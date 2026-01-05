@@ -27,8 +27,7 @@ func ReadinessCheck(c *gin.Context) {
 
 	// Check database connection
 	if database.DB != nil {
-		sqlDB, err := database.DB.DB()
-		if err != nil || sqlDB.Ping() != nil {
+		if err := database.DB.Ping(); err != nil {
 			c.JSON(http.StatusServiceUnavailable, gin.H{
 				"status":   "not_ready",
 				"database": "unavailable",
@@ -47,8 +46,8 @@ func ReadinessCheck(c *gin.Context) {
 	}
 
 	// Check Redis connection (optional - don't fail if Redis is down)
-	if cache.RedisClient != nil {
-		if err := cache.RedisClient.Ping(c.Request.Context()).Err(); err != nil {
+	if cache.Client != nil {
+		if err := cache.Client.Ping(c.Request.Context()).Err(); err != nil {
 			status["redis"] = "unavailable"
 		} else {
 			status["redis"] = "ok"
