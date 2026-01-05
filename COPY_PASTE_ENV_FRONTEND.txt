@@ -1,0 +1,12 @@
+# Frontend Production Environment Variables
+# Copy paste qiling: /www/wwwroot/kuafcv/frontend/.env.production
+
+# API Configuration
+NEXT_PUBLIC_API_URL=https://sysmasters.uz/api
+NEXT_PUBLIC_WS_URL=wss://sysmasters.uz/ws
+
+# Application URL
+NEXT_PUBLIC_APP_URL=https://sysmasters.uz
+
+# Environment
+NODE_ENV=production
