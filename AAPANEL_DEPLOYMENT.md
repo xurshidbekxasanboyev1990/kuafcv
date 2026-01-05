@@ -67,10 +67,8 @@ docker-compose --version
 ## 📁 Step 3: Repository Clone Qilish
 
 ```bash
-# Proyekt papkasini yaratish
-sudo mkdir -p /opt/kuafcv
-sudo chown -R $USER:$USER /opt/kuafcv
-cd /opt
+# aaPanel papkasiga o'tish
+cd /www/wwwroot
 
 # Git o'rnatish (agar yo'q bo'lsa)
 sudo apt update
@@ -79,6 +77,9 @@ sudo apt install git -y
 # Repository clone
 git clone https://github.com/xurshidbekxasanboyev1990/kuafcv.git
 cd kuafcv
+
+# Permissions
+sudo chown -R www:www /www/wwwroot/kuafcv
 ```
 
 ---
@@ -129,7 +130,7 @@ openssl rand -base64 32 | tr -d '\n' && echo
 ### Backend Environment:
 
 ```bash
-nano /opt/kuafcv/backend/.env.production
+nano /www/wwwroot/kuafcv/backend/.env.production
 ```
 
 Quyidagi qiymatlarni o'zgartiring:
@@ -170,7 +171,7 @@ Saqlash: `Ctrl+O`, `Enter`, Chiqish: `Ctrl+X`
 ### Frontend Environment:
 
 ```bash
-nano /opt/kuafcv/frontend/.env.production
+nano /www/wwwroot/kuafcv/frontend/.env.production
 ```
 
 ```env
@@ -183,7 +184,7 @@ NODE_ENV=production
 ### Docker Compose Environment:
 
 ```bash
-nano /opt/kuafcv/docker-compose.prod.yml
+nano /www/wwwroot/kuafcv/docker-compose.prod.yml
 ```
 
 `postgres` servisida parolni o'zgartiring:
@@ -232,12 +233,12 @@ sudo certbot certonly --standalone \
 ### Sertifikatlarni proyektga nusxalash:
 
 ```bash
-sudo mkdir -p /opt/kuafcv/nginx/ssl
-sudo cp /etc/letsencrypt/live/sysmasters.uz/fullchain.pem /opt/kuafcv/nginx/ssl/cert.pem
-sudo cp /etc/letsencrypt/live/sysmasters.uz/privkey.pem /opt/kuafcv/nginx/ssl/key.pem
-sudo chmod 644 /opt/kuafcv/nginx/ssl/cert.pem
-sudo chmod 600 /opt/kuafcv/nginx/ssl/key.pem
-sudo chown -R $USER:$USER /opt/kuafcv/nginx/ssl
+sudo mkdir -p /www/wwwroot/kuafcv/nginx/ssl
+sudo cp /etc/letsencrypt/live/sysmasters.uz/fullchain.pem /www/wwwroot/kuafcv/nginx/ssl/cert.pem
+sudo cp /etc/letsencrypt/live/sysmasters.uz/privkey.pem /www/wwwroot/kuafcv/nginx/ssl/key.pem
+sudo chmod 644 /www/wwwroot/kuafcv/nginx/ssl/cert.pem
+sudo chmod 600 /www/wwwroot/kuafcv/nginx/ssl/key.pem
+sudo chown -R www:www /www/wwwroot/kuafcv/nginx/ssl
 ```
 
 ### aaPanel Nginx'ni ishga tushirmaslik (Docker Nginx ishlatamiz):
@@ -253,7 +254,7 @@ sudo systemctl disable nginx
 ### Images build qilish:
 
 ```bash
-cd /opt/kuafcv
+cd /www/wwwroot/kuafcv
 docker-compose -f docker-compose.prod.yml build
 ```
 
@@ -327,13 +328,13 @@ sudo ufw status
 ### Backup script'ni executable qilish:
 
 ```bash
-chmod +x /opt/kuafcv/scripts/backup_database.sh
+chmod +x /www/wwwroot/kuafcv/scripts/backup_database.sh
 ```
 
 ### Test backup:
 
 ```bash
-/opt/kuafcv/scripts/backup_database.sh
+/www/wwwroot/kuafcv/scripts/backup_database.sh
 ```
 
 ### Cron job qo'shish (har kuni 2:00 AM):
@@ -345,7 +346,7 @@ crontab -e
 Quyidagi qatorni qo'shing:
 
 ```
-0 2 * * * /opt/kuafcv/scripts/backup_database.sh
+0 2 * * * /www/wwwroot/kuafcv/scripts/backup_database.sh
 ```
 
 ---
@@ -361,7 +362,7 @@ crontab -e
 Quyidagi qatorni qo'shing:
 
 ```
-0 3 * * * certbot renew --quiet --deploy-hook "docker-compose -f /opt/kuafcv/docker-compose.prod.yml restart nginx"
+0 3 * * * certbot renew --quiet --deploy-hook "docker-compose -f /www/wwwroot/kuafcv/docker-compose.prod.yml restart nginx"
 ```
 
 ---
@@ -465,7 +466,7 @@ du -sh /opt/kuafcv/*
 ## 🔄 Updates & Redeployment
 
 ```bash
-cd /opt/kuafcv
+cd /www/wwwroot/kuafcv
 
 # Pull yangi kod
 git pull origin master

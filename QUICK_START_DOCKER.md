@@ -19,13 +19,15 @@ Docker va PostgreSQL allaqachon o'rnatilgan bo'lsa, deployment juda tez!
 # SSH orqali serverga kirish
 ssh root@your-vps-ip
 
-# Proyekt papkasi
-cd /opt
+# aaPanel papkasiga o'tish
+cd /www/wwwroot
+
+# Repository clone
 git clone https://github.com/xurshidbekxasanboyev1990/kuafcv.git
 cd kuafcv
 
 # Yoki agar clone qilingan bo'lsa:
-cd /opt/kuafcv
+cd /www/wwwroot/kuafcv
 git pull origin master
 ```
 
@@ -54,7 +56,7 @@ echo "REDIS_PASSWORD=$REDIS_PASSWORD"
 ### Step 3: Backend Environment (2 daqiqa)
 
 ```bash
-nano /opt/kuafcv/backend/.env.production
+nano /www/wwwroot/kuafcv/backend/.env.production
 ```
 
 Faqat quyidagi qatorlarni o'zgartiring:
@@ -78,7 +80,7 @@ Qolgan qiymatlar allaqachon sozlangan:
 ### Step 4: Docker Compose Environment (1 daqiqa)
 
 ```bash
-nano /opt/kuafcv/docker-compose.prod.yml
+nano /www/wwwroot/kuafcv/docker-compose.prod.yml
 ```
 
 Faqat PostgreSQL parolni o'zgartiring (47-48 qator):
@@ -110,11 +112,11 @@ sudo certbot certonly --standalone \
   --agree-tos
 
 # Proyektga nusxalash
-sudo mkdir -p /opt/kuafcv/nginx/ssl
-sudo cp /etc/letsencrypt/live/sysmasters.uz/fullchain.pem /opt/kuafcv/nginx/ssl/cert.pem
-sudo cp /etc/letsencrypt/live/sysmasters.uz/privkey.pem /opt/kuafcv/nginx/ssl/key.pem
-sudo chmod 644 /opt/kuafcv/nginx/ssl/cert.pem
-sudo chmod 600 /opt/kuafcv/nginx/ssl/key.pem
+sudo mkdir -p /www/wwwroot/kuafcv/nginx/ssl
+sudo cp /etc/letsencrypt/live/sysmasters.uz/fullchain.pem /www/wwwroot/kuafcv/nginx/ssl/cert.pem
+sudo cp /etc/letsencrypt/live/sysmasters.uz/privkey.pem /www/wwwroot/kuafcv/nginx/ssl/key.pem
+sudo chmod 644 /www/wwwroot/kuafcv/nginx/ssl/cert.pem
+sudo chmod 600 /www/wwwroot/kuafcv/nginx/ssl/key.pem
 ```
 
 ---
@@ -122,7 +124,7 @@ sudo chmod 600 /opt/kuafcv/nginx/ssl/key.pem
 ### Step 6: Deploy! (4 daqiqa)
 
 ```bash
-cd /opt/kuafcv
+cd /www/wwwroot/kuafcv
 
 # Build (birinchi marta 5-10 daqiqa olishi mumkin)
 docker-compose -f docker-compose.prod.yml build
@@ -182,13 +184,13 @@ sudo ufw enable
 
 ```bash
 # Script executable qilish
-chmod +x /opt/kuafcv/scripts/backup_database.sh
+chmod +x /www/wwwroot/kuafcv/scripts/backup_database.sh
 
 # Cron job (har kuni 2 AM)
 crontab -e
 
 # Qo'shing:
-0 2 * * * /opt/kuafcv/scripts/backup_database.sh
+0 2 * * * /www/wwwroot/kuafcv/scripts/backup_database.sh
 ```
 
 ---
@@ -199,7 +201,7 @@ crontab -e
 crontab -e
 
 # Qo'shing:
-0 3 * * * certbot renew --quiet --deploy-hook "docker-compose -f /opt/kuafcv/docker-compose.prod.yml restart nginx"
+0 3 * * * certbot renew --quiet --deploy-hook "docker-compose -f /www/wwwroot/kuafcv/docker-compose.prod.yml restart nginx"
 ```
 
 ---
@@ -292,7 +294,7 @@ SELECT COUNT(*) FROM users;
 ## 🔄 Updates
 
 ```bash
-cd /opt/kuafcv
+cd /www/wwwroot/kuafcv
 
 # Yangi kod
 git pull origin master
