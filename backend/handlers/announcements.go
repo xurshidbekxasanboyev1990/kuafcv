@@ -14,7 +14,7 @@ import (
 
 // Announcement represents an announcement/news item
 type Announcement struct {
-	ID          int        `json:"id"`
+	ID          string     `json:"id"`
 	Title       string     `json:"title"`
 	Content     string     `json:"content"`
 	Type        string     `json:"type"`
@@ -26,7 +26,7 @@ type Announcement struct {
 	LinkText    *string    `json:"link_text,omitempty"`
 	ImageURL    *string    `json:"image_url,omitempty"`
 	PortfolioID *string    `json:"portfolio_id,omitempty"`
-	StartDate   time.Time  `json:"start_date"`
+	StartDate   *time.Time `json:"start_date,omitempty"`
 	EndDate     *time.Time `json:"end_date,omitempty"`
 	CreatedBy   string     `json:"created_by"`
 	CreatedAt   time.Time  `json:"created_at"`
@@ -212,7 +212,7 @@ func CreateAnnouncement(c *gin.Context) {
 		endDate = &t
 	}
 
-	var id int
+	var id string
 	err := database.DB.QueryRow(`
 		INSERT INTO announcements (title, content, type, priority, target_roles, is_active, is_marquee, 
 								   link_url, link_text, image_url, portfolio_id, start_date, end_date, created_by)

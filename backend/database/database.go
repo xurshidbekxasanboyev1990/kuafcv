@@ -208,6 +208,62 @@ func Migrate() error {
 		created_at TIMESTAMP DEFAULT NOW()
 	);
 
+	-- System settings table
+	CREATE TABLE IF NOT EXISTS system_settings (
+		id SERIAL PRIMARY KEY,
+		category TEXT DEFAULT 'general',
+		key TEXT UNIQUE NOT NULL,
+		value JSONB NOT NULL,
+		label TEXT,
+		description TEXT,
+		data_type TEXT DEFAULT 'string',
+		options JSONB,
+		is_public BOOLEAN DEFAULT FALSE,
+		updated_by TEXT,
+		created_at TIMESTAMP DEFAULT NOW(),
+		updated_at TIMESTAMP DEFAULT NOW()
+	);
+
+	-- Announcements table
+	CREATE TABLE IF NOT EXISTS announcements (
+		id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+		title TEXT NOT NULL,
+		content TEXT NOT NULL,
+		type TEXT DEFAULT 'info',
+		priority INTEGER DEFAULT 0,
+		target_roles TEXT[] DEFAULT '{ALL}',
+		is_active BOOLEAN DEFAULT TRUE,
+		is_marquee BOOLEAN DEFAULT FALSE,
+		link_url TEXT,
+		link_text TEXT,
+		image_url TEXT,
+		portfolio_id TEXT REFERENCES portfolio_items(id) ON DELETE SET NULL,
+		start_date TIMESTAMP DEFAULT NOW(),
+		end_date TIMESTAMP,
+		created_by TEXT REFERENCES users(id),
+		created_at TIMESTAMP DEFAULT NOW(),
+		updated_at TIMESTAMP DEFAULT NOW()
+	);
+
+	-- Indexes for new tables
+	CREATE INDEX IF NOT EXISTS idx_settings_key ON system_settings(key);
+	CREATE INDEX IF NOT EXISTS idx_settings_public ON system_settings(is_public);
+	CREATE INDEX IF NOT EXISTS idx_announcements_active ON announcements(is_active);
+	CREATE INDEX IF NOT EXISTS idx_announcements_marquee ON announcements(is_marquee);
+	CREATE INDEX IF NOT EXISTS idx_announcements_dates ON announcements(start_date, end_date);
+
+	-- Trigger for system_settings updated_at
+	DROP TRIGGER IF EXISTS system_settings_updated_at ON system_settings;
+	CREATE TRIGGER system_settings_updated_at
+		BEFORE UPDATE ON system_settings
+		FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+	-- Trigger for announcements updated_at
+	DROP TRIGGER IF EXISTS announcements_updated_at ON announcements;
+	CREATE TRIGGER announcements_updated_at
+		BEFORE UPDATE ON announcements
+		FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
 	-- Sync bookmark counts from portfolio_bookmarks table
 	UPDATE portfolio_items p
 	SET bookmark_count = (
