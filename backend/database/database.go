@@ -164,6 +164,35 @@ func Migrate() error {
 		BEFORE UPDATE ON portfolio_items
 		FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+	-- Portfolio bookmarks table
+	CREATE TABLE IF NOT EXISTS portfolio_bookmarks (
+		id SERIAL PRIMARY KEY,
+		portfolio_id TEXT REFERENCES portfolio_items(id) ON DELETE CASCADE,
+		user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+		note TEXT,
+		created_at TIMESTAMP DEFAULT NOW(),
+		UNIQUE(portfolio_id, user_id)
+	);
+
+	-- Portfolio comments table
+	CREATE TABLE IF NOT EXISTS portfolio_comments (
+		id SERIAL PRIMARY KEY,
+		portfolio_id TEXT REFERENCES portfolio_items(id) ON DELETE CASCADE,
+		user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+		comment TEXT NOT NULL,
+		created_at TIMESTAMP DEFAULT NOW()
+	);
+
+	-- Portfolio ratings table
+	CREATE TABLE IF NOT EXISTS portfolio_ratings (
+		id SERIAL PRIMARY KEY,
+		portfolio_id TEXT REFERENCES portfolio_items(id) ON DELETE CASCADE,
+		user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+		rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+		created_at TIMESTAMP DEFAULT NOW(),
+		UNIQUE(portfolio_id, user_id)
+	);
+
 	-- Sync bookmark counts from portfolio_bookmarks table
 	UPDATE portfolio_items p
 	SET bookmark_count = (
