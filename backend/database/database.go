@@ -85,6 +85,10 @@ func Migrate() error {
 		approved_by TEXT REFERENCES users(id),
 		approved_at TIMESTAMP,
 		rejection_reason TEXT,
+		bookmark_count INTEGER DEFAULT 0,
+		comment_count INTEGER DEFAULT 0,
+		rating_count INTEGER DEFAULT 0,
+		rating_average DECIMAL(3,2) DEFAULT 0.00,
 		created_at TIMESTAMP DEFAULT NOW(),
 		updated_at TIMESTAMP DEFAULT NOW()
 	);
