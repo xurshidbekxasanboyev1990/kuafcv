@@ -5,6 +5,7 @@ import { User, auth } from '@/lib/api';
 
 interface AuthContextType {
   user: User | null;
+  token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
   logout: () => void;
@@ -14,18 +15,20 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Saqlangan foydalanuvchini yuklash
     const storedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
+    const storedToken = localStorage.getItem('token');
 
-    if (storedUser && token) {
+    if (storedUser && storedToken) {
       try {
         // Avval localStorage'dan user ni olish
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
+        setToken(storedToken);
         setLoading(false);
         
         // Background'da token ni tekshirish
@@ -42,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               localStorage.removeItem('token');
               localStorage.removeItem('user');
               setUser(null);
+              setToken(null);
             }
             // Network xatoliklari, server down - logout QILMASLIK
             // localStorage'dagi user bilan davom etish
@@ -61,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('token', response.token);
     localStorage.setItem('user', JSON.stringify(response.user));
     setUser(response.user);
+    setToken(response.token);
     return response.user;
   };
 
@@ -68,11 +73,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
+    setToken(null);
     window.location.href = '/login';
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
