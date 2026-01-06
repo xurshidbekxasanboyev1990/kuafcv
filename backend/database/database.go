@@ -213,7 +213,7 @@ func Migrate() error {
 	UPDATE portfolio_items p
 	SET 
 		rating_count = COALESCE((SELECT COUNT(*) FROM portfolio_ratings pr WHERE pr.portfolio_id = p.id), 0),
-		rating_avg = COALESCE((SELECT AVG(rating)::numeric(3,2) FROM portfolio_ratings pr WHERE pr.portfolio_id = p.id), 0);
+		rating_average = COALESCE((SELECT AVG(rating)::numeric(3,2) FROM portfolio_ratings pr WHERE pr.portfolio_id = p.id), 0);
 
 	-- Sync view counts from portfolio_views table
 	UPDATE portfolio_items p
