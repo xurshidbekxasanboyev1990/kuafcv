@@ -197,6 +197,15 @@ func Migrate() error {
 		UNIQUE(portfolio_id, user_id)
 	);
 
+	-- Portfolio views table
+	CREATE TABLE IF NOT EXISTS portfolio_views (
+		id SERIAL PRIMARY KEY,
+		portfolio_id TEXT REFERENCES portfolio_items(id) ON DELETE CASCADE,
+		viewer_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+		viewer_ip TEXT,
+		created_at TIMESTAMP DEFAULT NOW()
+	);
+
 	-- Sync bookmark counts from portfolio_bookmarks table
 	UPDATE portfolio_items p
 	SET bookmark_count = (
