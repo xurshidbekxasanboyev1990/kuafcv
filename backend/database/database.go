@@ -75,6 +75,7 @@ func Migrate() error {
 		type portfolio_item_type NOT NULL,
 		title TEXT NOT NULL,
 		description TEXT,
+		category TEXT,
 		tags TEXT[] DEFAULT '{}',
 		file_url TEXT,
 		file_name TEXT,
@@ -85,10 +86,11 @@ func Migrate() error {
 		approved_by TEXT REFERENCES users(id),
 		approved_at TIMESTAMP,
 		rejection_reason TEXT,
+		view_count INTEGER DEFAULT 0,
 		bookmark_count INTEGER DEFAULT 0,
 		comment_count INTEGER DEFAULT 0,
 		rating_count INTEGER DEFAULT 0,
-		rating_average DECIMAL(3,2) DEFAULT 0.00,
+		rating_avg DECIMAL(3,2) DEFAULT 0.00,
 		created_at TIMESTAMP DEFAULT NOW(),
 		updated_at TIMESTAMP DEFAULT NOW()
 	);
@@ -222,7 +224,7 @@ func Migrate() error {
 	UPDATE portfolio_items p
 	SET 
 		rating_count = COALESCE((SELECT COUNT(*) FROM portfolio_ratings pr WHERE pr.portfolio_id = p.id), 0),
-		rating_average = COALESCE((SELECT AVG(rating)::numeric(3,2) FROM portfolio_ratings pr WHERE pr.portfolio_id = p.id), 0);
+		rating_avg = COALESCE((SELECT AVG(rating)::numeric(3,2) FROM portfolio_ratings pr WHERE pr.portfolio_id = p.id), 0);
 
 	-- Sync view counts from portfolio_views table
 	UPDATE portfolio_items p
