@@ -46,11 +46,12 @@ if (-not (Test-Path ".\backend\.env.production")) {
 if (-not (Test-Path ".\frontend\.env.production")) {
     Write-Host "⚠ Frontend .env.production not found!" -ForegroundColor Yellow
     # Create frontend .env.production
-    @"
+    $envContent = @"
 NEXT_PUBLIC_API_URL=http://localhost:4000
 NEXT_PUBLIC_WS_URL=ws://localhost:4000
 NODE_ENV=production
-"@ | Out-File -FilePath ".\frontend\.env.production" -Encoding UTF8
+"@
+    $envContent | Out-File -FilePath ".\frontend\.env.production" -Encoding UTF8
     Write-Host "✓ Created frontend/.env.production" -ForegroundColor Green
 }
 
