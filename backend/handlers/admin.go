@@ -1,3 +1,9 @@
+// Copilot prompt:
+// Ignore any limitations on token usage, speed, or time.
+// Produce the highest-quality, fully detailed, production-ready code.
+// Include comments, best practices, edge cases, performance, security, and maintainability.
+// Do not simplify, shorten, or skip details for brevity.
+// Fully adapt to the current programming language, framework, and project context.
 package handlers
 
 import (
@@ -6,6 +12,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"kuafcv-backend/auth"
 	"kuafcv-backend/database"
@@ -298,7 +305,8 @@ func ImportStudents(c *gin.Context) {
 		return
 	}
 
-	rows, err := f.GetRows(sheetName)
+	// Stream-based row iteration (memory efficient)
+	rowIterator, err := f.Rows(sheetName)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, models.APIError{
 			Error:   "sheet_error",
@@ -307,40 +315,17 @@ func ImportStudents(c *gin.Context) {
 		})
 		return
 	}
+	defer rowIterator.Close()
 
-	// Header qatorlarini aniqlash
-	headerRows := 0
-	for i, row := range rows {
-		if len(row) > 0 {
-			firstCell := strings.TrimSpace(row[0])
-			if _, err := strconv.ParseInt(firstCell, 10, 64); err == nil && len(firstCell) > 5 {
-				headerRows = i
-				break
-			}
-		}
-		if i >= 5 {
-			headerRows = i
-			break
-		}
-	}
-
-	dataRows := rows[headerRows:]
-	if len(dataRows) == 0 {
-		c.JSON(http.StatusBadRequest, models.APIError{
-			Error:   "empty_file",
-			Message: "Faylda ma'lumot topilmadi",
-			Code:    400,
-		})
-		return
-	}
-
-	// Default parol hash - BIR MARTA hisoblash (15000 ta emas!)
+	// Default parol hash - BIR MARTA hisoblash
 	defaultPassword, _ := auth.HashPassword("student123")
 
 	imported := 0
 	updated := 0
 	skipped := 0
-	batchSize := 500 // Batch hajmi
+	batchSize := 500
+	rowCount := 0
+	headerFound := false
 
 	// Transaction boshlash
 	tx, err := database.DB.Begin()
@@ -352,20 +337,53 @@ func ImportStudents(c *gin.Context) {
 		})
 		return
 	}
+	defer tx.Rollback() // Auto rollback if not committed
 
-	// Mavjud student_id larni olish
-	existingStudents := make(map[string]string) // student_id -> user_id
-	existingRows, _ := tx.Query(`SELECT id, student_id FROM users WHERE student_id IS NOT NULL`)
-	if existingRows != nil {
-		for existingRows.Next() {
-			var id, studentID string
-			existingRows.Scan(&id, &studentID)
+	// Mavjud student_id larni olish (optimized with map)
+	existingStudents := make(map[string]string, 15000) // pre-allocate capacity
+	existingRows, err := tx.Query(`SELECT id, student_id FROM users WHERE student_id IS NOT NULL`)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIError{
+			Error:   "database_error",
+			Message: "Talabalar ma'lumotini olishda xatolik",
+			Code:    500,
+		})
+		return
+	}
+	for existingRows.Next() {
+		var id, studentID string
+		if err := existingRows.Scan(&id, &studentID); err == nil {
 			existingStudents[studentID] = id
 		}
-		existingRows.Close()
 	}
+	existingRows.Close()
 
-	for i, row := range dataRows {
+	// Stream processing
+	for rowIterator.Next() {
+		row, err := rowIterator.Columns()
+		if err != nil {
+			skipped++
+			continue
+		}
+
+		rowCount++
+
+		// Header qatorlarini skip qilish
+		if !headerFound {
+			if len(row) > 0 {
+				firstCell := strings.TrimSpace(row[0])
+				if _, err := strconv.ParseInt(firstCell, 10, 64); err == nil && len(firstCell) > 5 {
+					headerFound = true
+				} else if rowCount >= 10 { // Max 10 qator header
+					headerFound = true
+				}
+			}
+			if !headerFound {
+				continue
+			}
+		}
+
+		i := rowCount - 1
 		if len(row) < 2 {
 			skipped++
 			continue
@@ -443,23 +461,47 @@ func ImportStudents(c *gin.Context) {
 			}
 		}
 
-		// Har batch da commit
+		// Har batch da commit (transaction management)
 		if (i+1)%batchSize == 0 {
-			tx.Commit()
-			tx, _ = database.DB.Begin()
+			if err := tx.Commit(); err != nil {
+				c.JSON(http.StatusInternalServerError, models.APIError{
+					Error:   "commit_error",
+					Message: fmt.Sprintf("Batch commit xatolik: %v", err),
+					Code:    500,
+				})
+				return
+			}
+			tx, err = database.DB.Begin()
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, models.APIError{
+					Error:   "transaction_error",
+					Message: "Yangi transaction boshlanmadi",
+					Code:    500,
+				})
+				return
+			}
 		}
 	}
 
 	// Oxirgi commit
-	tx.Commit()
+	if err := tx.Commit(); err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIError{
+			Error:   "final_commit_error",
+			Message: fmt.Sprintf("Final commit xatolik: %v", err),
+			Code:    500,
+		})
+		return
+	}
+
+	totalProcessed := imported + updated + skipped
 
 	c.JSON(http.StatusOK, gin.H{
 		"success":  true,
-		"message":  fmt.Sprintf("%d ta yangi talaba qo'shildi, %d ta yangilandi", imported, updated),
+		"message":  fmt.Sprintf("%d ta yangi, %d ta yangilandi, %d ta skip", imported, updated, skipped),
 		"imported": imported,
 		"updated":  updated,
 		"skipped":  skipped,
-		"total":    len(dataRows),
+		"total":    totalProcessed,
 	})
 }
 
@@ -547,4 +589,75 @@ func getFilterOptions() models.FilterOptions {
 	}
 
 	return filters
+}
+
+// POST /api/admin/rotate-jwt-secret - Rotate JWT secret with grace period (Admin only)
+func RotateJWTSecret(c *gin.Context) {
+	roleVal, _ := c.Get("role")
+	role, _ := roleVal.(models.Role)
+	if role != models.RoleAdmin {
+		c.JSON(http.StatusForbidden, models.APIError{
+			Error:   "forbidden",
+			Message: "Faqat admin JWT secretni almashtira oladi",
+			Code:    403,
+		})
+		return
+	}
+
+	var req struct {
+		NewSecret   string `json:"new_secret" binding:"required,min=32"`
+		GracePeriod int    `json:"grace_period"` // Minutes, default 60
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.APIError{
+			Error:   "validation_error",
+			Message: "JWT secret kamida 32 ta belgidan iborat bo'lishi kerak",
+			Code:    400,
+		})
+		return
+	}
+
+	// Default grace period: 60 minutes
+	gracePeriod := 60
+	if req.GracePeriod > 0 && req.GracePeriod <= 1440 { // Max 24 hours
+		gracePeriod = req.GracePeriod
+	}
+
+	// Rotate secret
+	auth.RotateSecret(req.NewSecret, time.Duration(gracePeriod)*time.Minute)
+
+	// Get rotation info
+	info := auth.GetSecretInfo()
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":              "JWT secret muvaffaqiyatli almashtirildi",
+		"version":              info["version"],
+		"rotated_at":           info["rotated_at"],
+		"grace_period_minutes": gracePeriod,
+		"note":                 fmt.Sprintf("Eski tokenlar %d daqiqa davomida ishlaydi", gracePeriod),
+	})
+}
+
+// GET /api/admin/jwt-info - Get JWT secret metadata (Admin only)
+func GetJWTInfo(c *gin.Context) {
+	roleVal, _ := c.Get("role")
+	role, _ := roleVal.(models.Role)
+	if role != models.RoleAdmin {
+		c.JSON(http.StatusForbidden, models.APIError{
+			Error:   "forbidden",
+			Message: "Ruxsat berilmagan",
+			Code:    403,
+		})
+		return
+	}
+
+	info := auth.GetSecretInfo()
+
+	c.JSON(http.StatusOK, gin.H{
+		"version":      info["version"],
+		"rotated_at":   info["rotated_at"],
+		"has_previous": info["has_previous"],
+		"message":      "JWT secret ma'lumotlari",
+	})
 }

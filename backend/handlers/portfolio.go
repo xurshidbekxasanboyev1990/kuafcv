@@ -1,12 +1,22 @@
+// Copilot prompt:
+// Ignore any limitations on token usage, speed, or time.
+// Produce the highest-quality, fully detailed, production-ready code.
+// Include comments, best practices, edge cases, performance, security, and maintainability.
+// Do not simplify, shorten, or skip details for brevity.
+// Fully adapt to the current programming language, framework, and project context.
 package handlers
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
+	"kuafcv-backend/cache"
 	"kuafcv-backend/database"
 	"kuafcv-backend/models"
 
@@ -15,12 +25,64 @@ import (
 	"github.com/lib/pq"
 )
 
+// Magic bytes signatures for file type validation
+var magicBytes = map[string][]byte{
+	"pdf":  {0x25, 0x50, 0x44, 0x46}, // %PDF
+	"jpeg": {0xFF, 0xD8, 0xFF},
+	"png":  {0x89, 0x50, 0x4E, 0x47},
+	"docx": {0x50, 0x4B, 0x03, 0x04}, // ZIP archive (DOCX, XLSX, PPTX)
+	"xlsx": {0x50, 0x4B, 0x03, 0x04},
+	"pptx": {0x50, 0x4B, 0x03, 0x04},
+	"mp4":  {0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70}, // ftyp
+}
+
+// validateMagicBytes checks if file content matches expected type
+func validateMagicBytes(data []byte, portfolioType string) bool {
+	if len(data) < 8 {
+		return false // Too small to validate
+	}
+
+	// Check common magic bytes
+	validTypes := []string{}
+
+	if portfolioType == "DOCUMENT" || portfolioType == "CERTIFICATE" {
+		validTypes = []string{"pdf", "docx", "xlsx", "pptx"}
+	} else if portfolioType == "MEDIA" {
+		validTypes = []string{"jpeg", "png", "mp4"}
+	} else {
+		// PROJECT, OTHER - allow all
+		validTypes = []string{"pdf", "docx", "xlsx", "pptx", "jpeg", "png", "mp4"}
+	}
+
+	for _, fileType := range validTypes {
+		if magic, ok := magicBytes[fileType]; ok {
+			if bytes.HasPrefix(data, magic) {
+				return true
+			}
+		}
+	}
+
+	// Additional check for Office Open XML (DOCX/XLSX/PPTX)
+	// They all start with PK (ZIP), but we can check further
+	if bytes.HasPrefix(data, []byte{0x50, 0x4B}) {
+		// Check if ZIP contains office-specific files
+		for _, fileType := range validTypes {
+			if fileType == "docx" || fileType == "xlsx" || fileType == "pptx" {
+				return true // Accept all Office formats
+			}
+		}
+	}
+
+	return false
+}
+
 // GET /api/portfolio - O'z portfoliolari
 func GetMyPortfolios(c *gin.Context) {
 	userID := c.GetString("user_id")
 
 	rows, err := database.DB.Query(`
-		SELECT id, type, title, description, tags, file_url, file_name, mime_type, size_bytes,
+		SELECT id, type, title, description, category, tags, file_url, file_name, mime_type, size_bytes,
+		       COALESCE(files, '[]'::jsonb) as files,
 		       owner_id, approval_status, approved_by, approved_at, rejection_reason, created_at, updated_at,
 		       view_count, rating_avg, rating_count, comment_count, bookmark_count
 		FROM portfolio_items
@@ -29,6 +91,7 @@ func GetMyPortfolios(c *gin.Context) {
 	`, userID)
 
 	if err != nil {
+		log.Printf("❌ GetMyPortfolios Query Error: %v", err)
 		c.JSON(http.StatusInternalServerError, models.APIError{
 			Error:   "database_error",
 			Message: "Ma'lumotlarni olishda xatolik",
@@ -42,17 +105,32 @@ func GetMyPortfolios(c *gin.Context) {
 	for rows.Next() {
 		var item models.PortfolioItem
 		var tags []string
+		var categoryStr string
+		var filesJSON []byte
 		err := rows.Scan(
-			&item.ID, &item.Type, &item.Title, &item.Description, pq.Array(&tags),
+			&item.ID, &item.Type, &item.Title, &item.Description, &categoryStr, pq.Array(&tags),
 			&item.FileURL, &item.FileName, &item.MimeType, &item.SizeBytes,
+			&filesJSON,
 			&item.OwnerID, &item.ApprovalStatus, &item.ApprovedBy, &item.ApprovedAt,
 			&item.RejectionReason, &item.CreatedAt, &item.UpdatedAt,
 			&item.ViewCount, &item.RatingAvg, &item.RatingCount, &item.CommentCount, &item.BookmarkCount,
 		)
 		if err != nil {
+			log.Printf("❌ GetMyPortfolios Scan Error: %v", err)
 			continue
 		}
+		cat := models.PortfolioCategory(categoryStr)
+		item.Category = &cat
 		item.Tags = tags
+
+		// Parse files JSON
+		if len(filesJSON) > 0 {
+			if err := json.Unmarshal(filesJSON, &item.Files); err != nil {
+				log.Printf("⚠️ Files JSON parse error: %v", err)
+				item.Files = []models.FileInfo{}
+			}
+		}
+
 		items = append(items, item)
 	}
 
@@ -91,6 +169,7 @@ func CreatePortfolio(c *gin.Context) {
 	title := c.PostForm("title")
 	portfolioType := c.PostForm("type")
 	description := c.PostForm("description")
+	category := c.PostForm("category")
 	tagsStr := c.PostForm("tags")
 
 	if title == "" || portfolioType == "" {
@@ -111,84 +190,138 @@ func CreatePortfolio(c *gin.Context) {
 		tags = []string{}
 	}
 
-	// Fayl mavjudligini tekshirish
-	file, fileHeader, err := c.Request.FormFile("file")
-	var fileURL, fileName, mimeType *string
-	var sizeBytes *int64
+	// Ko'p fayllarni qabul qilish (maksimal 3 ta)
+	form, err := c.MultipartForm()
+	var uploadedFiles []models.FileInfo
+	var firstFileURL, firstFileName, firstMimeType *string
+	var firstSizeBytes *int64
 
-	if err == nil && file != nil {
-		defer file.Close()
+	if err == nil && form != nil && form.File["files"] != nil {
+		files := form.File["files"]
 
-		// MIME type aniqlash
-		contentType := fileHeader.Header.Get("Content-Type")
-
-		// Portfolio turiga qarab fayl turini tekshirish
-		isValidFile := false
-		if portfolioType == "DOCUMENT" || portfolioType == "CERTIFICATE" {
-			isValidFile = allowedDocTypes[contentType]
-			if !isValidFile {
-				c.JSON(http.StatusBadRequest, models.APIError{
-					Error:   "invalid_file",
-					Message: "Faqat PDF, DOCX, XLSX, PPTX formatdagi fayllar qabul qilinadi",
-					Code:    400,
-				})
-				return
-			}
-		} else if portfolioType == "PROJECT" || portfolioType == "MEDIA" || portfolioType == "OTHER" {
-			isValidFile = allowedDocTypes[contentType] || allowedMediaTypes[contentType]
-			if !isValidFile {
-				c.JSON(http.StatusBadRequest, models.APIError{
-					Error:   "invalid_file",
-					Message: "Faqat ruxsat berilgan fayl turlari qabul qilinadi (PDF, DOCX, JPEG, PNG, MP4 va h.k.)",
-					Code:    400,
-				})
-				return
-			}
-		}
-
-		// Fayl hajmini tekshirish (50MB max)
-		if fileHeader.Size > 50*1024*1024 {
+		// Maksimal 3 ta fayl
+		if len(files) > 3 {
 			c.JSON(http.StatusBadRequest, models.APIError{
-				Error:   "file_too_large",
-				Message: "Fayl hajmi 50MB dan oshmasligi kerak",
+				Error:   "too_many_files",
+				Message: "Maksimal 3 ta fayl yuklash mumkin",
 				Code:    400,
 			})
 			return
 		}
 
-		// Faylni saqlash
-		ext := ""
-		if idx := len(fileHeader.Filename) - 1; idx >= 0 {
-			for i := idx; i >= 0; i-- {
-				if fileHeader.Filename[i] == '.' {
-					ext = fileHeader.Filename[i:]
-					break
+		for _, fileHeader := range files {
+			file, err := fileHeader.Open()
+			if err != nil {
+				c.JSON(http.StatusBadRequest, models.APIError{
+					Error:   "file_open_error",
+					Message: "Faylni ochishda xatolik",
+					Code:    400,
+				})
+				return
+			}
+			defer file.Close()
+
+			// Read first 512 bytes for magic number detection
+			buffer := make([]byte, 512)
+			n, _ := file.Read(buffer)
+			file.Seek(0, 0)
+
+			// Detect content type
+			detectedType := http.DetectContentType(buffer[:n])
+			headerType := fileHeader.Header.Get("Content-Type")
+			contentType := detectedType
+			if contentType == "application/octet-stream" && headerType != "" {
+				contentType = headerType
+			}
+
+			// Validate magic bytes
+			isValidMagic := validateMagicBytes(buffer[:n], portfolioType)
+			if !isValidMagic {
+				c.JSON(http.StatusBadRequest, models.APIError{
+					Error:   "invalid_file_content",
+					Message: "Fayl mazmuni turi noto'g'ri: " + fileHeader.Filename,
+					Code:    400,
+				})
+				return
+			}
+
+			// Validate file type
+			isValidFile := false
+			if portfolioType == "DOCUMENT" || portfolioType == "CERTIFICATE" {
+				isValidFile = allowedDocTypes[contentType] || allowedDocTypes[detectedType]
+				if !isValidFile {
+					c.JSON(http.StatusBadRequest, models.APIError{
+						Error:   "invalid_file",
+						Message: "Faqat PDF, DOCX, XLSX, PPTX formatdagi fayllar qabul qilinadi",
+						Code:    400,
+					})
+					return
+				}
+			} else if portfolioType == "PROJECT" || portfolioType == "MEDIA" || portfolioType == "OTHER" {
+				isValidFile = allowedDocTypes[contentType] || allowedMediaTypes[contentType] ||
+					allowedDocTypes[detectedType] || allowedMediaTypes[detectedType]
+				if !isValidFile {
+					c.JSON(http.StatusBadRequest, models.APIError{
+						Error:   "invalid_file",
+						Message: "Faqat ruxsat berilgan fayl turlari qabul qilinadi",
+						Code:    400,
+					})
+					return
 				}
 			}
-		}
 
-		newFileName := uuid.New().String() + ext
-		filePath := "uploads/portfolios/" + newFileName
+			// File size check (50MB max)
+			if fileHeader.Size > 50*1024*1024 {
+				c.JSON(http.StatusBadRequest, models.APIError{
+					Error:   "file_too_large",
+					Message: "Fayl hajmi 50MB dan oshmasligi kerak: " + fileHeader.Filename,
+					Code:    400,
+				})
+				return
+			}
 
-		// Papka mavjudligini tekshirish
-		os.MkdirAll("uploads/portfolios", 0755)
+			// Save file
+			ext := ""
+			if idx := len(fileHeader.Filename) - 1; idx >= 0 {
+				for i := idx; i >= 0; i-- {
+					if fileHeader.Filename[i] == '.' {
+						ext = fileHeader.Filename[i:]
+						break
+					}
+				}
+			}
 
-		if err := c.SaveUploadedFile(fileHeader, filePath); err != nil {
-			c.JSON(http.StatusInternalServerError, models.APIError{
-				Error:   "upload_error",
-				Message: "Fayl yuklashda xatolik",
-				Code:    500,
+			newFileName := uuid.New().String() + ext
+			filePath := "uploads/portfolios/" + newFileName
+			os.MkdirAll("uploads/portfolios", 0755)
+
+			if err := c.SaveUploadedFile(fileHeader, filePath); err != nil {
+				c.JSON(http.StatusInternalServerError, models.APIError{
+					Error:   "upload_error",
+					Message: "Fayl yuklashda xatolik: " + fileHeader.Filename,
+					Code:    500,
+				})
+				return
+			}
+
+			// Add to uploaded files
+			uploadedFiles = append(uploadedFiles, models.FileInfo{
+				URL:      "/" + filePath,
+				Name:     fileHeader.Filename,
+				MimeType: contentType,
+				Size:     fileHeader.Size,
 			})
-			return
-		}
 
-		fileURLStr := "/" + filePath
-		fileURL = &fileURLStr
-		fileNameStr := fileHeader.Filename
-		fileName = &fileNameStr
-		mimeType = &contentType
-		size := fileHeader.Size
-		sizeBytes = &size
+			// Keep first file for legacy compatibility
+			if firstFileURL == nil {
+				url := "/" + filePath
+				firstFileURL = &url
+				firstFileName = &fileHeader.Filename
+				firstMimeType = &contentType
+				size := fileHeader.Size
+				firstSizeBytes = &size
+			}
+		}
 	}
 
 	id := uuid.New().String()
@@ -197,12 +330,34 @@ func CreatePortfolio(c *gin.Context) {
 		descPtr = nil
 	}
 
+	var categoryStr *string
+	if category != "" {
+		var exists bool
+		err := database.DB.QueryRow(`
+			SELECT EXISTS(SELECT 1 FROM portfolio_categories WHERE value = $1 AND is_active = true)
+		`, category).Scan(&exists)
+
+		if err == nil && !exists {
+			c.JSON(http.StatusBadRequest, models.APIError{
+				Error:   "invalid_category",
+				Message: "Noto'g'ri kategoriya tanlandi",
+				Code:    400,
+			})
+			return
+		}
+		categoryStr = &category
+	}
+
+	// Convert files to JSON
+	filesJSON, _ := json.Marshal(uploadedFiles)
+
 	_, err = database.DB.Exec(`
-		INSERT INTO portfolio_items (id, type, title, description, tags, file_url, file_name, mime_type, size_bytes, owner_id, approval_status)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'PENDING')
-	`, id, portfolioType, title, descPtr, pq.Array(tags), fileURL, fileName, mimeType, sizeBytes, userID)
+		INSERT INTO portfolio_items (id, type, title, description, category, tags, file_url, file_name, mime_type, size_bytes, files, owner_id, approval_status)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'PENDING')
+	`, id, portfolioType, title, descPtr, categoryStr, pq.Array(tags), firstFileURL, firstFileName, firstMimeType, firstSizeBytes, filesJSON, userID)
 
 	if err != nil {
+		log.Printf("❌ Portfolio yaratishda xatolik: %v", err)
 		c.JSON(http.StatusInternalServerError, models.APIError{
 			Error:   "database_error",
 			Message: "Portfolio yaratishda xatolik: " + err.Error(),
@@ -214,7 +369,7 @@ func CreatePortfolio(c *gin.Context) {
 	c.JSON(http.StatusCreated, models.APISuccess{
 		Success: true,
 		Message: "Portfolio yaratildi",
-		Data:    gin.H{"id": id},
+		Data:    gin.H{"id": id, "files_count": len(uploadedFiles)},
 	})
 }
 
@@ -344,8 +499,8 @@ func GetAllPortfolios(c *gin.Context) {
 	offset := (page - 1) * limit
 
 	query := `
-		SELECT p.id, p.type, p.title, p.description, p.tags, p.file_url, p.file_name, 
-		       p.mime_type, p.size_bytes, p.owner_id, p.approval_status, p.approved_by, 
+		SELECT p.id, p.type, p.title, p.description, p.category, p.tags, p.file_url, p.file_name, 
+		       p.mime_type, p.size_bytes, COALESCE(p.files, '[]'::jsonb) as files, p.owner_id, p.approval_status, p.approved_by, 
 		       p.approved_at, p.rejection_reason, p.created_at, p.updated_at,
 		       u.id, u.email, u.role, u.full_name, u.student_id, u.student_data, u.created_at
 		FROM portfolio_items p
@@ -428,11 +583,13 @@ func GetAllPortfolios(c *gin.Context) {
 		var item models.PortfolioItem
 		var owner models.User
 		var studentDataJSON []byte
+		var filesJSON []byte
 		var tags []string
+		var categoryStr string
 
 		err := rows.Scan(
-			&item.ID, &item.Type, &item.Title, &item.Description, pq.Array(&tags),
-			&item.FileURL, &item.FileName, &item.MimeType, &item.SizeBytes,
+			&item.ID, &item.Type, &item.Title, &item.Description, &categoryStr, pq.Array(&tags),
+			&item.FileURL, &item.FileName, &item.MimeType, &item.SizeBytes, &filesJSON,
 			&item.OwnerID, &item.ApprovalStatus, &item.ApprovedBy, &item.ApprovedAt,
 			&item.RejectionReason, &item.CreatedAt, &item.UpdatedAt,
 			&owner.ID, &owner.Email, &owner.Role, &owner.FullName, &owner.StudentID,
@@ -441,7 +598,18 @@ func GetAllPortfolios(c *gin.Context) {
 		if err != nil {
 			continue
 		}
+		cat := models.PortfolioCategory(categoryStr)
+		item.Category = &cat
 		item.Tags = tags
+
+		// Parse files JSON array
+		if filesJSON != nil {
+			json.Unmarshal(filesJSON, &item.Files)
+		}
+		if item.Files == nil {
+			item.Files = []models.FileInfo{}
+		}
+
 		if studentDataJSON != nil {
 			json.Unmarshal(studentDataJSON, &owner.StudentData)
 		}
@@ -537,5 +705,43 @@ func RejectPortfolio(c *gin.Context) {
 	c.JSON(http.StatusOK, models.APISuccess{
 		Success: true,
 		Message: "Portfolio rad etildi",
+	})
+}
+
+// GET /api/portfolio/categories - Barcha kategoriyalar
+func GetPortfolioCategories(c *gin.Context) {
+	type CategoryInfo struct {
+		Value string `json:"value"`
+		Label string `json:"label"`
+	}
+
+	cacheKey := "portfolio:categories"
+	var cachedCategories []CategoryInfo
+
+	// Try cache first
+	if err := cache.Get(cacheKey, &cachedCategories); err == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"categories": cachedCategories,
+			"cached":     true,
+		})
+		return
+	}
+
+	categories := []CategoryInfo{
+		{Value: string(models.CategoryAcademic), Label: models.CategoryLabels[models.CategoryAcademic]},
+		{Value: string(models.CategoryLeadership), Label: models.CategoryLabels[models.CategoryLeadership]},
+		{Value: string(models.CategorySocial), Label: models.CategoryLabels[models.CategorySocial]},
+		{Value: string(models.CategoryProjects), Label: models.CategoryLabels[models.CategoryProjects]},
+		{Value: string(models.CategoryTechnical), Label: models.CategoryLabels[models.CategoryTechnical]},
+		{Value: string(models.CategoryCareer), Label: models.CategoryLabels[models.CategoryCareer]},
+		{Value: string(models.CategoryInternational), Label: models.CategoryLabels[models.CategoryInternational]},
+		{Value: string(models.CategoryAwards), Label: models.CategoryLabels[models.CategoryAwards]},
+	}
+
+	// Cache for 24 hours
+	cache.Set(cacheKey, categories, 24*time.Hour)
+
+	c.JSON(http.StatusOK, gin.H{
+		"categories": categories,
 	})
 }

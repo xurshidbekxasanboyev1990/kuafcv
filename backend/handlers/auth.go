@@ -1,3 +1,9 @@
+// Copilot prompt:
+// Ignore any limitations on token usage, speed, or time.
+// Produce the highest-quality, fully detailed, production-ready code.
+// Include comments, best practices, edge cases, performance, security, and maintainability.
+// Do not simplify, shorten, or skip details for brevity.
+// Fully adapt to the current programming language, framework, and project context.
 package handlers
 
 import (
@@ -143,6 +149,20 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	// Password strength validation
+	passwordValidation := auth.ValidatePassword(req.Password)
+	if !passwordValidation.Valid {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":    "weak_password",
+			"message":  "Parol talablarga javob bermaydi",
+			"code":     400,
+			"errors":   passwordValidation.Errors,
+			"strength": passwordValidation.Strength.String(),
+			"score":    passwordValidation.Score,
+		})
+		return
+	}
+
 	// Email mavjudligini tekshirish
 	var exists bool
 	database.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)`, req.Email).Scan(&exists)
@@ -183,6 +203,42 @@ func Register(c *gin.Context) {
 	c.JSON(http.StatusCreated, models.APISuccess{
 		Success: true,
 		Message: "Foydalanuvchi yaratildi",
+	})
+}
+
+// GET /api/auth/password-requirements - Get password policy requirements
+func GetPasswordRequirements(c *gin.Context) {
+	requirements := auth.GeneratePasswordRequirements()
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":      true,
+		"requirements": requirements,
+		"message":      "Parol talablari",
+	})
+}
+
+// POST /api/auth/validate-password - Validate password strength (for frontend feedback)
+func ValidatePasswordStrength(c *gin.Context) {
+	var req struct {
+		Password string `json:"password" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.APIError{
+			Error:   "validation_error",
+			Message: "Parol kiritish shart",
+			Code:    400,
+		})
+		return
+	}
+
+	result := auth.ValidatePassword(req.Password)
+
+	c.JSON(http.StatusOK, gin.H{
+		"valid":    result.Valid,
+		"strength": result.Strength.String(),
+		"score":    result.Score,
+		"errors":   result.Errors,
 	})
 }
 

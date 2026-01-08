@@ -1,3 +1,9 @@
+// Copilot prompt:
+// Ignore any limitations on token usage, speed, or time.
+// Produce the highest-quality, fully detailed, production-ready code.
+// Include comments, best practices, edge cases, performance, security, and maintainability.
+// Do not simplify, shorten, or skip details for brevity.
+// Fully adapt to the current programming language, framework, and project context.
 package handlers
 
 import (
@@ -148,26 +154,58 @@ func GetStudentDetails(c *gin.Context) {
 		json.Unmarshal(studentDataJSON, &user.StudentData)
 	}
 
-	// Talaba portfoliolari
+	// Talaba portfoliolari (optimized with category join)
 	rows, _ := database.DB.Query(`
-		SELECT id, type, title, description, tags, file_url, file_name, approval_status, created_at,
-		       view_count, rating_avg, rating_count, comment_count, bookmark_count
-		FROM portfolio_items
-		WHERE owner_id = $1 AND approval_status = 'APPROVED'
-		ORDER BY created_at DESC
+		SELECT p.id, p.type, p.title, p.description, p.category, p.tags, p.file_url, p.file_name, 
+		       p.approval_status, p.created_at, p.view_count, p.rating_avg, p.rating_count, 
+		       p.comment_count, p.bookmark_count, pc.label, pc.icon
+		FROM portfolio_items p
+		LEFT JOIN portfolio_categories pc ON p.category = pc.value
+		WHERE p.owner_id = $1 AND p.approval_status = 'APPROVED'
+		ORDER BY p.created_at DESC
 	`, studentID)
 
-	portfolios := []models.PortfolioItem{}
+	portfolios := []map[string]interface{}{}
 	if rows != nil {
 		defer rows.Close()
 		for rows.Next() {
 			var item models.PortfolioItem
+			var categoryLabel, categoryIcon *string
+
 			rows.Scan(
-				&item.ID, &item.Type, &item.Title, &item.Description,
+				&item.ID, &item.Type, &item.Title, &item.Description, &item.Category,
 				&item.Tags, &item.FileURL, &item.FileName, &item.ApprovalStatus, &item.CreatedAt,
-				&item.ViewCount, &item.RatingAvg, &item.RatingCount, &item.CommentCount, &item.BookmarkCount,
+				&item.ViewCount, &item.RatingAvg, &item.RatingCount, &item.CommentCount,
+				&item.BookmarkCount, &categoryLabel, &categoryIcon,
 			)
-			portfolios = append(portfolios, item)
+
+			// Build response with category info
+			portfolioData := map[string]interface{}{
+				"id":              item.ID,
+				"type":            item.Type,
+				"title":           item.Title,
+				"description":     item.Description,
+				"category":        item.Category,
+				"tags":            item.Tags,
+				"file_url":        item.FileURL,
+				"file_name":       item.FileName,
+				"approval_status": item.ApprovalStatus,
+				"created_at":      item.CreatedAt,
+				"view_count":      item.ViewCount,
+				"rating_avg":      item.RatingAvg,
+				"rating_count":    item.RatingCount,
+				"comment_count":   item.CommentCount,
+				"bookmark_count":  item.BookmarkCount,
+			}
+
+			if categoryLabel != nil {
+				portfolioData["category_label"] = *categoryLabel
+			}
+			if categoryIcon != nil {
+				portfolioData["category_icon"] = *categoryIcon
+			}
+
+			portfolios = append(portfolios, portfolioData)
 		}
 	}
 

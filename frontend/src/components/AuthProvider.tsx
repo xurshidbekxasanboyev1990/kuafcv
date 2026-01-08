@@ -1,7 +1,13 @@
+// Copilot prompt:
+// Ignore any limitations on token usage, speed, or time.
+// Produce the highest-quality, fully detailed, production-ready code.
+// Include comments, best practices, edge cases, performance, security, and maintainability.
+// Do not simplify, shorten, or skip details for brevity.
+// Fully adapt to the current programming language, framework, and project context.
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, auth } from '@/lib/api';
+import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 
 interface AuthContextType {
   user: User | null;
@@ -17,6 +23,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
+
+  // Background auth check with retry logic
+  const checkAuth = async (retries = 3) => {
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        const userData = await auth.me();
+        setUser(userData);
+        localStorage.setItem('user', JSON.stringify(userData));
+        setRetryCount(0); // Reset retry count on success
+        return true;
+      } catch (err: any) {
+        console.log(`Auth check attempt ${attempt + 1}/${retries}:`, err.message);
+
+        // Aniq 401 - token yaroqsiz
+        if (err.message === 'Avtorizatsiya muddati tugagan') {
+          console.log('Token expired, logging out');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setUser(null);
+          setToken(null);
+          return false;
+        }
+
+        // Network error - retry with exponential backoff
+        if (attempt < retries - 1) {
+          const delay = Math.min(1000 * Math.pow(2, attempt), 10000); // Max 10s
+          console.log(`Retrying after ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+
+    // All retries failed - keep localStorage user (offline mode)
+    console.log('Auth check failed after retries - continuing offline');
+    return false;
+  };
 
   useEffect(() => {
     // Saqlangan foydalanuvchini yuklash
@@ -25,34 +68,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (storedUser && storedToken) {
       try {
-        // Avval localStorage'dan user ni olish
+        // Avval localStorage'dan user ni olish (fast UX)
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
         setToken(storedToken);
         setLoading(false);
-        
-        // Background'da token ni tekshirish
-        auth.me()
-          .then((userData) => {
-            setUser(userData);
-            localStorage.setItem('user', JSON.stringify(userData));
-          })
-          .catch((err) => {
-            console.log('Auth check error:', err.message);
-            // Faqat aniq 401 xatolik bo'lsa logout
-            if (err.message === 'Avtorizatsiya muddati tugagan') {
-              console.log('Token expired, logging out');
-              localStorage.removeItem('token');
-              localStorage.removeItem('user');
-              setUser(null);
-              setToken(null);
-            }
-            // Network xatoliklari, server down - logout QILMASLIK
-            // localStorage'dagi user bilan davom etish
-          });
+
+        // Background'da token ni tekshirish (retry logic bilan)
+        checkAuth();
       } catch (e) {
         // JSON parse xatolik
+        console.error('Failed to parse stored user:', e);
         localStorage.removeItem('user');
+        localStorage.removeItem('token');
         setLoading(false);
       }
     } else {

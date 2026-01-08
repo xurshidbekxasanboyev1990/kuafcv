@@ -1,3 +1,9 @@
+// Copilot prompt:
+// Ignore any limitations on token usage, speed, or time.
+// Produce the highest-quality, fully detailed, production-ready code.
+// Include comments, best practices, edge cases, performance, security, and maintainability.
+// Do not simplify, shorten, or skip details for brevity.
+// Fully adapt to the current programming language, framework, and project context.
 // API helper functions
 
 const API_URL = '/api';
@@ -11,7 +17,7 @@ export async function apiFetch<T>(
   options: FetchOptions = {}
 ): Promise<T> {
   const { token, ...fetchOptions } = options;
-  
+
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     ...(options.headers || {}),
@@ -48,8 +54,8 @@ export const auth = {
   login: (email: string, password: string) =>
     apiFetch<{ token: string; user: User }>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ 
-        email, 
+      body: JSON.stringify({
+        email,
         password
       }),
     }),
@@ -81,7 +87,7 @@ export const admin = {
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
     });
-    
+
     const text = await response.text();
     try {
       const data = JSON.parse(text);
@@ -102,18 +108,25 @@ export const admin = {
 export const portfolio = {
   getMy: () => apiFetch<PortfolioItem[]>('/portfolio'),
 
-  create: async (data: CreatePortfolioData, file?: File) => {
+  getCategories: () => apiFetch<{ categories: PortfolioCategory[] }>('/portfolio/categories'),
+
+  create: async (data: CreatePortfolioData, files?: File[]) => {
     const formData = new FormData();
     formData.append('type', data.type);
     formData.append('title', data.title);
     if (data.description) {
       formData.append('description', data.description);
     }
+    if (data.category) {
+      formData.append('category', data.category);
+    }
     if (data.tags && data.tags.length > 0) {
       formData.append('tags', JSON.stringify(data.tags));
     }
-    if (file) {
-      formData.append('file', file);
+    if (files && files.length > 0) {
+      files.forEach((file) => {
+        formData.append('files', file);
+      });
     }
 
     const token = localStorage.getItem('token');
@@ -235,16 +248,23 @@ export interface User {
   updated_at: string;
 }
 
+export interface PortfolioCategory {
+  value: string;
+  label: string;
+}
+
 export interface PortfolioItem {
   id: string;
   type: 'PROJECT' | 'CERTIFICATE' | 'ASSIGNMENT';
   title: string;
   description?: string;
+  category?: string;
   tags?: string[];
   file_url?: string;
   file_name?: string;
   mime_type?: string;
   size_bytes?: number;
+  files?: FileInfo[];
   owner_id: string;
   approval_status: 'PENDING' | 'APPROVED' | 'REJECTED';
   rejection_reason?: string;
@@ -256,6 +276,13 @@ export interface PortfolioItem {
   rating_count?: number;
   comment_count?: number;
   bookmark_count?: number;
+}
+
+export interface FileInfo {
+  url: string;
+  name: string;
+  mime_type: string;
+  size: number;
 }
 
 export interface PortfolioItemWithOwner extends PortfolioItem {
@@ -315,11 +342,18 @@ export interface CreatePortfolioData {
   type: string;
   title: string;
   description?: string;
+  category?: string;
   tags?: string[];
 }
 
 // Generic API helper for simple REST calls
 export const api = {
+  auth,
+  admin,
+  portfolio,
+  registrar,
+  employer,
+  notifications,
   get: <T = unknown>(endpoint: string) => apiFetch<T>(endpoint, { method: 'GET' }),
   post: <T = unknown>(endpoint: string, data?: unknown) => apiFetch<T>(endpoint, {
     method: 'POST',

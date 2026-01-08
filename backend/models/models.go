@@ -1,3 +1,9 @@
+// Copilot prompt:
+// Ignore any limitations on token usage, speed, or time.
+// Produce the highest-quality, fully detailed, production-ready code.
+// Include comments, best practices, edge cases, performance, security, and maintainability.
+// Do not simplify, shorten, or skip details for brevity.
+// Fully adapt to the current programming language, framework, and project context.
 package models
 
 import "time"
@@ -26,10 +32,50 @@ type PortfolioType string
 const (
 	TypeProject     PortfolioType = "PROJECT"
 	TypeCertificate PortfolioType = "CERTIFICATE"
+	TypeAssignment  PortfolioType = "ASSIGNMENT"
 	TypeDocument    PortfolioType = "DOCUMENT"
 	TypeMedia       PortfolioType = "MEDIA"
+	TypeAward       PortfolioType = "AWARD"
+	TypePublication PortfolioType = "PUBLICATION"
 	TypeOther       PortfolioType = "OTHER"
 )
+
+type PortfolioCategory string
+
+const (
+	CategoryAcademic      PortfolioCategory = "ACADEMIC"      // Akademik faoliyat
+	CategoryLeadership    PortfolioCategory = "LEADERSHIP"    // Tashkiliy va yetakchilik
+	CategorySocial        PortfolioCategory = "SOCIAL"        // Ijtimoiy va ko'ngillilik
+	CategoryProjects      PortfolioCategory = "PROJECTS"      // Loyihalar va tashabbuslar
+	CategoryTechnical     PortfolioCategory = "TECHNICAL"     // Raqamli va texnik
+	CategoryCareer        PortfolioCategory = "CAREER"        // Karyera va professional
+	CategoryInternational PortfolioCategory = "INTERNATIONAL" // Xalqaro va tillar
+	CategoryAwards        PortfolioCategory = "AWARDS"        // Mukofotlar va yutuqlar
+)
+
+// CategoryLabels - O'zbek tilidagi nomlar
+var CategoryLabels = map[PortfolioCategory]string{
+	CategoryAcademic:      "Akademik faoliyat",
+	CategoryLeadership:    "Tashkiliy va yetakchilik",
+	CategorySocial:        "Ijtimoiy va ko'ngillilik",
+	CategoryProjects:      "Loyihalar va tashabbuslar",
+	CategoryTechnical:     "Raqamli va texnik tajriba",
+	CategoryCareer:        "Karyera va professional",
+	CategoryInternational: "Xalqaro va tillar",
+	CategoryAwards:        "Mukofotlar va yutuqlar",
+}
+
+// Portfolio Category Full (for admin)
+type PortfolioCategoryFull struct {
+	Value        string    `json:"value"`
+	Label        string    `json:"label"`
+	Icon         string    `json:"icon"`
+	Description  string    `json:"description"`
+	DisplayOrder int       `json:"display_order"`
+	IsActive     bool      `json:"is_active"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
 
 // ===== MODELS =====
 
@@ -48,23 +94,33 @@ type User struct {
 	UpdatedAt    time.Time              `json:"updated_at"`
 }
 
+// FileInfo represents a single uploaded file
+type FileInfo struct {
+	URL      string `json:"url"`
+	Name     string `json:"name"`
+	MimeType string `json:"mime_type"`
+	Size     int64  `json:"size"`
+}
+
 type PortfolioItem struct {
-	ID              string         `json:"id"`
-	Type            PortfolioType  `json:"type"`
-	Title           string         `json:"title"`
-	Description     *string        `json:"description,omitempty"`
-	Tags            []string       `json:"tags,omitempty"`
-	FileURL         *string        `json:"file_url,omitempty"`
-	FileName        *string        `json:"file_name,omitempty"`
-	MimeType        *string        `json:"mime_type,omitempty"`
-	SizeBytes       *int64         `json:"size_bytes,omitempty"`
-	OwnerID         string         `json:"owner_id"`
-	ApprovalStatus  ApprovalStatus `json:"approval_status"`
-	ApprovedBy      *string        `json:"approved_by,omitempty"`
-	ApprovedAt      *time.Time     `json:"approved_at,omitempty"`
-	RejectionReason *string        `json:"rejection_reason,omitempty"`
-	CreatedAt       time.Time      `json:"created_at"`
-	UpdatedAt       time.Time      `json:"updated_at"`
+	ID              string             `json:"id"`
+	Type            PortfolioType      `json:"type"`
+	Title           string             `json:"title"`
+	Description     *string            `json:"description,omitempty"`
+	Category        *PortfolioCategory `json:"category,omitempty"`
+	Tags            []string           `json:"tags,omitempty"`
+	FileURL         *string            `json:"file_url,omitempty"`   // Legacy single file
+	FileName        *string            `json:"file_name,omitempty"`  // Legacy
+	MimeType        *string            `json:"mime_type,omitempty"`  // Legacy
+	SizeBytes       *int64             `json:"size_bytes,omitempty"` // Legacy
+	Files           []FileInfo         `json:"files,omitempty"`      // New: multiple files
+	OwnerID         string             `json:"owner_id"`
+	ApprovalStatus  ApprovalStatus     `json:"approval_status"`
+	ApprovedBy      *string            `json:"approved_by,omitempty"`
+	ApprovedAt      *time.Time         `json:"approved_at,omitempty"`
+	RejectionReason *string            `json:"rejection_reason,omitempty"`
+	CreatedAt       time.Time          `json:"created_at"`
+	UpdatedAt       time.Time          `json:"updated_at"`
 	// Stats fields
 	ViewCount     int     `json:"view_count"`
 	RatingAvg     float64 `json:"rating_avg"`

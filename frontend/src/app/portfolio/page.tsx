@@ -1,45 +1,87 @@
+// Copilot prompt:
+// Ignore any limitations on token usage, speed, or time.
+// Produce the highest-quality, fully detailed, production-ready code.
+// Include comments, best practices, edge cases, performance, security, and maintainability.
+// Do not simplify, shorten, or skip details for brevity.
+// Fully adapt to the current programming language, framework, and project context.
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import AIAnalytics from '@/components/AIAnalytics';
 import { useAuth } from '@/components/AuthProvider';
-import Sidebar from '@/components/Sidebar';
-import MarqueeBanner from '@/components/MarqueeBanner';
 import FileAnalysis from '@/components/FileAnalysis';
+import MainLayout from '@/components/MainLayout';
+import { PortfolioStatsCard } from '@/components/PortfolioFeatures';
 import { portfolio, PortfolioItem } from '@/lib/api';
 import {
-  FileText,
-  Plus,
-  Clock,
-  CheckCircle,
-  XCircle,
-  X,
   AlertCircle,
-  Upload,
-  File,
-  Image,
-  Video,
-  Download,
-  Brain,
-  Sparkles,
-  Eye,
-  Star,
-  MessageCircle,
   BarChart3,
+  Brain,
+  CheckCircle,
+  Clock,
+  Download,
+  Eye,
+  File,
+  FileText,
+  Image,
+  MessageCircle,
+  Plus,
+  Sparkles,
+  Star,
+  Trash2,
+  Upload,
+  Video,
+  X,
+  XCircle
 } from 'lucide-react';
-import AIAnalytics from '@/components/AIAnalytics';
-import { PortfolioStatsCard } from '@/components/PortfolioFeatures';
+import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+
+// Category labels
+const categoryLabels: Record<string, string> = {
+  'ACADEMIC': 'Akademik faoliyat',
+  'LEADERSHIP': 'Tashkiliy va yetakchilik',
+  'SOCIAL': 'Ijtimoiy va ko\'ngillilik',
+  'PROJECTS': 'Loyihalar va tashabbuslar',
+  'TECHNICAL': 'Raqamli va texnik tajriba',
+  'CAREER': 'Karyera va professional',
+  'INTERNATIONAL': 'Xalqaro va tillar',
+  'AWARDS': 'Mukofotlar va yutuqlar',
+};
+
+function getCategoryLabel(category: string) {
+  return categoryLabels[category] || category;
+}
 
 export default function PortfolioPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const [items, setItems] = useState<PortfolioItem[]>([]);
+  const [allItems, setAllItems] = useState<PortfolioItem[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showAIAnalysis, setShowAIAnalysis] = useState(false);
-  const [fileAnalysis, setFileAnalysis] = useState<{url: string; name: string; type?: string; mimeType?: string} | null>(null);
+  const [fileAnalysis, setFileAnalysis] = useState<{ url: string; name: string; type?: string; mimeType?: string } | null>(null);
   const [selectedPortfolio, setSelectedPortfolio] = useState<PortfolioItem | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'APPROVED' | 'REJECTED' | 'PENDING'>('ALL');
+
+  // Memoized filtered items - kategoriya va status bo'yicha filtr
+  const items = useMemo(() => {
+    let filtered = allItems;
+
+    // Kategoriya filtri
+    if (selectedCategory && filtered.length > 0) {
+      filtered = filtered.filter(item => item.category === selectedCategory);
+    }
+
+    // Status filtri
+    if (statusFilter !== 'ALL') {
+      filtered = filtered.filter(item => item.approval_status === statusFilter);
+    }
+
+    return filtered;
+  }, [selectedCategory, allItems, statusFilter]);
 
   useEffect(() => {
     if (!loading && (!user || user.role !== 'STUDENT')) {
@@ -51,7 +93,9 @@ export default function PortfolioPage() {
     setLoadingData(true);
     try {
       const data = await portfolio.getMy();
-      setItems(data);
+      startTransition(() => {
+        setAllItems(data);
+      });
     } catch (err) {
       console.error(err);
     } finally {
@@ -65,27 +109,42 @@ export default function PortfolioPage() {
     }
   }, [user]);
 
+  const handleDelete = async (id: string) => {
+    if (!confirm('Rostdan ham o\'chirmoqchimisiz?')) return;
+
+    try {
+      await portfolio.delete(id);
+      setMessage({ type: 'success', text: 'Portfolio muvaffaqiyatli o\'chirildi!' });
+      fetchPortfolios();
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Xatolik yuz berdi' });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'APPROVED':
         return (
-          <span className="flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-            <CheckCircle size={14} />
-            Tasdiqlangan
+          <span className="flex items-center gap-1 px-2 md:px-3 py-0.5 md:py-1 bg-green-100 text-green-700 rounded-full text-[10px] md:text-xs font-medium whitespace-nowrap">
+            <CheckCircle size={12} />
+            <span className="hidden sm:inline">Tasdiqlangan</span>
+            <span className="sm:hidden">✓</span>
           </span>
         );
       case 'REJECTED':
         return (
-          <span className="flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
-            <XCircle size={14} />
-            Rad etilgan
+          <span className="flex items-center gap-1 px-2 md:px-3 py-0.5 md:py-1 bg-red-100 text-red-700 rounded-full text-[10px] md:text-xs font-medium whitespace-nowrap">
+            <XCircle size={12} />
+            <span className="hidden sm:inline">Rad etilgan</span>
+            <span className="sm:hidden">✗</span>
           </span>
         );
       default:
         return (
-          <span className="flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
-            <Clock size={14} />
-            Kutilmoqda
+          <span className="flex items-center gap-1 px-2 md:px-3 py-0.5 md:py-1 bg-orange-100 text-orange-700 rounded-full text-[10px] md:text-xs font-medium whitespace-nowrap">
+            <Clock size={12} />
+            <span className="hidden sm:inline">Kutilmoqda</span>
+            <span className="sm:hidden">⏳</span>
           </span>
         );
     }
@@ -122,246 +181,343 @@ export default function PortfolioPage() {
   }
 
   return (
-    <div className="min-h-screen bg-red-50">
-      <Sidebar />
-      {/* Marquee Banner */}
-      <div className="ml-64">
-        <MarqueeBanner userRole="STUDENT" />
-      </div>
-      <main className="ml-64 p-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-red-800 flex items-center gap-3">
-              <FileText className="text-red-500" size={32} />
-              Mening Portfolio
-            </h1>
-            <p className="text-red-600 mt-1">Jami: {items.length} ta</p>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setShowAIAnalysis(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-            >
-              <Brain size={20} />
-              <span>AI Tahlil</span>
-            </button>
-            <button
-              onClick={() => setShowModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              <Plus size={20} />
-              <span>Yangi qo'shish</span>
-            </button>
-          </div>
+    <MainLayout>
+      {/* Header */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4 sm:mb-6 md:mb-8 gap-3 sm:gap-4">
+        <div>
+          <h1 className="text-base sm:text-lg md:text-2xl font-bold text-red-800 flex items-center gap-1.5 sm:gap-2">
+            <FileText className="text-red-500" size={20} />
+            Portfoliolarim
+          </h1>
+          <p className="text-red-600 mt-1 text-sm">Jami: {items.length} ta</p>
         </div>
-
-        {/* Message */}
-        {message && (
-          <div
-            className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
-              message.type === 'success'
-                ? 'bg-green-50 border border-green-200 text-green-700'
-                : 'bg-red-50 border border-red-200 text-red-700'
-            }`}
+        <div className="flex gap-2 md:gap-3 w-full md:w-auto">
+          <button
+            onClick={() => setShowAIAnalysis(true)}
+            className="flex items-center justify-center gap-2 px-3 md:px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm md:text-base flex-1 md:flex-initial"
           >
-            {message.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
-            <span>{message.text}</span>
-            <button 
-              onClick={() => setMessage(null)} 
-              className="ml-auto"
-              aria-label="Xabarni yopish"
-            >
-              <X size={18} />
-            </button>
-          </div>
-        )}
+            <Brain size={18} />
+            <span className="hidden sm:inline">AI Tahlil</span>
+            <span className="sm:hidden">Tahlil</span>
+          </button>
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center justify-center gap-2 px-3 md:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm md:text-base flex-1 md:flex-initial"
+          >
+            <Plus size={18} />
+            <span className="hidden sm:inline">Yangi qo'shish</span>
+            <span className="sm:hidden">Qo'shish</span>
+          </button>
+        </div>
+      </div>
 
-        {/* Portfolios */}
-        {loadingData ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-white rounded-xl p-6 border border-red-100 animate-pulse">
-                <div className="h-32 bg-red-100 rounded"></div>
-              </div>
-            ))}
-          </div>
-        ) : items.length === 0 ? (
-          <div className="bg-white rounded-xl p-12 text-center border border-red-100">
-            <FileText className="mx-auto text-red-300 mb-4" size={48} />
-            <p className="text-red-500 mb-4">Hozircha portfolio yo'q</p>
-            <button
-              onClick={() => setShowModal(true)}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+      {/* Status Filter Tabs */}
+      <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
+        <button
+          onClick={() => setStatusFilter('ALL')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${statusFilter === 'ALL'
+            ? 'bg-red-600 text-white'
+            : 'bg-white text-red-600 border border-red-200 hover:bg-red-50'
+            }`}
+        >
+          Barchasi ({allItems.length})
+        </button>
+        <button
+          onClick={() => setStatusFilter('APPROVED')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${statusFilter === 'APPROVED'
+            ? 'bg-green-600 text-white'
+            : 'bg-white text-green-600 border border-green-200 hover:bg-green-50'
+            }`}
+        >
+          Tasdiqlangan ({allItems.filter(i => i.approval_status === 'APPROVED').length})
+        </button>
+        <button
+          onClick={() => setStatusFilter('PENDING')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${statusFilter === 'PENDING'
+            ? 'bg-orange-600 text-white'
+            : 'bg-white text-orange-600 border border-orange-200 hover:bg-orange-50'
+            }`}
+        >
+          Kutilmoqda ({allItems.filter(i => i.approval_status === 'PENDING').length})
+        </button>
+        <button
+          onClick={() => setStatusFilter('REJECTED')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${statusFilter === 'REJECTED'
+            ? 'bg-red-600 text-white'
+            : 'bg-white text-red-600 border border-red-200 hover:bg-red-50'
+            }`}
+        >
+          Rad etilgan ({allItems.filter(i => i.approval_status === 'REJECTED').length})
+        </button>
+      </div>
+
+      {/* Message */}
+      {message && (
+        <div
+          className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${message.type === 'success'
+            ? 'bg-green-50 border border-green-200 text-green-700'
+            : 'bg-red-50 border border-red-200 text-red-700'
+            }`}
+        >
+          {message.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
+          <span>{message.text}</span>
+          <button
+            onClick={() => setMessage(null)}
+            className="ml-auto"
+            aria-label="Xabarni yopish"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      )}
+
+      {/* Portfolios */}
+      {loadingData ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-white rounded-xl p-4 md:p-6 border border-red-100 animate-pulse">
+              <div className="h-24 md:h-32 bg-red-100 rounded"></div>
+            </div>
+          ))}
+        </div>
+      ) : items.length === 0 ? (
+        <div className="bg-white rounded-xl p-8 md:p-12 text-center border border-red-100">
+          <FileText className="mx-auto text-red-300 mb-4" size={48} />
+          <p className="text-red-500 mb-4">Hozircha portfolio yo'q</p>
+          <button
+            onClick={() => setShowModal(true)}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+          >
+            Birinchi portfolioni qo'shish
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 border border-red-100 shadow-sm hover:shadow-md transition-shadow"
             >
-              Birinchi portfolioni qo'shish
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {items.map((item) => (
-              <div
-                key={item.id}
-                className="bg-white rounded-xl p-6 border border-red-100 shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="font-semibold text-red-800">{item.title}</h3>
-                    <p className="text-red-500 text-sm">{getTypeLabel(item.type)}</p>
+              <div className="flex items-start justify-between mb-2.5 sm:mb-3 md:mb-4 gap-1.5 sm:gap-2">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-red-800 text-xs sm:text-sm md:text-base truncate">{item.title}</h3>
+                  <div className="flex items-center gap-1 md:gap-2 mt-0.5 sm:mt-1 flex-wrap">
+                    <p className="text-red-500 text-[10px] sm:text-xs md:text-sm">{getTypeLabel(item.type)}</p>
+                    {item.category && (
+                      <span className="px-1.5 md:px-2 py-0.5 bg-blue-100 text-blue-700 text-[9px] sm:text-[10px] md:text-xs rounded-full">
+                        {item.category}
+                      </span>
+                    )}
                   </div>
+                </div>
+                <div className="flex-shrink-0">
                   {getStatusBadge(item.approval_status)}
                 </div>
+              </div>
 
-                {item.description && (
-                  <p className="text-red-600 text-sm mb-4 line-clamp-2">{item.description}</p>
-                )}
+              {item.description && (
+                <p className="text-red-600 text-xs md:text-sm mb-3 md:mb-4 line-clamp-2">{item.description}</p>
+              )}
 
-                {/* Fayl ko'rsatish */}
-                {item.file_url && (
-                  <div className="mb-4 p-3 bg-red-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      {getFileIcon(item.mime_type)}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-red-700 text-sm font-medium truncate">{item.file_name}</p>
-                        <p className="text-red-400 text-xs">
-                          {item.size_bytes ? `${(item.size_bytes / 1024 / 1024).toFixed(2)} MB` : ''}
-                        </p>
+              {/* Ko'p fayllarni ko'rsatish */}
+              {item.files && item.files.length > 0 ? (
+                <div className="mb-3 md:mb-4 space-y-2">
+                  {item.files.map((file, idx) => (
+                    <div key={idx} className="p-2 md:p-3 bg-red-50 rounded-lg">
+                      <div className="flex items-center gap-2 md:gap-3">
+                        {getFileIcon(file.mime_type)}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-red-700 text-xs md:text-sm font-medium truncate">{file.name}</p>
+                          <p className="text-red-400 text-[10px] md:text-xs">
+                            {file.size ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : ''}
+                          </p>
+                        </div>
+                        <a
+                          href={`http://localhost:4000${file.url}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 md:p-2 bg-red-100 rounded-lg hover:bg-red-200 text-red-600 flex-shrink-0"
+                          aria-label="Faylni yuklab olish"
+                          title="Faylni yuklab olish"
+                        >
+                          <Download size={16} />
+                        </a>
                       </div>
-                      <a
-                        href={`http://localhost:4000${item.file_url}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-2 bg-red-100 rounded-lg hover:bg-red-200 text-red-600"
-                        aria-label="Faylni yuklab olish"
-                        title="Faylni yuklab olish"
+                      {/* AI Fayl Tahlili tugmasi */}
+                      <button
+                        onClick={() => setFileAnalysis({
+                          url: `http://localhost:4000${file.url}`,
+                          name: file.name || item.title,
+                          type: item.type,
+                          mimeType: file.mime_type
+                        })}
+                        className="mt-2 w-full py-1.5 md:py-2 bg-purple-100 text-purple-700 rounded-lg text-xs md:text-sm font-medium hover:bg-purple-200 transition-colors flex items-center justify-center gap-2"
                       >
-                        <Download size={18} />
-                      </a>
+                        <Sparkles size={14} />
+                        AI bilan tahlil qilish
+                      </button>
                     </div>
-                    {/* AI Fayl Tahlili tugmasi */}
-                    <button
-                      onClick={() => setFileAnalysis({
-                        url: `http://localhost:4000${item.file_url}`,
-                        name: item.file_name || item.title,
-                        type: item.type,
-                        mimeType: item.mime_type
-                      })}
-                      className="mt-2 w-full py-2 bg-purple-100 text-purple-700 rounded-lg text-sm font-medium hover:bg-purple-200 transition-colors flex items-center justify-center gap-2"
+                  ))}
+                </div>
+              ) : item.file_url ? (
+                <div className="mb-3 md:mb-4 p-2 md:p-3 bg-red-50 rounded-lg">
+                  <div className="flex items-center gap-2 md:gap-3">
+                    {getFileIcon(item.mime_type)}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-red-700 text-xs md:text-sm font-medium truncate">{item.file_name}</p>
+                      <p className="text-red-400 text-[10px] md:text-xs">
+                        {item.size_bytes ? `${(item.size_bytes / 1024 / 1024).toFixed(2)} MB` : ''}
+                      </p>
+                    </div>
+                    <a
+                      href={`http://localhost:4000${item.file_url}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1.5 md:p-2 bg-red-100 rounded-lg hover:bg-red-200 text-red-600 flex-shrink-0"
+                      aria-label="Faylni yuklab olish"
+                      title="Faylni yuklab olish"
                     >
-                      <Sparkles size={16} />
-                      AI bilan tahlil qilish
-                    </button>
+                      <Download size={16} />
+                    </a>
                   </div>
-                )}
+                  {/* AI Fayl Tahlili tugmasi */}
+                  <button
+                    onClick={() => setFileAnalysis({
+                      url: `http://localhost:4000${item.file_url}`,
+                      name: item.file_name || item.title,
+                      type: item.type,
+                      mimeType: item.mime_type
+                    })}
+                    className="mt-2 w-full py-1.5 md:py-2 bg-purple-100 text-purple-700 rounded-lg text-xs md:text-sm font-medium hover:bg-purple-200 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Sparkles size={14} />
+                    AI bilan tahlil qilish
+                  </button>
+                </div>
+              ) : null}
 
-                {item.tags && item.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mb-4">
-                    {item.tags.map((tag, i) => (
-                      <span key={i} className="px-2 py-0.5 bg-red-50 text-red-600 rounded text-xs">
-                        {tag}
-                      </span>
-                    ))}
+              {item.tags && item.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-3 md:mb-4">
+                  {item.tags.map((tag, i) => (
+                    <span key={i} className="px-1.5 md:px-2 py-0.5 bg-red-50 text-red-600 rounded text-[10px] md:text-xs">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Rejection reason */}
+              {item.rejection_reason && (
+                <div className="p-2 md:p-3 bg-red-50 border border-red-200 rounded-lg mb-3 md:mb-4">
+                  <p className="text-red-700 text-xs md:text-sm">
+                    <strong>Rad sababi:</strong> {item.rejection_reason}
+                  </p>
+                </div>
+              )}
+
+              {/* Portfolio Stats - mini version */}
+              {item.approval_status === 'APPROVED' && (
+                <div className="flex items-center gap-2 md:gap-4 mb-2 md:mb-3 py-2 px-2 md:px-3 bg-gray-50 rounded-lg flex-wrap">
+                  <div className="flex items-center gap-1 text-gray-600">
+                    <Eye size={12} />
+                    <span className="text-xs md:text-sm">{item.view_count || 0}</span>
                   </div>
-                )}
-
-                {/* Rejection reason */}
-                {item.rejection_reason && (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-4">
-                    <p className="text-red-700 text-sm">
-                      <strong>Rad sababi:</strong> {item.rejection_reason}
-                    </p>
+                  <div className="flex items-center gap-1 text-yellow-600">
+                    <Star size={12} className="fill-yellow-400" />
+                    <span className="text-xs md:text-sm">{item.rating_avg?.toFixed(1) || '0.0'}</span>
+                    <span className="text-[10px] md:text-xs text-gray-400">({item.rating_count || 0})</span>
                   </div>
-                )}
-
-                {/* Portfolio Stats - mini version */}
-                {item.approval_status === 'APPROVED' && (
-                  <div className="flex items-center gap-4 mb-3 py-2 px-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-1 text-gray-600">
-                      <Eye size={14} />
-                      <span className="text-sm">{item.view_count || 0}</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-yellow-600">
-                      <Star size={14} className="fill-yellow-400" />
-                      <span className="text-sm">{item.rating_avg?.toFixed(1) || '0.0'}</span>
-                      <span className="text-xs text-gray-400">({item.rating_count || 0})</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-green-600">
-                      <MessageCircle size={14} />
-                      <span className="text-sm">{item.comment_count || 0}</span>
-                    </div>
-                    <button
-                      onClick={() => setSelectedPortfolio(item)}
-                      className="ml-auto text-red-600 hover:text-red-700 text-sm flex items-center gap-1"
-                    >
-                      <BarChart3 size={14} />
-                      Batafsil
-                    </button>
+                  <div className="flex items-center gap-1 text-green-600">
+                    <MessageCircle size={12} />
+                    <span className="text-xs md:text-sm">{item.comment_count || 0}</span>
                   </div>
-                )}
+                  <button
+                    onClick={() => setSelectedPortfolio(item)}
+                    className="ml-auto text-red-600 hover:text-red-700 text-xs md:text-sm flex items-center gap-1"
+                  >
+                    <BarChart3 size={12} />
+                    <span className="hidden sm:inline">Batafsil</span>
+                  </button>
+                </div>
+              )}
 
-                {/* Date */}
-                <p className="text-red-400 text-xs">
+              {/* Date and Actions */}
+              <div className="flex items-center justify-between mt-3">
+                <p className="text-red-400 text-[10px] md:text-xs">
                   {new Date(item.created_at).toLocaleDateString('uz-UZ')}
                 </p>
+
+                {/* Tahrirlash va O'chirish - faqat PENDING holatda */}
+                {item.approval_status === 'PENDING' && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      className="p-1.5 bg-red-100 text-red-600 rounded hover:bg-red-200 transition-colors"
+                      title="O'chirish"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
-        )}
-
-        {/* Create Modal */}
-        {showModal && (
-          <PortfolioModal
-            onClose={() => setShowModal(false)}
-            onSuccess={() => {
-              setShowModal(false);
-              setMessage({ type: 'success', text: 'Portfolio yaratildi' });
-              fetchPortfolios();
-            }}
-          />
-        )}
-
-        {/* AI Analysis Modal */}
-        {showAIAnalysis && (
-          <AIAnalytics 
-            onClose={() => setShowAIAnalysis(false)} 
-            isModal={true} 
-          />
-        )}
-
-        {/* File Analysis Modal */}
-        {fileAnalysis && (
-          <FileAnalysis
-            fileUrl={fileAnalysis.url}
-            fileName={fileAnalysis.name}
-            fileType={fileAnalysis.type}
-            mimeType={fileAnalysis.mimeType}
-            onClose={() => setFileAnalysis(null)}
-          />
-        )}
-
-        {/* Portfolio Stats Modal */}
-        {selectedPortfolio && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-red-800 flex items-center gap-2">
-                  <BarChart3 className="text-red-600" />
-                  {selectedPortfolio.title} - Statistika
-                </h2>
-                <button 
-                  onClick={() => setSelectedPortfolio(null)} 
-                  className="p-2 hover:bg-red-100 rounded-lg"
-                  aria-label="Statistikani yopish"
-                >
-                  <X size={20} className="text-red-500" />
-                </button>
-              </div>
-              <PortfolioStatsCard portfolioId={selectedPortfolio.id} isOwner={true} />
             </div>
+          ))}
+        </div>
+      )}
+
+      {/* Create Modal */}
+      {showModal && (
+        <PortfolioModal
+          onClose={() => setShowModal(false)}
+          onSuccess={() => {
+            setShowModal(false);
+            setMessage({ type: 'success', text: 'Portfolio yaratildi' });
+            fetchPortfolios();
+          }}
+        />
+      )}
+
+      {/* AI Analysis Modal */}
+      {showAIAnalysis && (
+        <AIAnalytics
+          onClose={() => setShowAIAnalysis(false)}
+          isModal={true}
+        />
+      )}
+
+      {/* File Analysis Modal */}
+      {fileAnalysis && (
+        <FileAnalysis
+          fileUrl={fileAnalysis.url}
+          fileName={fileAnalysis.name}
+          fileType={fileAnalysis.type}
+          mimeType={fileAnalysis.mimeType}
+          onClose={() => setFileAnalysis(null)}
+        />
+      )}
+
+      {/* Portfolio Stats Modal */}
+      {selectedPortfolio && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-red-800 flex items-center gap-2">
+                <BarChart3 className="text-red-600" />
+                {selectedPortfolio.title} - Statistika
+              </h2>
+              <button
+                onClick={() => setSelectedPortfolio(null)}
+                className="p-2 hover:bg-red-100 rounded-lg"
+                aria-label="Statistikani yopish"
+              >
+                <X size={20} className="text-red-500" />
+              </button>
+            </div>
+            <PortfolioStatsCard portfolioId={selectedPortfolio.id} isOwner={true} />
           </div>
-        )}
-      </main>
-    </div>
+        </div>
+      )}
+    </MainLayout>
   );
 }
 
@@ -377,13 +533,28 @@ function PortfolioModal({
     type: 'PROJECT',
     title: '',
     description: '',
+    category: '',
     tags: [] as string[],
   });
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [categories, setCategories] = useState<{ value: string; label: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Categories yuklaymiz
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const data = await portfolio.getCategories();
+        setCategories(data.categories);
+      } catch (err) {
+        console.error('Categories yuklashda xatolik:', err);
+      }
+    };
+    loadCategories();
+  }, []);
 
   // Ruxsat berilgan fayl turlari
   const allowedDocTypes = [
@@ -440,23 +611,36 @@ function PortfolioModal({
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      setError('');
-      if (validateFile(selectedFile)) {
-        setFile(selectedFile);
+    const selectedFiles = Array.from(e.target.files || []);
+    setError('');
+
+    if (files.length + selectedFiles.length > 3) {
+      setError('Maksimal 3 ta fayl yuklash mumkin');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    const validFiles: File[] = [];
+    for (const file of selectedFiles) {
+      if (validateFile(file)) {
+        validFiles.push(file);
       } else {
-        setFile(null);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        return;
       }
     }
+
+    setFiles([...files, ...validFiles]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeFile = (index: number) => {
+    setFiles(files.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.title.trim()) {
       setError('Sarlavha kiritilishi shart');
       return;
@@ -466,7 +650,7 @@ function PortfolioModal({
     setError('');
 
     try {
-      await portfolio.create(formData, file || undefined);
+      await portfolio.create(formData, files);
       onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Xatolik');
@@ -494,11 +678,11 @@ function PortfolioModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-red-800">Yangi portfolio</h2>
-          <button 
-            onClick={onClose} 
+      <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-4 md:p-6 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-4 md:mb-6">
+          <h2 className="text-lg md:text-xl font-bold text-red-800">Yangi portfolio</h2>
+          <button
+            onClick={onClose}
             className="p-2 hover:bg-red-100 rounded-lg"
             aria-label="Formani yopish"
           >
@@ -512,7 +696,7 @@ function PortfolioModal({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
           {/* Turi */}
           <div>
             <label className="block text-sm font-medium text-red-700 mb-1">Turi</label>
@@ -520,7 +704,7 @@ function PortfolioModal({
               value={formData.type}
               onChange={(e) => {
                 setFormData({ ...formData, type: e.target.value });
-                setFile(null);
+                setFiles([]);
                 if (fileInputRef.current) {
                   fileInputRef.current.value = '';
                 }
@@ -530,9 +714,30 @@ function PortfolioModal({
             >
               <option value="PROJECT">🚀 Loyiha</option>
               <option value="CERTIFICATE">🏆 Sertifikat</option>
+              <option value="ASSIGNMENT">📝 Topshiriq</option>
               <option value="DOCUMENT">📄 Hujjat</option>
               <option value="MEDIA">🎬 Media</option>
+              <option value="AWARD">🥇 Mukofot</option>
+              <option value="PUBLICATION">📚 Nashr</option>
               <option value="OTHER">📁 Boshqa</option>
+            </select>
+          </div>
+
+          {/* Kategoriya */}
+          <div>
+            <label className="block text-sm font-medium text-red-700 mb-1">Kategoriya</label>
+            <select
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              className="w-full px-4 py-2 border border-red-200 rounded-lg focus:ring-2 focus:ring-red-500 text-red-800 bg-white"
+              aria-label="Portfolio kategoriyasi"
+            >
+              <option value="">Kategoriyani tanlang</option>
+              {categories.map((cat) => (
+                <option key={cat.value} value={cat.value}>
+                  {cat.label}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -572,41 +777,49 @@ function PortfolioModal({
               </span>
             </label>
             <div
-              className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${
-                file ? 'border-green-300 bg-green-50' : 'border-red-200 hover:border-red-400 hover:bg-red-50'
-              }`}
-              onClick={() => fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${files.length > 0 ? 'border-green-300 bg-green-50' : 'border-red-200 hover:border-red-400 hover:bg-red-50'
+                }`}
+              onClick={() => files.length < 3 && fileInputRef.current?.click()}
             >
               <input
                 ref={fileInputRef}
                 type="file"
+                multiple
                 accept={getAcceptedTypes()}
                 onChange={handleFileChange}
+                disabled={files.length >= 3}
                 className="hidden"
-                aria-label="Fayl tanlash"
+                aria-label="Fayllar tanlash"
               />
-              {file ? (
-                <div className="flex items-center justify-center gap-3">
-                  <CheckCircle className="text-green-500" size={24} />
-                  <div className="text-left">
-                    <p className="text-green-700 font-medium">{file.name}</p>
-                    <p className="text-green-600 text-sm">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setFile(null);
-                      if (fileInputRef.current) {
-                        fileInputRef.current.value = '';
-                      }
-                    }}
-                    className="p-1 hover:bg-green-200 rounded"
-                    aria-label="Faylni olib tashlash"
-                    title="Faylni olib tashlash"
-                  >
-                    <X size={18} className="text-green-600" />
-                  </button>
+              {files.length > 0 ? (
+                <div className="space-y-2">
+                  {files.map((file, index) => (
+                    <div key={index} className="flex items-center justify-center gap-3 p-2 bg-white rounded-lg">
+                      <CheckCircle className="text-green-500 flex-shrink-0" size={24} />
+                      <div className="text-left flex-1 min-w-0">
+                        <p className="text-green-700 font-medium truncate">{file.name}</p>
+                        <p className="text-green-600 text-sm">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFile(index);
+                        }}
+                        className="p-1 hover:bg-green-200 rounded flex-shrink-0"
+                        aria-label="Faylni olib tashlash"
+                        title="Faylni olib tashlash"
+                      >
+                        <X size={18} className="text-green-600" />
+                      </button>
+                    </div>
+                  ))}
+                  {files.length < 3 && (
+                    <p className="text-sm text-gray-500 mt-2">
+                      <Upload className="inline-block mr-1" size={16} />
+                      Yana {3 - files.length} ta fayl qo'shishingiz mumkin
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="py-4">
@@ -660,18 +873,18 @@ function PortfolioModal({
           </div>
 
           {/* Buttons */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50"
+              className="flex-1 py-2.5 sm:py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 min-h-[44px]"
             >
               Bekor qilish
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-300"
+              className="flex-1 py-2.5 sm:py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 min-h-[44px]"
             >
               {loading ? 'Saqlanmoqda...' : 'Saqlash'}
             </button>

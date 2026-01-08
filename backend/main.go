@@ -1,3 +1,9 @@
+// Copilot prompt:
+// Ignore any limitations on token usage, speed, or time.
+// Produce the highest-quality, fully detailed, production-ready code.
+// Include comments, best practices, edge cases, performance, security, and maintainability.
+// Do not simplify, shorten, or skip details for brevity.
+// Fully adapt to the current programming language, framework, and project context.
 package main
 
 import (
@@ -85,6 +91,8 @@ func main() {
 
 		// Public routes
 		api.POST("/auth/login", handlers.Login)
+		api.GET("/auth/password-requirements", handlers.GetPasswordRequirements)
+		api.POST("/auth/validate-password", handlers.ValidatePasswordStrength)
 		api.GET("/settings/public", handlers.GetPublicSettings)             // Public settings
 		api.GET("/announcements/marquee", handlers.GetMarqueeAnnouncements) // Public marquee
 
@@ -114,9 +122,8 @@ func main() {
 				portfolio.POST("", handlers.CreatePortfolio)
 				portfolio.PUT("/:id", handlers.UpdatePortfolio)
 				portfolio.DELETE("/:id", handlers.DeletePortfolio)
-			}
-
-			// Portfolio Features - Barcha autentifikatsiya qilingan foydalanuvchilar uchun
+				portfolio.GET("/categories", handlers.GetPortfolioCategories)
+			} // Portfolio Features - Barcha autentifikatsiya qilingan foydalanuvchilar uchun
 			portfolioFeatures := protected.Group("/portfolio")
 			{
 				portfolioFeatures.POST("/:id/view", handlers.RecordPortfolioView)
@@ -172,6 +179,9 @@ func main() {
 				admin.DELETE("/users/:id", handlers.DeleteUser)
 				admin.POST("/import-students", handlers.ImportStudents)
 				admin.POST("/notifications", handlers.CreateNotification)
+				// JWT secret rotation
+				admin.POST("/rotate-jwt-secret", handlers.RotateJWTSecret)
+				admin.GET("/jwt-info", handlers.GetJWTInfo)
 				// Admin analytics
 				admin.GET("/analytics/overview", handlers.GetAnalyticsOverview)
 				admin.GET("/analytics/top-portfolios", handlers.GetTopPortfolios)
@@ -179,9 +189,13 @@ func main() {
 				admin.GET("/analytics/categories", handlers.GetCategoryStats)
 				admin.GET("/analytics/rating-distribution", handlers.GetRatingDistribution)
 				admin.GET("/analytics/recent-activity", handlers.GetRecentActivity)
-			}
-
-			// Announcements routes (Admin only)
+				// Categories management
+				admin.GET("/categories", handlers.GetAllCategories)
+				admin.POST("/categories", handlers.CreateCategory)
+				admin.PUT("/categories/:value", handlers.UpdateCategory)
+				admin.DELETE("/categories/:value", handlers.DeleteCategory)
+				admin.POST("/categories/reorder", handlers.ReorderCategories)
+			} // Announcements routes (Admin only)
 			announcements := protected.Group("/announcements")
 			announcements.Use(middleware.RequireRole(models.RoleAdmin))
 			{

@@ -1,3 +1,9 @@
+// Copilot prompt:
+// Ignore any limitations on token usage, speed, or time.
+// Produce the highest-quality, fully detailed, production-ready code.
+// Include comments, best practices, edge cases, performance, security, and maintainability.
+// Do not simplify, shorten, or skip details for brevity.
+// Fully adapt to the current programming language, framework, and project context.
 package handlers
 
 import (
@@ -7,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"kuafcv-backend/cache"
 	"kuafcv-backend/database"
 	"kuafcv-backend/models"
 
@@ -113,6 +120,18 @@ func GetAllSettings(c *gin.Context) {
 
 // GET /api/settings/public - Get public settings (no auth required)
 func GetPublicSettings(c *gin.Context) {
+	cacheKey := "settings:public"
+	var cachedSettings map[string]json.RawMessage
+
+	// Try cache first
+	if err := cache.Get(cacheKey, &cachedSettings); err == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"settings": cachedSettings,
+			"cached":   true,
+		})
+		return
+	}
+
 	rows, err := database.DB.Query(`
 		SELECT key, value 
 		FROM system_settings 
@@ -136,6 +155,9 @@ func GetPublicSettings(c *gin.Context) {
 		rows.Scan(&key, &value)
 		settings[key] = value
 	}
+
+	// Cache for 1 hour
+	cache.Set(cacheKey, settings, time.Hour)
 
 	c.JSON(http.StatusOK, gin.H{
 		"settings": settings,
@@ -252,6 +274,9 @@ func UpdateSetting(c *gin.Context) {
 		return
 	}
 
+	// Invalidate cache
+	cache.Delete("settings:public")
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Sozlama yangilandi",
 		"key":     key,
@@ -314,6 +339,11 @@ func UpdateBulkSettings(c *gin.Context) {
 		} else {
 			failed = append(failed, key)
 		}
+	}
+
+	// Invalidate cache if any updates succeeded
+	if len(updated) > 0 {
+		cache.Delete("settings:public")
 	}
 
 	c.JSON(http.StatusOK, gin.H{

@@ -1,56 +1,57 @@
+// Copilot prompt:
+// Ignore any limitations on token usage, speed, or time.
+// Produce the highest-quality, fully detailed, production-ready code.
+// Include comments, best practices, edge cases, performance, security, and maintainability.
+// Do not simplify, shorten, or skip details for brevity.
+// Fully adapt to the current programming language, framework, and project context.
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import AIAnalytics from '@/components/AIAnalytics';
 import { useAuth } from '@/components/AuthProvider';
-import Sidebar from '@/components/Sidebar';
-import { admin, User, FilterOptions, CreateUserData } from '@/lib/api';
+import MainLayout from '@/components/MainLayout';
+import { admin, CreateUserData, FilterOptions, User } from '@/lib/api';
 import {
-  Users,
-  Plus,
-  Trash2,
-  Upload,
-  X,
   AlertCircle,
-  CheckCircle,
-  FileSpreadsheet,
-  Shield,
   BarChart3,
-  GraduationCap,
-  FileText,
   Bell,
-  Settings,
-  Search,
-  RefreshCw,
+  Brain,
+  Building,
+  Calendar,
+  CheckCircle,
   ChevronLeft,
   ChevronRight,
-  Building,
-  UserPlus,
   Clock,
+  Database,
+  Edit,
   Eye,
-  Download,
-  Brain,
+  FileText,
+  Globe,
+  GraduationCap,
+  Link,
+  Lock,
+  Megaphone,
+  Palette,
+  Phone,
+  Plus,
+  RefreshCw,
   Save,
+  Search,
+  Settings,
+  Shield,
+  Sparkles,
+  Star,
   ToggleLeft,
   ToggleRight,
-  Phone,
-  Mail,
-  MapPin,
-  Palette,
-  Lock,
-  Globe,
-  Sparkles,
-  Database,
-  Megaphone,
-  Star,
-  Link,
-  Calendar,
-  Edit,
+  Trash2,
+  Upload,
+  UserPlus,
+  Users,
+  X
 } from 'lucide-react';
-import AIAnalytics from '@/components/AIAnalytics';
-import MarqueeBanner from '@/components/MarqueeBanner';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
-type TabType = 'dashboard' | 'students' | 'staff' | 'portfolios' | 'ai-analytics' | 'announcements' | 'notifications' | 'settings';
+type TabType = 'dashboard' | 'students' | 'staff' | 'portfolios' | 'ai-analytics' | 'announcements' | 'notifications' | 'settings' | 'categories';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -77,6 +78,7 @@ export default function AdminPage() {
     { id: 'students', label: 'Talabalar', icon: <GraduationCap size={20} /> },
     { id: 'staff', label: 'Xodimlar', icon: <Shield size={20} /> },
     { id: 'portfolios', label: 'Portfoliolar', icon: <FileText size={20} /> },
+    { id: 'categories', label: 'Kategoriyalar', icon: <Palette size={20} /> },
     { id: 'ai-analytics', label: 'AI Tahlil', icon: <Brain size={20} /> },
     { id: 'announcements', label: "E'lonlar", icon: <Megaphone size={20} /> },
     { id: 'notifications', label: 'Bildirishnomalar', icon: <Bell size={20} /> },
@@ -84,68 +86,60 @@ export default function AdminPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-red-50">
-      <Sidebar />
-      {/* Marquee Banner */}
-      <div className="ml-64">
-        <MarqueeBanner userRole="ADMIN" />
+    <MainLayout>
+      {/* Header */}
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold text-red-800 flex items-center gap-3">
+          <Shield className="text-red-500" size={28} />
+          Super Admin Panel
+        </h1>
+        <p className="text-red-600 mt-1 text-sm md:text-base">To'liq tizim boshqaruvi</p>
       </div>
-      <main className="ml-64 p-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-red-800 flex items-center gap-3">
-            <Shield className="text-red-500" size={32} />
-            Super Admin Panel
-          </h1>
-          <p className="text-red-600 mt-1">To'liq tizim boshqaruvi</p>
-        </div>
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as TabType)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-all ${
-                activeTab === tab.id
-                  ? 'bg-red-600 text-white shadow-lg'
-                  : 'bg-white text-red-700 border border-red-200 hover:bg-red-50'
+      {/* Tabs */}
+      <div className="flex gap-2 mb-6 md:mb-8 overflow-x-auto pb-2 scrollbar-hide">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as TabType)}
+            className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg whitespace-nowrap transition-all text-sm md:text-base ${activeTab === tab.id
+                ? 'bg-red-600 text-white shadow-lg'
+                : 'bg-white text-red-700 border border-red-200 hover:bg-red-50'
               }`}
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Message */}
-        {message && (
-          <div
-            className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
-              message.type === 'success'
-                ? 'bg-green-50 border border-green-200 text-green-700'
-                : 'bg-red-50 border border-red-200 text-red-700'
-            }`}
           >
-            {message.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
-            <span>{message.text}</span>
-            <button onClick={() => setMessage(null)} className="ml-auto">
-              <X size={18} />
-            </button>
-          </div>
-        )}
+            {tab.icon}
+            <span className="hidden sm:inline">{tab.label}</span>
+          </button>
+        ))}
+      </div>
 
-        {/* Tab Content */}
-        {activeTab === 'dashboard' && <DashboardTab />}
-        {activeTab === 'students' && <StudentsTab setMessage={setMessage} />}
-        {activeTab === 'staff' && <StaffTab setMessage={setMessage} />}
-        {activeTab === 'portfolios' && <PortfoliosTab />}
-        {activeTab === 'ai-analytics' && <AIAnalytics />}
-        {activeTab === 'announcements' && <AnnouncementsTab setMessage={setMessage} />}
-        {activeTab === 'notifications' && <NotificationsTab setMessage={setMessage} />}
-        {activeTab === 'settings' && <SettingsTab />}
-      </main>
-    </div>
+      {/* Message */}
+      {message && (
+        <div
+          className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${message.type === 'success'
+              ? 'bg-green-50 border border-green-200 text-green-700'
+              : 'bg-red-50 border border-red-200 text-red-700'
+            }`}
+        >
+          {message.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
+          <span>{message.text}</span>
+          <button onClick={() => setMessage(null)} className="ml-auto">
+            <X size={18} />
+          </button>
+        </div>
+      )}
+
+      {/* Tab Content */}
+      {activeTab === 'dashboard' && <DashboardTab />}
+      {activeTab === 'students' && <StudentsTab setMessage={setMessage} />}
+      {activeTab === 'staff' && <StaffTab setMessage={setMessage} />}
+      {activeTab === 'portfolios' && <PortfoliosTab />}
+      {activeTab === 'categories' && <CategoriesTab setMessage={setMessage} />}
+      {activeTab === 'ai-analytics' && <AIAnalytics />}
+      {activeTab === 'announcements' && <AnnouncementsTab setMessage={setMessage} />}
+      {activeTab === 'notifications' && <NotificationsTab setMessage={setMessage} />}
+      {activeTab === 'settings' && <SettingsTab />}
+    </MainLayout>
   );
 }
 
@@ -212,18 +206,18 @@ function DashboardTab() {
   }
 
   // Convert map to array for display
-  const facultyStats = stats?.students_by_faculty 
+  const facultyStats = stats?.students_by_faculty
     ? Object.entries(stats.students_by_faculty).map(([faculty, count]) => ({ faculty, count }))
     : [];
 
   return (
     <div className="space-y-6">
       {/* Header with refresh */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h2 className="text-xl font-bold text-red-800">Real-time Dashboard</h2>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+          <h2 className="text-lg md:text-xl font-bold text-red-800">Real-time Dashboard</h2>
           {lastUpdated && (
-            <span className="text-sm text-red-500">
+            <span className="text-xs md:text-sm text-red-500">
               Oxirgi yangilanish: {lastUpdated.toLocaleTimeString()}
             </span>
           )}
@@ -231,19 +225,19 @@ function DashboardTab() {
         <button
           onClick={() => fetchDashboardData(true)}
           disabled={refreshing}
-          className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+          className="flex items-center gap-2 px-3 md:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors text-sm w-full sm:w-auto justify-center"
         >
-          <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
+          <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
           Yangilash
         </button>
       </div>
 
       {/* Main Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-6">
         <StatCard
           title="Jami Talabalar"
           value={stats?.total_students || 0}
-          icon={<GraduationCap size={24} />}
+          icon={<GraduationCap size={20} className="sm:w-6 sm:h-6" />}
           color="blue"
         />
         <StatCard
@@ -268,60 +262,60 @@ function DashboardTab() {
 
       {/* Engagement Stats */}
       {analyticsOverview && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
+          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg sm:rounded-xl p-2.5 sm:p-3 md:p-4 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-purple-100 text-sm">Jami ko'rishlar</p>
-                <p className="text-2xl font-bold">{(analyticsOverview.total_views || 0).toLocaleString()}</p>
+                <p className="text-purple-100 text-xs md:text-sm">Jami ko'rishlar</p>
+                <p className="text-xl md:text-2xl font-bold">{(analyticsOverview.total_views || 0).toLocaleString()}</p>
               </div>
-              <Eye size={28} className="text-purple-200" />
+              <Eye size={24} className="text-purple-200" />
             </div>
           </div>
-          <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl p-4 text-white">
+          <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl p-3 md:p-4 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-yellow-100 text-sm">Jami baholar</p>
-                <p className="text-2xl font-bold">{(analyticsOverview.total_ratings || 0).toLocaleString()}</p>
+                <p className="text-yellow-100 text-xs md:text-sm">Jami baholar</p>
+                <p className="text-xl md:text-2xl font-bold">{(analyticsOverview.total_ratings || 0).toLocaleString()}</p>
               </div>
-              <Star size={28} className="text-yellow-200" />
+              <Star size={24} className="text-yellow-200" />
             </div>
           </div>
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white">
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-3 md:p-4 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-blue-100 text-sm">Jami izohlar</p>
-                <p className="text-2xl font-bold">{(analyticsOverview.total_comments || 0).toLocaleString()}</p>
+                <p className="text-blue-100 text-xs md:text-sm">Jami izohlar</p>
+                <p className="text-xl md:text-2xl font-bold">{(analyticsOverview.total_comments || 0).toLocaleString()}</p>
               </div>
-              <FileText size={28} className="text-blue-200" />
+              <FileText size={24} className="text-blue-200" />
             </div>
           </div>
-          <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl p-4 text-white">
+          <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl p-3 md:p-4 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-pink-100 text-sm">Jami bookmark</p>
-                <p className="text-2xl font-bold">{(analyticsOverview.total_bookmarks || 0).toLocaleString()}</p>
+                <p className="text-pink-100 text-xs md:text-sm">Jami bookmark</p>
+                <p className="text-xl md:text-2xl font-bold">{(analyticsOverview.total_bookmarks || 0).toLocaleString()}</p>
               </div>
-              <Link size={28} className="text-pink-200" />
+              <Link size={24} className="text-pink-200" />
             </div>
           </div>
-          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 text-white">
+          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-3 md:p-4 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-green-100 text-sm">Online foydalanuvchilar</p>
-                <p className="text-2xl font-bold">{analyticsOverview.online_users || 0}</p>
+                <p className="text-green-100 text-xs md:text-sm">Online foydalanuvchilar</p>
+                <p className="text-xl md:text-2xl font-bold">{analyticsOverview.online_users || 0}</p>
               </div>
-              <Users size={28} className="text-green-200" />
+              <Users size={24} className="text-green-200" />
             </div>
           </div>
         </div>
       )}
 
       {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Top Portfolios */}
-        <div className="bg-white rounded-xl p-6 border border-red-100 shadow-sm">
-          <h3 className="text-lg font-bold text-red-800 mb-4 flex items-center gap-2">
+        <div className="bg-white rounded-xl p-4 md:p-6 border border-red-100 shadow-sm">
+          <h3 className="text-base md:text-lg font-bold text-red-800 mb-3 md:mb-4 flex items-center gap-2">
             <Star size={20} className="text-yellow-500" />
             Eng mashhur portfoliolar
           </h3>
@@ -329,9 +323,8 @@ function DashboardTab() {
             <div className="space-y-3">
               {topPortfolios.slice(0, 5).map((p: any, idx: number) => (
                 <div key={p.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                  <span className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-white ${
-                    idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-gray-400' : idx === 2 ? 'bg-amber-600' : 'bg-red-400'
-                  }`}>
+                  <span className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-white ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-gray-400' : idx === 2 ? 'bg-amber-600' : 'bg-red-400'
+                    }`}>
                     {idx + 1}
                   </span>
                   <div className="flex-1 min-w-0">
@@ -355,8 +348,8 @@ function DashboardTab() {
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-white rounded-xl p-6 border border-red-100 shadow-sm">
-          <h3 className="text-lg font-bold text-red-800 mb-4 flex items-center gap-2">
+        <div className="bg-white rounded-xl p-4 md:p-6 border border-red-100 shadow-sm">
+          <h3 className="text-base md:text-lg font-bold text-red-800 mb-3 md:mb-4 flex items-center gap-2">
             <Clock size={20} className="text-blue-500" />
             So'nggi faoliyatlar
           </h3>
@@ -364,16 +357,15 @@ function DashboardTab() {
             <div className="space-y-3 max-h-80 overflow-y-auto">
               {recentActivity.map((a: any, idx: number) => (
                 <div key={idx} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                  <div className={`w-8 h-8 flex items-center justify-center rounded-full ${
-                    a.type === 'view' ? 'bg-purple-100 text-purple-600' :
-                    a.type === 'rating' ? 'bg-yellow-100 text-yellow-600' :
-                    a.type === 'comment' ? 'bg-blue-100 text-blue-600' :
-                    'bg-pink-100 text-pink-600'
-                  }`}>
+                  <div className={`w-8 h-8 flex items-center justify-center rounded-full ${a.type === 'view' ? 'bg-purple-100 text-purple-600' :
+                      a.type === 'rating' ? 'bg-yellow-100 text-yellow-600' :
+                        a.type === 'comment' ? 'bg-blue-100 text-blue-600' :
+                          'bg-pink-100 text-pink-600'
+                    }`}>
                     {a.type === 'view' ? <Eye size={16} /> :
-                     a.type === 'rating' ? <Star size={16} /> :
-                     a.type === 'comment' ? <FileText size={16} /> :
-                     <Link size={16} />}
+                      a.type === 'rating' ? <Star size={16} /> :
+                        a.type === 'comment' ? <FileText size={16} /> :
+                          <Link size={16} />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-gray-800">{a.description || a.user_name}</p>
@@ -392,12 +384,12 @@ function DashboardTab() {
 
       {/* Category Stats */}
       {categoryStats.length > 0 && (
-        <div className="bg-white rounded-xl p-6 border border-red-100 shadow-sm">
-          <h3 className="text-lg font-bold text-red-800 mb-4 flex items-center gap-2">
+        <div className="bg-white rounded-xl p-4 md:p-6 border border-red-100 shadow-sm">
+          <h3 className="text-base md:text-lg font-bold text-red-800 mb-3 md:mb-4 flex items-center gap-2">
             <BarChart3 size={20} />
             Kategoriyalar bo'yicha portfoliolar
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
             {categoryStats.map((cat: any, idx: number) => {
               const maxCount = Math.max(...categoryStats.map((c: any) => c.count));
               const percentage = maxCount > 0 ? (cat.count / maxCount) * 100 : 0;
@@ -423,12 +415,12 @@ function DashboardTab() {
 
       {/* Fakultetlar */}
       {facultyStats.length > 0 && (
-        <div className="bg-white rounded-xl p-6 border border-red-100 shadow-sm">
-          <h3 className="text-lg font-bold text-red-800 mb-4 flex items-center gap-2">
+        <div className="bg-white rounded-xl p-4 md:p-6 border border-red-100 shadow-sm">
+          <h3 className="text-base md:text-lg font-bold text-red-800 mb-3 md:mb-4 flex items-center gap-2">
             <Building size={20} />
             Fakultetlar bo'yicha talabalar
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
             {facultyStats.map((f: any, i: number) => (
               <div key={i} className="flex items-center justify-between p-4 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
                 <span className="text-red-700 font-medium truncate">{f.faculty || "Noma'lum"}</span>
@@ -442,12 +434,12 @@ function DashboardTab() {
       )}
 
       {/* System Health Indicator */}
-      <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200">
-        <h3 className="text-lg font-bold text-green-800 mb-4 flex items-center gap-2">
+      <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 md:p-6 border border-green-200">
+        <h3 className="text-base md:text-lg font-bold text-green-800 mb-3 md:mb-4 flex items-center gap-2">
           <CheckCircle size={20} className="text-green-500" />
           Tizim holati
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
           <div className="flex items-center gap-3">
             <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
             <span className="text-green-700">Backend: Ishlayapti</span>
@@ -476,10 +468,10 @@ function StatCard({ title, value, icon, color }: { title: string; value: number;
   };
 
   return (
-    <div className={`rounded-xl p-6 border ${colors[color]} flex items-center justify-between`}>
+    <div className={`rounded-xl p-4 md:p-6 border ${colors[color]} flex items-center justify-between`}>
       <div>
-        <p className="text-sm opacity-80">{title}</p>
-        <p className="text-3xl font-bold">{value.toLocaleString()}</p>
+        <p className="text-xs md:text-sm opacity-80">{title}</p>
+        <p className="text-2xl md:text-3xl font-bold">{value.toLocaleString()}</p>
       </div>
       <div className="opacity-50">{icon}</div>
     </div>
@@ -561,43 +553,43 @@ function StudentsTab({ setMessage }: { setMessage: (m: any) => void }) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-wrap gap-4 items-center justify-between">
+      <div className="flex flex-col sm:flex-row gap-3 md:gap-4 items-stretch sm:items-center justify-between">
         <div className="flex gap-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-red-400" size={20} />
+          <div className="relative flex-1 sm:flex-initial">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-red-400" size={16} />
             <input
               type="text"
               placeholder="Qidirish..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-red-200 rounded-lg focus:ring-2 focus:ring-red-500 text-red-800 w-64"
+              className="pl-9 pr-3 py-2 border border-red-200 rounded-lg focus:ring-2 focus:ring-red-500 text-red-800 w-full sm:w-64 text-sm"
             />
           </div>
           <button
             onClick={() => fetchStudents()}
-            className="p-2 border border-red-200 rounded-lg hover:bg-red-50"
+            className="p-2 border border-red-200 rounded-lg hover:bg-red-50 flex-shrink-0"
             aria-label="Yangilash"
             title="Yangilash"
           >
-            <RefreshCw size={20} className="text-red-600" />
+            <RefreshCw size={18} className="text-red-600" />
           </button>
         </div>
         <button
           onClick={() => setShowImport(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          className="flex items-center gap-2 px-3 md:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm justify-center"
         >
-          <Upload size={20} />
+          <Upload size={18} />
           <span>Excel Import</span>
         </button>
       </div>
 
       {/* Filters */}
       {filters && (
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-3">
           <select
             value={filterValues.faculty}
             onChange={(e) => setFilterValues({ ...filterValues, faculty: e.target.value })}
-            className="px-3 py-2 border border-red-200 rounded-lg text-red-700 bg-white"
+            className="px-2 md:px-3 py-2 border border-red-200 rounded-lg text-red-700 bg-white text-sm"
             aria-label="Fakultet tanlash"
           >
             <option value="">Barcha fakultetlar</option>
@@ -608,7 +600,7 @@ function StudentsTab({ setMessage }: { setMessage: (m: any) => void }) {
           <select
             value={filterValues.course}
             onChange={(e) => setFilterValues({ ...filterValues, course: e.target.value })}
-            className="px-3 py-2 border border-red-200 rounded-lg text-red-700 bg-white"
+            className="px-2 md:px-3 py-2 border border-red-200 rounded-lg text-red-700 bg-white text-sm"
             aria-label="Kurs tanlash"
           >
             <option value="">Barcha kurslar</option>
@@ -619,7 +611,7 @@ function StudentsTab({ setMessage }: { setMessage: (m: any) => void }) {
           <select
             value={filterValues.group}
             onChange={(e) => setFilterValues({ ...filterValues, group: e.target.value })}
-            className="px-3 py-2 border border-red-200 rounded-lg text-red-700 bg-white"
+            className="px-2 md:px-3 py-2 border border-red-200 rounded-lg text-red-700 bg-white text-sm"
             aria-label="Guruh tanlash"
           >
             <option value="">Barcha guruhlar</option>
@@ -631,34 +623,35 @@ function StudentsTab({ setMessage }: { setMessage: (m: any) => void }) {
       )}
 
       {/* Stats */}
-      <div className="text-red-600">
+      <div className="text-red-600 text-sm md:text-base">
         Jami: <strong>{total.toLocaleString()}</strong> ta talaba
       </div>
 
       {/* Table */}
       <div className="bg-white rounded-xl border border-red-100 overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead className="bg-red-50">
               <tr>
-                <th className="px-4 py-3 text-left text-red-700 font-medium">Talaba</th>
-                <th className="px-4 py-3 text-left text-red-700 font-medium">ID</th>
-                <th className="px-4 py-3 text-left text-red-700 font-medium">Fakultet</th>
-                <th className="px-4 py-3 text-left text-red-700 font-medium">Guruh</th>
-                <th className="px-4 py-3 text-left text-red-700 font-medium">Kurs</th>
-                <th className="px-4 py-3 text-right text-red-700 font-medium">Amallar</th>
+                <th className="px-4 py-3 text-left text-red-700 font-medium text-sm">Talaba</th>
+                <th className="px-4 py-3 text-left text-red-700 font-medium text-sm">ID</th>
+                <th className="px-4 py-3 text-left text-red-700 font-medium text-sm">Fakultet</th>
+                <th className="px-4 py-3 text-left text-red-700 font-medium text-sm">Guruh</th>
+                <th className="px-4 py-3 text-left text-red-700 font-medium text-sm">Kurs</th>
+                <th className="px-4 py-3 text-right text-red-700 font-medium text-sm">Amallar</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-red-100">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-red-500">
+                  <td colSpan={6} className="px-4 py-8 text-center text-red-500 text-sm">
                     Yuklanmoqda...
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-red-500">
+                  <td colSpan={6} className="px-4 py-8 text-center text-red-500 text-sm">
                     Talaba topilmadi
                   </td>
                 </tr>
@@ -667,21 +660,21 @@ function StudentsTab({ setMessage }: { setMessage: (m: any) => void }) {
                   <tr key={u.id} className="hover:bg-red-50">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                          <span className="text-red-600 font-bold">
+                        <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-red-600 font-bold text-sm">
                             {u.full_name.charAt(0).toUpperCase()}
                           </span>
                         </div>
-                        <div>
-                          <p className="text-red-800 font-medium">{u.full_name}</p>
-                          <p className="text-red-400 text-sm">{u.email}</p>
+                        <div className="min-w-0">
+                          <p className="text-red-800 font-medium text-sm truncate">{u.full_name}</p>
+                          <p className="text-red-400 text-xs truncate">{u.email}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-red-600">{u.student_id || '-'}</td>
-                    <td className="px-4 py-3 text-red-600">{u.student_data?.faculty || '-'}</td>
-                    <td className="px-4 py-3 text-red-600">{u.student_data?.group || '-'}</td>
-                    <td className="px-4 py-3 text-red-600">{u.student_data?.course || '-'}</td>
+                    <td className="px-4 py-3 text-red-600 text-sm">{u.student_id || '-'}</td>
+                    <td className="px-4 py-3 text-red-600 text-sm">{u.student_data?.faculty || '-'}</td>
+                    <td className="px-4 py-3 text-red-600 text-sm">{u.student_data?.group || '-'}</td>
+                    <td className="px-4 py-3 text-red-600 text-sm">{u.student_data?.course || '-'}</td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
                         <button
@@ -690,7 +683,7 @@ function StudentsTab({ setMessage }: { setMessage: (m: any) => void }) {
                           aria-label="O'chirish"
                           title="O'chirish"
                         >
-                          <Trash2 size={18} />
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </td>
@@ -701,30 +694,82 @@ function StudentsTab({ setMessage }: { setMessage: (m: any) => void }) {
           </table>
         </div>
 
+        {/* Mobile Cards */}
+        <div className="md:hidden divide-y divide-red-100">
+          {loading ? (
+            <div className="px-4 py-8 text-center text-red-500 text-sm">
+              Yuklanmoqda...
+            </div>
+          ) : users.length === 0 ? (
+            <div className="px-4 py-8 text-center text-red-500 text-sm">
+              Talaba topilmadi
+            </div>
+          ) : (
+            users.map((u) => (
+              <div key={u.id} className="p-4 hover:bg-red-50">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-red-600 font-bold text-lg">
+                      {u.full_name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-red-800 font-medium text-sm truncate">{u.full_name}</p>
+                    <p className="text-red-400 text-xs truncate">{u.email}</p>
+                    <p className="text-red-500 text-xs mt-1">ID: {u.student_id || '-'}</p>
+                  </div>
+                  <button
+                    onClick={() => handleDelete(u.id)}
+                    className="p-2 text-red-500 hover:bg-red-100 rounded-lg flex-shrink-0"
+                    aria-label="O'chirish"
+                    title="O'chirish"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <p className="text-red-400">Fakultet</p>
+                    <p className="text-red-700 font-medium truncate">{u.student_data?.faculty || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-red-400">Guruh</p>
+                    <p className="text-red-700 font-medium">{u.student_data?.group || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-red-400">Kurs</p>
+                    <p className="text-red-700 font-medium">{u.student_data?.course || '-'}</p>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-red-100">
-            <div className="text-red-600 text-sm">
+          <div className="flex flex-col sm:flex-row items-center justify-between px-3 md:px-4 py-3 border-t border-red-100 gap-2">
+            <div className="text-red-600 text-xs md:text-sm">
               Sahifa {page} / {totalPages}
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="p-2 border border-red-200 rounded-lg hover:bg-red-50 disabled:opacity-50"
+                className="p-1.5 md:p-2 border border-red-200 rounded-lg hover:bg-red-50 disabled:opacity-50"
                 aria-label="Oldingi sahifa"
                 title="Oldingi sahifa"
               >
-                <ChevronLeft size={20} className="text-red-600" />
+                <ChevronLeft size={18} className="text-red-600" />
               </button>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="p-2 border border-red-200 rounded-lg hover:bg-red-50 disabled:opacity-50"
+                className="p-1.5 md:p-2 border border-red-200 rounded-lg hover:bg-red-50 disabled:opacity-50"
                 aria-label="Keyingi sahifa"
                 title="Keyingi sahifa"
               >
-                <ChevronRight size={20} className="text-red-600" />
+                <ChevronRight size={18} className="text-red-600" />
               </button>
             </div>
           </div>
@@ -734,19 +779,18 @@ function StudentsTab({ setMessage }: { setMessage: (m: any) => void }) {
       {/* Import Modal */}
       {showImport && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-red-800">Talabalarni Import</h2>
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-4 md:p-6">
+            <div className="flex items-center justify-between mb-4 md:mb-6">
+              <h2 className="text-lg md:text-xl font-bold text-red-800">Talabalarni Import</h2>
               <button onClick={() => setShowImport(false)} className="p-2 hover:bg-red-100 rounded-lg">
                 <X size={20} className="text-red-500" />
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               <div
-                className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-                  importFile ? 'border-green-300 bg-green-50' : 'border-red-200 hover:border-red-400'
-                }`}
+                className={`border-2 border-dashed rounded-lg p-4 md:p-6 text-center cursor-pointer transition-colors ${importFile ? 'border-green-300 bg-green-50' : 'border-red-200 hover:border-red-400'
+                  }`}
                 onClick={() => document.getElementById('import-file')?.click()}
               >
                 <input
@@ -759,21 +803,21 @@ function StudentsTab({ setMessage }: { setMessage: (m: any) => void }) {
                 />
                 {importFile ? (
                   <div>
-                    <CheckCircle className="mx-auto text-green-500 mb-2" size={32} />
-                    <p className="text-green-700 font-medium">{importFile.name}</p>
-                    <p className="text-green-600 text-sm">{(importFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <CheckCircle className="mx-auto text-green-500 mb-2" size={28} />
+                    <p className="text-green-700 font-medium text-sm truncate">{importFile.name}</p>
+                    <p className="text-green-600 text-xs">{(importFile.size / 1024 / 1024).toFixed(2)} MB</p>
                   </div>
                 ) : (
                   <div>
-                    <Upload className="mx-auto text-red-400 mb-2" size={32} />
-                    <p className="text-red-600">Excel fayl tanlang</p>
+                    <Upload className="mx-auto text-red-400 mb-2" size={28} />
+                    <p className="text-red-600 text-sm">Excel fayl tanlang</p>
                     <p className="text-red-400 text-xs mt-1">.xlsx, .xls, .csv</p>
                   </div>
                 )}
               </div>
 
               {importResult && (
-                <div className={`p-4 rounded-lg ${importResult.error ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                <div className={`p-3 md:p-4 rounded-lg text-sm ${importResult.error ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
                   {importResult.error ? (
                     <p>{importResult.error}</p>
                   ) : (
@@ -786,10 +830,10 @@ function StudentsTab({ setMessage }: { setMessage: (m: any) => void }) {
                 </div>
               )}
 
-              <div className="flex gap-3">
+              <div className="flex gap-2 md:gap-3">
                 <button
                   onClick={() => setShowImport(false)}
-                  className="flex-1 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50"
+                  className="flex-1 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 text-sm"
                 >
                   Yopish
                 </button>
@@ -829,7 +873,7 @@ function StaffTab({ setMessage }: { setMessage: (m: any) => void }) {
     try {
       const response = await admin.getUsers({ role: 'STAFF' });
       // Filter staff (ADMIN, REGISTRAR, EMPLOYER)
-      const staff = (response.students || []).filter((u: User) => 
+      const staff = (response.students || []).filter((u: User) =>
         ['ADMIN', 'REGISTRAR', 'EMPLOYER'].includes(u.role)
       );
       setUsers(staff);
@@ -1099,16 +1143,15 @@ function PortfoliosTab() {
   return (
     <div className="space-y-6">
       {/* Status Filter */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {['PENDING', 'APPROVED', 'REJECTED'].map((s) => (
           <button
             key={s}
             onClick={() => setStatus(s)}
-            className={`px-4 py-2 rounded-lg transition-all ${
-              status === s
+            className={`px-3 md:px-4 py-2 rounded-lg transition-all text-xs md:text-sm ${status === s
                 ? 'bg-red-600 text-white'
                 : 'bg-white text-red-700 border border-red-200 hover:bg-red-50'
-            }`}
+              }`}
           >
             {s === 'PENDING' && 'Kutilmoqda'}
             {s === 'APPROVED' && 'Tasdiqlangan'}
@@ -1117,52 +1160,53 @@ function PortfoliosTab() {
         ))}
       </div>
 
-      <div className="text-red-600">Jami: <strong>{total}</strong> ta portfolio</div>
+      <div className="text-red-600 text-sm md:text-base">Jami: <strong>{total}</strong> ta portfolio</div>
 
       {/* List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
         {loading ? (
-          <div className="col-span-2 text-center py-12 text-red-500">Yuklanmoqda...</div>
+          <div className="col-span-2 text-center py-8 md:py-12 text-red-500 text-sm md:text-base">Yuklanmoqda...</div>
         ) : portfolios.length === 0 ? (
-          <div className="col-span-2 text-center py-12 text-red-500">Portfolio topilmadi</div>
+          <div className="col-span-2 text-center py-8 md:py-12 text-red-500 text-sm md:text-base">Portfolio topilmadi</div>
         ) : (
           portfolios.map((p) => (
-            <div key={p.id} className="bg-white rounded-xl p-6 border border-red-100">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h4 className="font-semibold text-red-800">{p.title}</h4>
-                  <p className="text-red-500 text-sm">{p.type}</p>
+            <div key={p.id} className="bg-white rounded-xl p-4 md:p-6 border border-red-100">
+              <div className="flex items-start justify-between mb-3 md:mb-4 gap-2">
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-semibold text-red-800 text-sm md:text-base truncate">{p.title}</h4>
+                  <p className="text-red-500 text-xs md:text-sm">{p.type}</p>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                  p.approval_status === 'APPROVED' ? 'bg-green-100 text-green-700' :
-                  p.approval_status === 'REJECTED' ? 'bg-red-100 text-red-700' :
-                  'bg-orange-100 text-orange-700'
-                }`}>
+                <span className={`px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs font-medium whitespace-nowrap flex-shrink-0 ${p.approval_status === 'APPROVED' ? 'bg-green-100 text-green-700' :
+                    p.approval_status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                      'bg-orange-100 text-orange-700'
+                  }`}>
                   {p.approval_status}
                 </span>
               </div>
-              <p className="text-red-600 text-sm mb-4">
+              <p className="text-red-600 text-xs md:text-sm mb-3 md:mb-4 truncate">
                 <GraduationCap size={14} className="inline mr-1" />
                 {p.owner?.full_name || 'Noma\'lum'}
               </p>
               {p.description && (
-                <p className="text-red-500 text-sm mb-4 line-clamp-2">{p.description}</p>
+                <p className="text-red-500 text-xs md:text-sm mb-3 md:mb-4 line-clamp-2">{p.description}</p>
               )}
               {p.approval_status === 'PENDING' && (
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleApprove(p.id)}
-                    className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2"
+                    className="flex-1 py-1.5 md:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-1 md:gap-2 text-xs md:text-sm"
                   >
-                    <CheckCircle size={16} />
-                    Tasdiqlash
+                    <CheckCircle size={14} />
+                    <span className="hidden sm:inline">Tasdiqlash</span>
+                    <span className="sm:hidden">✓</span>
                   </button>
                   <button
                     onClick={() => handleReject(p.id)}
-                    className="flex-1 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center justify-center gap-2"
+                    className="flex-1 py-1.5 md:py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center justify-center gap-1 md:gap-2 text-xs md:text-sm"
                   >
-                    <X size={16} />
-                    Rad etish
+                    <X size={14} />
+                    <span className="hidden sm:inline">Rad etish</span>
+                    <span className="sm:hidden">✗</span>
                   </button>
                 </div>
               )}
@@ -1212,19 +1256,19 @@ function NotificationsTab({ setMessage }: { setMessage: (m: any) => void }) {
 
   return (
     <div className="max-w-2xl">
-      <div className="bg-white rounded-xl p-6 border border-red-100">
-        <h3 className="text-lg font-bold text-red-800 mb-6 flex items-center gap-2">
-          <Bell size={20} />
+      <div className="bg-white rounded-xl p-4 md:p-6 border border-red-100">
+        <h3 className="text-base md:text-lg font-bold text-red-800 mb-4 md:mb-6 flex items-center gap-2">
+          <Bell size={18} />
           Yangi bildirishnoma yuborish
         </h3>
 
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4">
           <div>
-            <label className="block text-sm font-medium text-red-700 mb-1">Maqsad guruh</label>
+            <label className="block text-xs md:text-sm font-medium text-red-700 mb-1">Maqsad guruh</label>
             <select
               value={targetRole}
               onChange={(e) => setTargetRole(e.target.value)}
-              className="w-full px-4 py-2 border border-red-200 rounded-lg text-red-800 bg-white"
+              className="w-full px-3 md:px-4 py-2 border border-red-200 rounded-lg text-red-800 bg-white text-sm"
               aria-label="Maqsad guruh"
             >
               <option value="">Barcha foydalanuvchilar</option>
@@ -1234,31 +1278,31 @@ function NotificationsTab({ setMessage }: { setMessage: (m: any) => void }) {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-red-700 mb-1">Sarlavha</label>
+            <label className="block text-xs md:text-sm font-medium text-red-700 mb-1">Sarlavha</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Bildirishnoma sarlavhasi"
-              className="w-full px-4 py-2 border border-red-200 rounded-lg text-red-800"
+              className="w-full px-3 md:px-4 py-2 border border-red-200 rounded-lg text-red-800 text-sm"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-red-700 mb-1">Xabar</label>
+            <label className="block text-xs md:text-sm font-medium text-red-700 mb-1">Xabar</label>
             <textarea
               value={message_}
               onChange={(e) => setMessage_(e.target.value)}
               rows={4}
               placeholder="Bildirishnoma matni..."
-              className="w-full px-4 py-2 border border-red-200 rounded-lg text-red-800"
+              className="w-full px-3 md:px-4 py-2 border border-red-200 rounded-lg text-red-800 text-sm"
             />
           </div>
           <button
             onClick={handleSend}
             disabled={sending || !title || !message_}
-            className="w-full py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-300 flex items-center justify-center gap-2"
+            className="w-full py-2.5 md:py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-300 flex items-center justify-center gap-2 text-sm md:text-base"
           >
-            <Bell size={20} />
+            <Bell size={18} />
             <span>{sending ? 'Yuborilmoqda...' : 'Yuborish'}</span>
           </button>
         </div>
@@ -1390,11 +1434,10 @@ function SettingsTab() {
         return (
           <button
             onClick={() => handleValueChange(setting.key, !value)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-              value 
-                ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${value
+                ? 'bg-green-100 text-green-700 hover:bg-green-200'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            } ${isEdited ? 'ring-2 ring-blue-500' : ''}`}
+              } ${isEdited ? 'ring-2 ring-blue-500' : ''}`}
           >
             {value ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
             <span>{value ? 'Yoqilgan' : 'O\'chirilgan'}</span>
@@ -1407,9 +1450,8 @@ function SettingsTab() {
             type="number"
             value={value}
             onChange={(e) => handleValueChange(setting.key, parseInt(e.target.value) || 0)}
-            className={`px-4 py-2 border rounded-lg w-32 ${
-              isEdited ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'
-            }`}
+            className={`px-4 py-2 border rounded-lg w-32 ${isEdited ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'
+              }`}
             aria-label="Raqam kiriting"
           />
         );
@@ -1445,9 +1487,8 @@ function SettingsTab() {
                   e.currentTarget.value = '';
                 }
               }}
-              className={`px-3 py-1 border rounded text-sm ${
-                isEdited ? 'border-blue-500' : 'border-gray-200'
-              }`}
+              className={`px-3 py-1 border rounded text-sm ${isEdited ? 'border-blue-500' : 'border-gray-200'
+                }`}
             />
           </div>
         );
@@ -1458,9 +1499,8 @@ function SettingsTab() {
             type="text"
             value={value || ''}
             onChange={(e) => handleValueChange(setting.key, e.target.value)}
-            className={`px-4 py-2 border rounded-lg w-full max-w-md ${
-              isEdited ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'
-            }`}
+            className={`px-4 py-2 border rounded-lg w-full max-w-md ${isEdited ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'
+              }`}
             aria-label="Qiymat kiriting"
           />
         );
@@ -1505,9 +1545,8 @@ function SettingsTab() {
       {/* Message */}
       {message && (
         <div
-          className={`p-4 rounded-lg flex items-center gap-3 ${
-            message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-          }`}
+          className={`p-4 rounded-lg flex items-center gap-3 ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+            }`}
         >
           {message.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
           <span>{message.text}</span>
@@ -1523,18 +1562,16 @@ function SettingsTab() {
           <button
             key={cat.id}
             onClick={() => setActiveCategory(cat.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-all ${
-              activeCategory === cat.id
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-all ${activeCategory === cat.id
                 ? 'bg-red-600 text-white shadow-lg'
                 : 'bg-white text-red-700 border border-red-200 hover:bg-red-50'
-            }`}
+              }`}
           >
             {cat.icon}
             <span>{cat.label}</span>
             {grouped[cat.id]?.length > 0 && (
-              <span className={`text-xs px-1.5 py-0.5 rounded ${
-                activeCategory === cat.id ? 'bg-white/20' : 'bg-red-100'
-              }`}>
+              <span className={`text-xs px-1.5 py-0.5 rounded ${activeCategory === cat.id ? 'bg-white/20' : 'bg-red-100'
+                }`}>
                 {grouped[cat.id].length}
               </span>
             )}
@@ -1612,8 +1649,8 @@ function SettingsTab() {
 
       {/* Add Setting Modal */}
       {showAddModal && (
-        <AddSettingModal 
-          onClose={() => setShowAddModal(false)} 
+        <AddSettingModal
+          onClose={() => setShowAddModal(false)}
           onSuccess={() => {
             setShowAddModal(false);
             fetchSettings();
@@ -1627,12 +1664,12 @@ function SettingsTab() {
 }
 
 // Add Setting Modal Component
-function AddSettingModal({ 
-  onClose, 
+function AddSettingModal({
+  onClose,
   onSuccess,
-  categories 
-}: { 
-  onClose: () => void; 
+  categories
+}: {
+  onClose: () => void;
   onSuccess: () => void;
   categories: { id: string; label: string }[];
 }) {
@@ -1936,9 +1973,8 @@ function AnnouncementsTab({ setMessage }: { setMessage: (msg: { type: 'success' 
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-              filter === 'all' ? 'bg-red-600 text-white' : 'bg-red-100 text-red-700 hover:bg-red-200'
-            }`}
+            className={`px-4 py-2 rounded-lg text-sm transition-colors ${filter === 'all' ? 'bg-red-600 text-white' : 'bg-red-100 text-red-700 hover:bg-red-200'
+              }`}
           >
             Barchasi
           </button>
@@ -1946,9 +1982,8 @@ function AnnouncementsTab({ setMessage }: { setMessage: (msg: { type: 'success' 
             <button
               key={type.value}
               onClick={() => setFilter(type.value)}
-              className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-                filter === type.value ? 'bg-red-600 text-white' : 'bg-red-100 text-red-700 hover:bg-red-200'
-              }`}
+              className={`px-4 py-2 rounded-lg text-sm transition-colors ${filter === type.value ? 'bg-red-600 text-white' : 'bg-red-100 text-red-700 hover:bg-red-200'
+                }`}
             >
               {type.icon} {type.label}
             </button>
@@ -1973,9 +2008,8 @@ function AnnouncementsTab({ setMessage }: { setMessage: (msg: { type: 'success' 
             return (
               <div
                 key={announcement.id}
-                className={`bg-white rounded-xl shadow-lg p-6 border-l-4 ${
-                  announcement.is_active ? 'border-green-500' : 'border-gray-300'
-                }`}
+                className={`bg-white rounded-xl shadow-lg p-6 border-l-4 ${announcement.is_active ? 'border-green-500' : 'border-gray-300'
+                  }`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -1983,9 +2017,8 @@ function AnnouncementsTab({ setMessage }: { setMessage: (msg: { type: 'success' 
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${typeInfo.color}`}>
                         {typeInfo.icon} {typeInfo.label}
                       </span>
-                      <span className={`px-2 py-1 rounded text-xs ${
-                        announcement.is_marquee ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'
-                      }`}>
+                      <span className={`px-2 py-1 rounded text-xs ${announcement.is_marquee ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'
+                        }`}>
                         {announcement.is_marquee ? '🔄 Banner' : '📄 Oddiy'}
                       </span>
                       <span className="text-xs text-gray-500">
@@ -1994,7 +2027,7 @@ function AnnouncementsTab({ setMessage }: { setMessage: (msg: { type: 'success' 
                     </div>
                     <h3 className="text-lg font-semibold text-gray-800 mb-1">{announcement.title}</h3>
                     <p className="text-gray-600 text-sm mb-3">{announcement.content}</p>
-                    
+
                     <div className="flex flex-wrap gap-2 text-xs text-gray-500">
                       <span className="flex items-center gap-1">
                         <Users size={14} />
@@ -2016,11 +2049,10 @@ function AnnouncementsTab({ setMessage }: { setMessage: (msg: { type: 'success' 
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => toggleAnnouncement(announcement.id)}
-                      className={`p-2 rounded-lg transition-colors ${
-                        announcement.is_active
+                      className={`p-2 rounded-lg transition-colors ${announcement.is_active
                           ? 'bg-green-100 text-green-600 hover:bg-green-200'
                           : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                      }`}
+                        }`}
                       title={announcement.is_active ? "O'chirish" : 'Yoqish'}
                     >
                       {announcement.is_active ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
@@ -2169,11 +2201,10 @@ function AnnouncementModal({
                   key={type.value}
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, type: type.value }))}
-                  className={`p-3 rounded-lg border-2 text-left transition-colors ${
-                    formData.type === type.value
+                  className={`p-3 rounded-lg border-2 text-left transition-colors ${formData.type === type.value
                       ? 'border-red-500 bg-red-50'
                       : 'border-gray-200 hover:border-red-200'
-                  }`}
+                    }`}
                 >
                   <span className="text-xl mr-2">{type.icon}</span>
                   <span className="text-sm font-medium">{type.label}</span>
@@ -2261,11 +2292,10 @@ function AnnouncementModal({
                   key={role.value}
                   type="button"
                   onClick={() => toggleRole(role.value)}
-                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                    formData.target_roles.includes(role.value)
+                  className={`px-3 py-1 rounded-full text-sm transition-colors ${formData.target_roles.includes(role.value)
                       ? 'bg-red-600 text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
+                    }`}
                 >
                   {role.label}
                 </button>
@@ -2317,3 +2347,525 @@ function AnnouncementModal({
     </div>
   );
 }
+
+// ==================== CATEGORIES TAB ====================
+function CategoriesTab({ setMessage }: { setMessage: (msg: { type: 'success' | 'error'; text: string } | null) => void }) {
+  const [categories, setCategories] = useState<{
+    value: string;
+    label: string;
+    icon?: string;
+    description?: string;
+    slug?: string;
+    display_order?: number;
+    is_active?: boolean;
+  }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<{
+    value: string;
+    label: string;
+    icon?: string;
+    description?: string;
+    slug?: string;
+    display_order?: number;
+  } | null>(null);
+
+  const fetchCategories = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/admin/categories', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const data = await response.json();
+      if (data.categories) {
+        setCategories(data.categories);
+      }
+    } catch (error) {
+      console.error('Kategoriyalarni yuklashda xatolik:', error);
+      setMessage({ type: 'error', text: 'Kategoriyalarni yuklashda xatolik' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const handleDelete = async (categoryValue: string) => {
+    if (!confirm(`${categoryValue} kategoriyasini o'chirishni xohlaysizmi?`)) return;
+
+    try {
+      const response = await fetch(`/api/admin/categories/${categoryValue}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Xatolik');
+      }
+
+      setMessage({ type: 'success', text: 'Kategoriya o\'chirildi' });
+      fetchCategories();
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message || 'Kategoriyani o\'chirishda xatolik' });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="relative">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-200"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-red-600 absolute top-0 left-0"></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header - Modern SaaS Style */}
+      <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-2xl p-6 border border-red-100">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-red-100 rounded-xl">
+                <Palette className="text-red-600" size={24} />
+              </div>
+              <h2 className="text-2xl font-bold text-red-900">Portfolio Kategoriyalari</h2>
+            </div>
+            <p className="text-red-700 text-sm flex items-center gap-2">
+              <span className="flex items-center gap-1">
+                <Database size={16} />
+                Jami: <strong>{categories.length}</strong> ta kategoriya
+              </span>
+              <span className="text-red-400">•</span>
+              <span className="flex items-center gap-1">
+                <CheckCircle size={16} />
+                Aktiv: <strong>{categories.filter(c => c.is_active).length}</strong> ta
+              </span>
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              setEditingCategory(null);
+              setShowModal(true);
+            }}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 shadow-lg shadow-red-200 transition-all transform hover:scale-105"
+          >
+            <Plus size={20} />
+            <span className="font-medium">Yangi kategoriya</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Categories Grid - Modern Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {categories.map((category, index) => (
+          <div
+            key={category.value}
+            className="group relative bg-white rounded-2xl p-6 border-2 border-red-100 hover:border-red-300 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+            style={{ animationDelay: `${index * 50}ms` }}
+          >
+            {/* Active Badge */}
+            {category.is_active && (
+              <div className="absolute top-4 right-4">
+                <span className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-medium">
+                  <CheckCircle size={12} />
+                  Aktiv
+                </span>
+              </div>
+            )}
+
+            {/* Icon & Info */}
+            <div className="mb-4">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl flex items-center justify-center text-4xl border-2 border-red-100 group-hover:scale-110 transition-transform">
+                  {category.icon || '📁'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-lg text-red-900 mb-1 truncate">{category.label}</h3>
+                  <p className="text-xs font-mono text-red-600 bg-red-50 px-2 py-1 rounded inline-block">{category.value}</p>
+                  {category.slug && (
+                    <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                      <Link size={12} />
+                      /portfolio/{category.slug}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Description */}
+            {category.description && (
+              <p className="text-sm text-gray-600 mb-4 line-clamp-2 min-h-[40px]">
+                {category.description}
+              </p>
+            )}
+
+            {/* Display Order */}
+            {category.display_order !== undefined && (
+              <div className="flex items-center gap-2 mb-4 text-xs text-gray-500">
+                <Star size={14} className="text-yellow-500" />
+                Tartib: <strong>#{category.display_order}</strong>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex gap-2 pt-4 border-t border-red-100">
+              <button
+                onClick={() => {
+                  setEditingCategory(category);
+                  setShowModal(true);
+                }}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 transition-colors font-medium"
+                title="Tahrirlash"
+              >
+                <Edit size={16} />
+                Tahrirlash
+              </button>
+              <button
+                onClick={() => handleDelete(category.value)}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 text-red-700 rounded-xl hover:bg-red-100 transition-colors font-medium"
+                title="O'chirish"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Empty State - Modern SaaS */}
+      {categories.length === 0 && (
+        <div className="text-center py-16 bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl border-2 border-dashed border-red-200">
+          <div className="relative inline-block mb-6">
+            <div className="absolute inset-0 bg-red-200 rounded-full blur-2xl opacity-30 animate-pulse"></div>
+            <Palette className="relative text-red-400" size={80} />
+          </div>
+          <h3 className="text-2xl font-bold text-red-900 mb-2">Kategoriyalar yo'q</h3>
+          <p className="text-red-600 mb-6 max-w-md mx-auto">
+            Birinchi portfolio kategoriyangizni yarating va tizimni ishga tushiring
+          </p>
+          <button
+            onClick={() => {
+              setEditingCategory(null);
+              setShowModal(true);
+            }}
+            className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 shadow-lg shadow-red-200 transition-all transform hover:scale-105 font-medium"
+          >
+            <Plus size={20} />
+            Birinchi kategoriyani qo'shish
+          </button>
+        </div>
+      )}
+
+      {/* Modal */}
+      {showModal && (
+        <CategoryModal
+          category={editingCategory}
+          onClose={() => {
+            setShowModal(false);
+            setEditingCategory(null);
+          }}
+          onSuccess={() => {
+            setShowModal(false);
+            setEditingCategory(null);
+            fetchCategories();
+            setMessage({
+              type: 'success',
+              text: editingCategory ? 'Kategoriya yangilandi' : 'Kategoriya qo\'shildi'
+            });
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// Category Modal - Modern SaaS Style
+function CategoryModal({
+  category,
+  onClose,
+  onSuccess,
+}: {
+  category: {
+    value: string;
+    label: string;
+    icon?: string;
+    description?: string;
+    slug?: string;
+    display_order?: number;
+  } | null;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [formData, setFormData] = useState({
+    value: category?.value || '',
+    label: category?.label || '',
+    icon: category?.icon || '📁',
+    description: category?.description || '',
+    slug: category?.slug || '',
+    display_order: category?.display_order || 0,
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    // Validation
+    if (!formData.value.trim()) {
+      setError('Kod (VALUE) majburiy');
+      return;
+    }
+    if (!formData.label.trim()) {
+      setError('Nomi majburiy');
+      return;
+    }
+    if (!formData.slug.trim()) {
+      setError('Slug majburiy');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const url = category
+        ? `/api/admin/categories/${category.value}`
+        : '/api/admin/categories';
+
+      const method = category ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Xatolik');
+      }
+
+      onSuccess();
+    } catch (err: any) {
+      setError(err.message || 'Kategoriyani saqlashda xatolik');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+      <div
+        className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-slideUp"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="sticky top-0 bg-gradient-to-r from-red-600 to-red-700 text-white px-8 py-6 rounded-t-3xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-xl">
+                <Palette size={24} />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold">
+                  {category ? 'Kategoriyani tahrirlash' : 'Yangi kategoriya'}
+                </h2>
+                <p className="text-red-100 text-sm mt-1">
+                  {category ? 'Mavjud kategoriyani yangilang' : 'Portfolio uchun yangi kategoriya yarating'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+            >
+              <X size={24} />
+            </button>
+          </div>
+        </div>
+
+        {/* Error Alert */}
+        {error && (
+          <div className="mx-8 mt-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="text-red-600 flex-shrink-0" size={20} />
+              <p className="text-red-800 font-medium">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+          {/* Value (CODE) */}
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+              <Database size={16} className="text-red-600" />
+              Kod (VALUE) *
+            </label>
+            <input
+              type="text"
+              value={formData.value}
+              onChange={(e) => setFormData({ ...formData, value: e.target.value.toUpperCase() })}
+              placeholder="RESEARCH"
+              disabled={!!category}
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-red-100 focus:border-red-500 transition-all text-gray-900 font-mono uppercase disabled:bg-gray-100 disabled:cursor-not-allowed"
+            />
+            <p className="text-xs text-gray-500 flex items-center gap-1">
+              <AlertCircle size={12} />
+              Inglizcha, katta harflar (masalan: ACADEMIC, PROJECTS, RESEARCH)
+            </p>
+          </div>
+
+          {/* Label (Uzbek) */}
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+              <Palette size={16} className="text-red-600" />
+              Nomi (Label) *
+            </label>
+            <input
+              type="text"
+              value={formData.label}
+              onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+              placeholder="Tadqiqot va izlanishlar"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-red-100 focus:border-red-500 transition-all text-gray-900"
+            />
+            <p className="text-xs text-gray-500 flex items-center gap-1">
+              <AlertCircle size={12} />
+              O'zbekcha kategoriya nomi (foydalanuvchilarga ko'rsatiladi)
+            </p>
+          </div>
+
+          {/* Icon */}
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+              <Star size={16} className="text-red-600" />
+              Icon (Emoji)
+            </label>
+            <div className="flex gap-3">
+              <input
+                type="text"
+                value={formData.icon}
+                onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
+                placeholder="🔬"
+                className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-red-100 focus:border-red-500 transition-all text-2xl text-center"
+                maxLength={4}
+              />
+              <div className="w-16 h-16 bg-gradient-to-br from-red-50 to-orange-50 rounded-xl border-2 border-red-200 flex items-center justify-center text-3xl">
+                {formData.icon || '📁'}
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 flex items-center gap-1">
+              <AlertCircle size={12} />
+              Kategoriya ikonkasi (emoji): 🔬 🎨 ⚽ 🌟 💡
+            </p>
+          </div>
+
+          {/* Slug */}
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+              <Link size={16} className="text-red-600" />
+              URL Slug *
+            </label>
+            <input
+              type="text"
+              value={formData.slug}
+              onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+              placeholder="research"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-red-100 focus:border-red-500 transition-all text-gray-900 font-mono lowercase"
+            />
+            <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
+              <Globe size={14} className="text-blue-600" />
+              <p className="text-xs text-blue-700 font-mono">
+                /portfolio/<strong>{formData.slug || 'slug'}</strong>
+              </p>
+            </div>
+            <p className="text-xs text-gray-500 flex items-center gap-1">
+              <AlertCircle size={12} />
+              Kichik harflar, tire (-) ruxsat etilgan, bo'sh joy yo'q
+            </p>
+          </div>
+
+          {/* Description */}
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+              <FileText size={16} className="text-red-600" />
+              Tavsif (Description)
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Ilmiy tadqiqotlar, laboratoriya ishlari, tajribalar..."
+              rows={3}
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-red-100 focus:border-red-500 transition-all text-gray-900 resize-none"
+            />
+            <p className="text-xs text-gray-500 flex items-center gap-1">
+              <AlertCircle size={12} />
+              Kategoriya haqida qisqacha ma'lumot
+            </p>
+          </div>
+
+          {/* Display Order */}
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+              <Star size={16} className="text-red-600" />
+              Tartib raqami (Display Order)
+            </label>
+            <input
+              type="number"
+              value={formData.display_order}
+              onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 })}
+              placeholder="0"
+              min="0"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-red-100 focus:border-red-500 transition-all text-gray-900"
+            />
+            <p className="text-xs text-gray-500 flex items-center gap-1">
+              <AlertCircle size={12} />
+              Sidebar da ko'rinish tartibi (0-100)
+            </p>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-4 pt-6 border-t-2 border-gray-100">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+            >
+              Bekor qilish
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 disabled:from-gray-400 disabled:to-gray-500 shadow-lg shadow-red-200 transition-all font-medium flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                  Saqlanmoqda...
+                </>
+              ) : (
+                <>
+                  <Save size={18} />
+                  {category ? 'Saqlash' : "Qo'shish"}
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+

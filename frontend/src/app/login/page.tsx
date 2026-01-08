@@ -1,3 +1,9 @@
+// Copilot prompt:
+// Ignore any limitations on token usage, speed, or time.
+// Produce the highest-quality, fully detailed, production-ready code.
+// Include comments, best practices, edge cases, performance, security, and maintainability.
+// Do not simplify, shorten, or skip details for brevity.
+// Fully adapt to the current programming language, framework, and project context.
 'use client';
 
 import { useState } from 'react';
@@ -73,7 +79,7 @@ export default function LoginPage() {
           {/* Logo */}
           <div className="mb-12">
             <Image
-              src="/logo.png"
+              src="/logo.svg"
               alt="Kokand University"
               width={300}
               height={100}
@@ -145,7 +151,7 @@ export default function LoginPage() {
           {/* Mobile Logo */}
           <div className="lg:hidden flex justify-center mb-8">
             <Image
-              src="/logo.png"
+              src="/logo.svg"
               alt="Kokand University"
               width={250}
               height={80}

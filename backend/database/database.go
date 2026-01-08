@@ -1,3 +1,10 @@
+// Copilot prompt:
+// Ignore any limitations on token usage, speed, or time.
+// Produce the highest-quality, fully detailed, production-ready code.
+// Include comments, best practices, edge cases, performance, security, and maintainability.
+// Do not simplify, shorten, or skip details for brevity.
+// Fully adapt to the current programming language, framework, and project context.
+
 package database
 
 import (
@@ -33,7 +40,42 @@ func Connect(databaseURL string) error {
 }
 
 func Migrate() error {
-	schema := `
+	// Create migration version table
+	versionTable := `
+	CREATE TABLE IF NOT EXISTS schema_migrations (
+		version INTEGER PRIMARY KEY,
+		applied_at TIMESTAMP DEFAULT NOW(),
+		success BOOLEAN DEFAULT TRUE
+	);
+	`
+
+	if _, err := DB.Exec(versionTable); err != nil {
+		return fmt.Errorf("migration version table yaratishda xatolik: %w", err)
+	}
+
+	// Check current version
+	var currentVersion int
+	err := DB.QueryRow(`
+		SELECT COALESCE(MAX(version), 0) FROM schema_migrations WHERE success = true
+	`).Scan(&currentVersion)
+	if err != nil {
+		currentVersion = 0
+	}
+
+	log.Printf("📊 Current migration version: %d", currentVersion)
+
+	// Start transaction for migration
+	tx, err := DB.Begin()
+	if err != nil {
+		return fmt.Errorf("migration transaction boshlanmadi: %w", err)
+	}
+	defer tx.Rollback() // Auto rollback if not committed
+
+	// Migration version 1: Base schema
+	if currentVersion < 1 {
+		log.Println("🔄 Applying migration v1: Base schema...")
+
+		schema := `
 	-- Enum types
 	DO $$ BEGIN
 		CREATE TYPE role AS ENUM ('STUDENT', 'ADMIN', 'REGISTRAR', 'EMPLOYER');
@@ -48,7 +90,31 @@ func Migrate() error {
 	END $$;
 
 	DO $$ BEGIN
-		CREATE TYPE portfolio_item_type AS ENUM ('PROJECT', 'CERTIFICATE', 'ASSIGNMENT');
+		CREATE TYPE portfolio_item_type AS ENUM (
+			'PROJECT',      -- Loyiha
+			'CERTIFICATE',  -- Sertifikat
+			'ASSIGNMENT',   -- Topshiriq
+			'DOCUMENT',     -- Hujjat
+			'MEDIA',        -- Media fayl
+			'AWARD',        -- Mukofot
+			'PUBLICATION',  -- Nashr
+			'OTHER'         -- Boshqa
+		);
+	EXCEPTION
+		WHEN duplicate_object THEN null;
+	END $$;
+
+	DO $$ BEGIN
+		CREATE TYPE portfolio_category AS ENUM (
+			'ACADEMIC',           -- Akademik faoliyat
+			'LEADERSHIP',         -- Tashkiliy va yetakchilik
+			'SOCIAL',             -- Ijtimoiy va ko'ngillilik
+			'PROJECTS',           -- Loyihalar va tashabbuslar
+			'TECHNICAL',          -- Raqamli va texnik tajriba
+			'CAREER',             -- Karyera va professional
+			'INTERNATIONAL',      -- Xalqaro va tillar
+			'AWARDS'              -- Mukofotlar va yutuqlar
+		);
 	EXCEPTION
 		WHEN duplicate_object THEN null;
 	END $$;
@@ -81,6 +147,7 @@ func Migrate() error {
 		file_name TEXT,
 		mime_type TEXT,
 		size_bytes INTEGER,
+		files JSONB DEFAULT '[]',
 		owner_id TEXT REFERENCES users(id) ON DELETE CASCADE,
 		approval_status approval_status DEFAULT 'PENDING',
 		approved_by TEXT REFERENCES users(id),
@@ -224,6 +291,31 @@ func Migrate() error {
 		updated_at TIMESTAMP DEFAULT NOW()
 	);
 
+	-- Portfolio Categories table
+	CREATE TABLE IF NOT EXISTS portfolio_categories (
+		value TEXT PRIMARY KEY,
+		label TEXT NOT NULL,
+		icon TEXT DEFAULT '📁',
+		description TEXT,
+		slug TEXT UNIQUE,
+		display_order INTEGER DEFAULT 0,
+		is_active BOOLEAN DEFAULT TRUE,
+		created_at TIMESTAMP DEFAULT NOW(),
+		updated_at TIMESTAMP DEFAULT NOW()
+	);
+
+	-- Insert default categories if not exist
+	INSERT INTO portfolio_categories (value, label, icon, description, slug, display_order) VALUES
+		('ACADEMIC', 'Akademik faoliyat', '🎓', 'Ilmiy maqolalar, tezislar, konferensiya ishtiroklar', 'academic', 1),
+		('LEADERSHIP', 'Tashkiliy va yetakchilik', '👔', 'Jamoa boshqaruvi, tadbirlar tashkil etish', 'leadership', 2),
+		('SOCIAL', 'Ijtimoiy va ko''ngillilik', '🤝', 'Ko''ngillilik, xayriya, mentorlik', 'social', 3),
+		('PROJECTS', 'Loyihalar va tashabbuslar', '🚀', 'Shaxsiy/jamoa loyihalari, startup', 'projects', 4),
+		('TECHNICAL', 'Raqamli va texnik tajriba', '💻', 'Dasturlash, botlar, veb-loyihalar', 'technical', 5),
+		('CAREER', 'Karyera va professional', '💼', 'Amaliyot, trening, sertifikatlar', 'career', 6),
+		('INTERNATIONAL', 'Xalqaro va tillar', '🌍', 'Xalqaro dasturlar, til sertifikatlar', 'international', 7),
+		('AWARDS', 'Mukofotlar va yutuqlar', '🏆', 'Tanlovlar, imtiyozlar, grantlar', 'awards', 8)
+	ON CONFLICT (value) DO NOTHING;
+
 	-- Announcements table
 	CREATE TABLE IF NOT EXISTS announcements (
 		id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -248,6 +340,8 @@ func Migrate() error {
 	-- Indexes for new tables
 	CREATE INDEX IF NOT EXISTS idx_settings_key ON system_settings(key);
 	CREATE INDEX IF NOT EXISTS idx_settings_public ON system_settings(is_public);
+	CREATE INDEX IF NOT EXISTS idx_categories_active ON portfolio_categories(is_active);
+	CREATE INDEX IF NOT EXISTS idx_categories_order ON portfolio_categories(display_order);
 	CREATE INDEX IF NOT EXISTS idx_announcements_active ON announcements(is_active);
 	CREATE INDEX IF NOT EXISTS idx_announcements_marquee ON announcements(is_marquee);
 	CREATE INDEX IF NOT EXISTS idx_announcements_dates ON announcements(start_date, end_date);
@@ -289,12 +383,126 @@ func Migrate() error {
 	);
 	`
 
-	_, err := DB.Exec(schema)
-	if err != nil {
-		return fmt.Errorf("migration xatolik: %w", err)
+		if _, err := tx.Exec(schema); err != nil {
+			log.Printf("❌ Migration v1 failed: %v", err)
+			return fmt.Errorf("migration v1 xatolik: %w", err)
+		}
+
+		// Record successful migration
+		if _, err := tx.Exec(`INSERT INTO schema_migrations (version) VALUES (1)`); err != nil {
+			return fmt.Errorf("migration version yozishda xatolik: %w", err)
+		}
+
+		log.Println("✅ Migration v1 completed")
 	}
 
-	log.Println("✅ Database migration bajarildi")
+	// Migration version 2: Extensions and fixes
+	if currentVersion < 2 {
+		log.Println("🔄 Applying migration v2: Extensions...")
+
+		// Add category column if it doesn't exist
+		if _, err := tx.Exec(`ALTER TABLE portfolio_items ADD COLUMN IF NOT EXISTS category TEXT;`); err != nil {
+			log.Printf("⚠️ Category column qo'shishda xatolik: %v", err)
+		} else {
+			log.Println("✅ Category column qo'shildi")
+		}
+
+		// Extend portfolio_item_type ENUM with new values
+		enumValues := []string{"DOCUMENT", "MEDIA", "AWARD", "PUBLICATION", "OTHER"}
+		for _, val := range enumValues {
+			// Check if value already exists
+			var exists bool
+			err = tx.QueryRow(`
+				SELECT EXISTS(
+					SELECT 1 FROM pg_enum 
+					WHERE enumtypid = 'portfolio_item_type'::regtype 
+					AND enumlabel = $1
+				)
+			`, val).Scan(&exists)
+
+			if err == nil && !exists {
+				// Add new value (note: ALTER TYPE can't be in transaction on some PostgreSQL versions)
+				// So we'll skip if already in transaction
+				log.Printf("ℹ️  Portfolio type '%s' uchun manual qo'shish kerak (transaction ichida)", val)
+			} else if exists {
+				log.Printf("✅ Portfolio type '%s' allaqachon mavjud", val)
+			}
+		}
+
+		// Record successful migration
+		if _, err := tx.Exec(`INSERT INTO schema_migrations (version) VALUES (2)`); err != nil {
+			return fmt.Errorf("migration version 2 yozishda xatolik: %w", err)
+		}
+
+		log.Println("✅ Migration v2 completed")
+	}
+
+	// Commit all migrations
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("migration commit xatolik: %w", err)
+	}
+
+	// ENUM extensions (outside transaction - PostgreSQL limitation)
+	if currentVersion < 2 {
+		enumValues := []string{"DOCUMENT", "MEDIA", "AWARD", "PUBLICATION", "OTHER"}
+		for _, val := range enumValues {
+			var exists bool
+			DB.QueryRow(`
+				SELECT EXISTS(
+					SELECT 1 FROM pg_enum 
+					WHERE enumtypid = 'portfolio_item_type'::regtype 
+					AND enumlabel = $1
+				)
+			`, val).Scan(&exists)
+
+			if !exists {
+				if _, err := DB.Exec(fmt.Sprintf("ALTER TYPE portfolio_item_type ADD VALUE IF NOT EXISTS '%s'", val)); err != nil {
+					log.Printf("⚠️ Portfolio type '%s' qo'shishda xatolik: %v", val, err)
+				} else {
+					log.Printf("✅ Portfolio type '%s' qo'shildi", val)
+				}
+			}
+		}
+	}
+
+	// Migration v3: Add files JSONB column for multiple file uploads
+	if currentVersion < 3 {
+		log.Println("🔄 Applying migration v3: Multiple files support...")
+
+		// Add files column
+		if _, err := DB.Exec(`ALTER TABLE portfolio_items ADD COLUMN IF NOT EXISTS files JSONB DEFAULT '[]'`); err != nil {
+			log.Printf("⚠️ Files column qo'shishda xatolik: %v", err)
+		} else {
+			log.Println("✅ Files column qo'shildi")
+		}
+
+		// Migrate existing single file to files array
+		if _, err := DB.Exec(`
+			UPDATE portfolio_items 
+			SET files = jsonb_build_array(
+				jsonb_build_object(
+					'url', file_url,
+					'name', file_name,
+					'mime_type', mime_type,
+					'size', size_bytes
+				)
+			)
+			WHERE file_url IS NOT NULL AND (files IS NULL OR files = '[]'::jsonb)
+		`); err != nil {
+			log.Printf("⚠️ Mavjud fayllarni migration qilishda xatolik: %v", err)
+		} else {
+			log.Println("✅ Mavjud fayllar files arrayga ko'chirildi")
+		}
+
+		// Record migration
+		if _, err := DB.Exec(`INSERT INTO schema_migrations (version) VALUES (3)`); err != nil {
+			log.Printf("⚠️ Migration v3 yozishda xatolik: %v", err)
+		} else {
+			log.Println("✅ Migration v3 completed")
+		}
+	}
+
+	log.Println("✅ Database migration bajarildi (version tracking enabled)")
 	return nil
 }
 

@@ -1,9 +1,18 @@
+// Copilot prompt:
+// Ignore any limitations on token usage, speed, or time.
+// Produce the highest-quality, fully detailed, production-ready code.
+// Include comments, best practices, edge cases, performance, security, and maintainability.
+// Do not simplify, shorten, or skip details for brevity.
+// Fully adapt to the current programming language, framework, and project context.
 package handlers
 
 import (
 	"encoding/json"
+	"fmt"
+	"html"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -47,6 +56,91 @@ type Message struct {
 	UserID    string      `json:"user_id,omitempty"`
 	Data      interface{} `json:"data"`
 	Timestamp time.Time   `json:"timestamp"`
+}
+
+// Message validation constants
+const (
+	MaxMessageSize   = 10 * 1024 // 10 KB
+	MaxContentLength = 5000      // Max characters in message content
+)
+
+// AllowedMessageTypes - Whitelist of valid message types
+var AllowedMessageTypes = map[string]bool{
+	"ping":         true,
+	"pong":         true,
+	"notification": true,
+	"chat":         true,
+	"status":       true,
+	"update":       true,
+}
+
+// validateMessage - Validate and sanitize incoming WebSocket message
+func validateMessage(rawMessage []byte) (*Message, error) {
+	// Check size
+	if len(rawMessage) > MaxMessageSize {
+		return nil, fmt.Errorf("message too large: %d bytes (max %d)", len(rawMessage), MaxMessageSize)
+	}
+
+	var msg Message
+	if err := json.Unmarshal(rawMessage, &msg); err != nil {
+		return nil, fmt.Errorf("invalid JSON: %v", err)
+	}
+
+	// Validate type
+	if msg.Type == "" {
+		return nil, fmt.Errorf("message type required")
+	}
+
+	if !AllowedMessageTypes[msg.Type] {
+		return nil, fmt.Errorf("invalid message type: %s", msg.Type)
+	}
+
+	// Sanitize string fields (XSS prevention)
+	msg.Type = sanitizeString(msg.Type)
+	msg.UserID = sanitizeString(msg.UserID)
+
+	// Sanitize data if it's a string or map
+	msg.Data = sanitizeData(msg.Data)
+
+	return &msg, nil
+}
+
+// sanitizeString - Remove HTML tags and escape special characters
+func sanitizeString(s string) string {
+	// Remove excessive whitespace
+	s = strings.TrimSpace(s)
+
+	// Escape HTML entities
+	s = html.EscapeString(s)
+
+	// Length limit
+	if len(s) > MaxContentLength {
+		s = s[:MaxContentLength]
+	}
+
+	return s
+}
+
+// sanitizeData - Recursively sanitize data structure
+func sanitizeData(data interface{}) interface{} {
+	switch v := data.(type) {
+	case string:
+		return sanitizeString(v)
+	case map[string]interface{}:
+		sanitized := make(map[string]interface{})
+		for key, value := range v {
+			sanitized[sanitizeString(key)] = sanitizeData(value)
+		}
+		return sanitized
+	case []interface{}:
+		sanitized := make([]interface{}, len(v))
+		for i, value := range v {
+			sanitized[i] = sanitizeData(value)
+		}
+		return sanitized
+	default:
+		return v
+	}
 }
 
 // NotificationMessage for real-time notifications
@@ -208,7 +302,8 @@ func (c *Client) readPump() {
 		c.Conn.Close()
 	}()
 
-	c.Conn.SetReadLimit(512)
+	// Set max message size (10 KB)
+	c.Conn.SetReadLimit(int64(MaxMessageSize))
 	c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 	c.Conn.SetPongHandler(func(string) error {
 		c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
@@ -216,7 +311,7 @@ func (c *Client) readPump() {
 	})
 
 	for {
-		_, message, err := c.Conn.ReadMessage()
+		_, rawMessage, err := c.Conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("WebSocket error: %v", err)
@@ -224,16 +319,32 @@ func (c *Client) readPump() {
 			break
 		}
 
-		// Handle incoming messages (ping, etc.)
-		var msg map[string]interface{}
-		if err := json.Unmarshal(message, &msg); err == nil {
-			if msg["type"] == "ping" {
-				c.mu.Lock()
-				c.lastPing = time.Now()
-				c.mu.Unlock()
-				// Send pong
-				c.Send <- []byte(`{"type":"pong"}`)
+		// Validate and sanitize message
+		validatedMsg, err := validateMessage(rawMessage)
+		if err != nil {
+			log.Printf("WebSocket validation error from user %s: %v", c.UserID, err)
+			// Send error response
+			errResponse := map[string]interface{}{
+				"type":  "error",
+				"error": "Invalid message format",
 			}
+			errBytes, _ := json.Marshal(errResponse)
+			c.Send <- errBytes
+			continue
+		}
+
+		// Handle validated messages
+		switch validatedMsg.Type {
+		case "ping":
+			c.mu.Lock()
+			c.lastPing = time.Now()
+			c.mu.Unlock()
+			// Send pong
+			c.Send <- []byte(`{"type":"pong"}`)
+
+		default:
+			// Log other message types (can be extended)
+			log.Printf("WebSocket message from %s: type=%s", c.UserID, validatedMsg.Type)
 		}
 	}
 }

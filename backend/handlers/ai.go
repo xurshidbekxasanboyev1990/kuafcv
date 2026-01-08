@@ -1,3 +1,9 @@
+// Copilot prompt:
+// Ignore any limitations on token usage, speed, or time.
+// Produce the highest-quality, fully detailed, production-ready code.
+// Include comments, best practices, edge cases, performance, security, and maintainability.
+// Do not simplify, shorten, or skip details for brevity.
+// Fully adapt to the current programming language, framework, and project context.
 package handlers
 
 import (
@@ -114,12 +120,24 @@ Tizim haqida:
 
 	"analytics": `Sen professional portfolio tahlilchisisisan. Vazifang talabaning portfoliosini chuqur tahlil qilish:
 
-1. KUCHLI TOMONLAR - talabaning eng yaxshi yutuqlari
-2. RIVOJLANTIRISH KERAK - qaysi sohalarda ishlash kerak
-3. TAVSIYALAR - karyera uchun maslahatlar
-4. UMUMIY BAL - 100 ballik tizimda baholash
+KATEGORIYALAR TIZIMI:
+- ACADEMIC: Akademik faoliyat (maqolalar, tezislar, konferensiyalar)
+- LEADERSHIP: Tashkiliy va yetakchilik (jamoa boshqaruvi, tadbirlar)
+- SOCIAL: Ijtimoiy va ko'ngillilik (ko'ngillilik, xayriya, mentorlik)
+- PROJECTS: Loyihalar va tashabbuslar (shaxsiy/jamoa loyihalar, startup)
+- TECHNICAL: Raqamli va texnik (dasturlash, botlar, veb-loyihalar)
+- CAREER: Karyera va professional (amaliyot, trening, sertifikatlar)
+- INTERNATIONAL: Xalqaro va tillar (xalqaro dasturlar, til sertifikatlar)
+- AWARDS: Mukofotlar va yutuqlar (tanlovlar, imtiyozlar, grantlar)
 
-Tahlil professional, konstruktiv va motivatsion bo'lsin. O'zbek tilida yoz.`,
+TAHLIL FORMATI:
+1. KATEGORIYALAR TAHLILI - har bir kategoriya bo'yicha baholash va kuchli/zaif tomonlar
+2. UMUMIY BAHOLASH - barcha kategoriyalarni hisobga olgan holda umumiy holat
+3. MUVOZANAT - qaysi kategoriyalarda ko'proq/kamroq ish kerak
+4. TAVSIYALAR - har bir kategoriya uchun aniq maslahatlar
+5. UMUMIY BAL - 100 ballik tizimda (kategoriyalar bo'yicha taqsimlangan)
+
+Tahlil professional, konstruktiv va motivatsion bo'lsin. Har bir kategoriyani alohida e'tiborga oling. O'zbek tilida yoz.`,
 }
 
 // POST /api/ai/chat - Support chat
@@ -232,9 +250,9 @@ func AnalyzePortfolio(c *gin.Context) {
 		json.Unmarshal(studentDataJSON, &student.StudentData)
 	}
 
-	// Get approved portfolios
+	// Get approved portfolios with categories
 	rows, err := database.DB.Query(`
-		SELECT type, title, description, tags, approval_status, created_at
+		SELECT type, title, description, category, tags, approval_status, created_at
 		FROM portfolio_items
 		WHERE owner_id = $1 AND approval_status = 'APPROVED'
 		ORDER BY created_at DESC
@@ -250,23 +268,44 @@ func AnalyzePortfolio(c *gin.Context) {
 	}
 	defer rows.Close()
 
+	// Get category labels for display
+	categoryLabels := make(map[string]string)
+	catRows, _ := database.DB.Query(`SELECT value, label FROM portfolio_categories WHERE is_active = true`)
+	if catRows != nil {
+		defer catRows.Close()
+		for catRows.Next() {
+			var value, label string
+			catRows.Scan(&value, &label)
+			categoryLabels[value] = label
+		}
+	}
+
 	var portfolios []map[string]interface{}
+	categoryCounts := make(map[string]int)
 	for rows.Next() {
 		var pType, title, description, status string
+		var category *string
 		var tags []byte
 		var createdAt time.Time
-		rows.Scan(&pType, &title, &description, &tags, &status, &createdAt)
+		rows.Scan(&pType, &title, &description, &category, &tags, &status, &createdAt)
+
+		categoryStr := ""
+		if category != nil {
+			categoryStr = *category
+			categoryCounts[categoryStr]++
+		}
 
 		portfolios = append(portfolios, map[string]interface{}{
 			"type":        pType,
 			"title":       title,
 			"description": description,
+			"category":    categoryStr,
 			"tags":        string(tags),
 			"created_at":  createdAt.Format("2006-01-02"),
 		})
 	}
 
-	// Build analysis prompt
+	// Build analysis prompt with categories
 	portfolioText := fmt.Sprintf(`
 TALABA MA'LUMOTLARI:
 - Ism: %s
@@ -276,7 +315,7 @@ TALABA MA'LUMOTLARI:
 - Kurs: %v
 - Guruh: %v
 
-PORTFOLIO ELEMENTLARI (%d ta tasdiqlangan):
+KATEGORIYALAR BO'YICHA TAQSIMOT:
 `,
 		student.FullName,
 		student.StudentID,
@@ -284,24 +323,44 @@ PORTFOLIO ELEMENTLARI (%d ta tasdiqlangan):
 		student.StudentData["specialty"],
 		student.StudentData["course"],
 		student.StudentData["group"],
-		len(portfolios),
 	)
 
+	// Add category statistics
+	for catValue, count := range categoryCounts {
+		catLabel := categoryLabels[catValue]
+		if catLabel == "" {
+			catLabel = catValue
+		}
+		portfolioText += fmt.Sprintf("- %s: %d ta\n", catLabel, count)
+	}
+
+	portfolioText += fmt.Sprintf(`
+PORTFOLIO ELEMENTLARI (%d ta tasdiqlangan):
+`, len(portfolios))
+
 	for i, p := range portfolios {
+		categoryStr := ""
+		if p["category"] != "" {
+			catLabel := categoryLabels[p["category"].(string)]
+			if catLabel == "" {
+				catLabel = p["category"].(string)
+			}
+			categoryStr = fmt.Sprintf(" [%s]", catLabel)
+		}
+
 		portfolioText += fmt.Sprintf(`
-%d. %s (%s)
+%d. %s%s (%s)
    Sarlavha: %s
    Tavsif: %s
    Teglar: %s
-   Sana: %s
 `,
 			i+1,
 			p["type"],
+			categoryStr,
 			p["created_at"],
 			p["title"],
 			p["description"],
 			p["tags"],
-			p["created_at"],
 		)
 	}
 
@@ -377,7 +436,7 @@ func QuickAnalyze(c *gin.Context) {
 			semaphore <- struct{}{}
 			defer func() { <-semaphore }()
 
-			// Get portfolio count
+			// Get portfolio count and categories
 			var count int
 			var fullName string
 			database.DB.QueryRow(`
@@ -388,11 +447,31 @@ func QuickAnalyze(c *gin.Context) {
 				GROUP BY u.full_name
 			`, sid).Scan(&fullName, &count)
 
+			// Get category distribution
+			categoryRows, _ := database.DB.Query(`
+				SELECT category, COUNT(*) 
+				FROM portfolio_items 
+				WHERE owner_id = $1 AND approval_status = 'APPROVED' AND category IS NOT NULL
+				GROUP BY category
+			`, sid)
+
+			categoryDist := make(map[string]int)
+			if categoryRows != nil {
+				defer categoryRows.Close()
+				for categoryRows.Next() {
+					var cat string
+					var cnt int
+					categoryRows.Scan(&cat, &cnt)
+					categoryDist[cat] = cnt
+				}
+			}
+
 			results[idx] = gin.H{
 				"student_id":      sid,
 				"full_name":       fullName,
 				"portfolio_count": count,
 				"status":          getPortfolioStatus(count),
+				"categories":      categoryDist,
 			}
 		}(i, studentID)
 	}
@@ -422,63 +501,110 @@ func getPortfolioStatus(count int) string {
 
 // callOpenAI - Make request to OpenAI API
 func callOpenAI(systemPrompt, userMessage string) (string, error) {
+	return callOpenAIWithRetry(systemPrompt, userMessage, 3)
+}
+
+func callOpenAIWithRetry(systemPrompt, userMessage string, maxRetries int) (string, error) {
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
 		return "", fmt.Errorf("OpenAI API key not configured")
 	}
 
-	reqBody := OpenAIRequest{
-		Model: "gpt-4o", // Eng zo'r model
-		Messages: []OpenAIMessage{
-			{Role: "system", Content: systemPrompt},
-			{Role: "user", Content: userMessage},
-		},
-		MaxTokens:   2000,
-		Temperature: 0.7,
+	var lastErr error
+	backoff := time.Second
+
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		if attempt > 0 {
+			log.Printf("⚠️  OpenAI retry attempt %d/%d after %v", attempt+1, maxRetries, backoff)
+			time.Sleep(backoff)
+			backoff *= 2 // Exponential backoff
+		}
+
+		reqBody := OpenAIRequest{
+			Model: "gpt-4o", // Eng zo'r model
+			Messages: []OpenAIMessage{
+				{Role: "system", Content: systemPrompt},
+				{Role: "user", Content: userMessage},
+			},
+			MaxTokens:   2000,
+			Temperature: 0.7,
+		}
+
+		jsonBody, err := json.Marshal(reqBody)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+
+		req, err := http.NewRequest("POST", "https://api.openai.com/v1/chat/completions", bytes.NewBuffer(jsonBody))
+		if err != nil {
+			lastErr = err
+			continue
+		}
+
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+apiKey)
+
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			lastErr = fmt.Errorf("network error: %w", err)
+			continue
+		}
+
+		body, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+
+		if err != nil {
+			lastErr = fmt.Errorf("read error: %w", err)
+			continue
+		}
+
+		// Handle HTTP error codes with retry logic
+		if resp.StatusCode == 429 {
+			// Rate limit - retry with backoff
+			lastErr = fmt.Errorf("rate limit exceeded")
+			continue
+		} else if resp.StatusCode == 503 || resp.StatusCode == 502 {
+			// Service unavailable - retry
+			lastErr = fmt.Errorf("service temporarily unavailable")
+			continue
+		} else if resp.StatusCode >= 500 {
+			// Server error - retry
+			lastErr = fmt.Errorf("server error: %d", resp.StatusCode)
+			continue
+		} else if resp.StatusCode != 200 {
+			// Other errors - don't retry
+			var openAIResp OpenAIResponse
+			if json.Unmarshal(body, &openAIResp) == nil && openAIResp.Error != nil {
+				return "", fmt.Errorf("OpenAI error: %s", openAIResp.Error.Message)
+			}
+			return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		}
+
+		var openAIResp OpenAIResponse
+		if err := json.Unmarshal(body, &openAIResp); err != nil {
+			lastErr = fmt.Errorf("parse error: %w", err)
+			continue
+		}
+
+		if openAIResp.Error != nil {
+			return "", fmt.Errorf("OpenAI error: %s", openAIResp.Error.Message)
+		}
+
+		if len(openAIResp.Choices) == 0 {
+			lastErr = fmt.Errorf("no response from OpenAI")
+			continue
+		}
+
+		// Success!
+		content := openAIResp.Choices[0].Message.Content
+		content = cleanMarkdown(content)
+		return strings.TrimSpace(content), nil
 	}
 
-	jsonBody, err := json.Marshal(reqBody)
-	if err != nil {
-		return "", err
-	}
-
-	req, err := http.NewRequest("POST", "https://api.openai.com/v1/chat/completions", bytes.NewBuffer(jsonBody))
-	if err != nil {
-		return "", err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+apiKey)
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	var openAIResp OpenAIResponse
-	if err := json.Unmarshal(body, &openAIResp); err != nil {
-		return "", err
-	}
-
-	if openAIResp.Error != nil {
-		return "", fmt.Errorf("OpenAI error: %s", openAIResp.Error.Message)
-	}
-
-	if len(openAIResp.Choices) == 0 {
-		return "", fmt.Errorf("no response from OpenAI")
-	}
-
-	// Clean markdown formatting from response
-	content := openAIResp.Choices[0].Message.Content
-	content = cleanMarkdown(content)
-
-	return strings.TrimSpace(content), nil
+	// All retries failed
+	log.Printf("❌ OpenAI failed after %d attempts: %v", maxRetries, lastErr)
+	return "", lastErr
 }
 
 // cleanMarkdown - Remove markdown formatting from AI response

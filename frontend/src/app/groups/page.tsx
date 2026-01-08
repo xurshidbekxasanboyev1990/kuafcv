@@ -1,9 +1,15 @@
+// Copilot prompt:
+// Ignore any limitations on token usage, speed, or time.
+// Produce the highest-quality, fully detailed, production-ready code.
+// Include comments, best practices, edge cases, performance, security, and maintainability.
+// Do not simplify, shorten, or skip details for brevity.
+// Fully adapt to the current programming language, framework, and project context.
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
-import Sidebar from '@/components/Sidebar';
+import MainLayout from '@/components/MainLayout';
 import Filters from '@/components/Filters';
 import { registrar, User, FilterOptions } from '@/lib/api';
 import { Users, Eye, Phone, Mail, GraduationCap } from 'lucide-react';
@@ -85,17 +91,15 @@ export default function GroupsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-red-50">
-      <Sidebar />
-      <main className="ml-64 p-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-red-800 flex items-center gap-3">
-            <Users className="text-red-500" size={32} />
-            Talabalar Kontingenti
-          </h1>
-          <p className="text-red-600 mt-1">Jami: {total} ta talaba</p>
-        </div>
+    <MainLayout showMarquee={false}>
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-red-800 flex items-center gap-3">
+          <Users className="text-red-500" size={32} />
+          Talabalar Kontingenti
+        </h1>
+        <p className="text-red-600 mt-1">Jami: {total} ta talaba</p>
+      </div>
 
         {/* Filters */}
         <Filters
@@ -229,7 +233,6 @@ export default function GroupsPage() {
             </div>
           </div>
         )}
-      </main>
-    </div>
+      </MainLayout>
   );
 }

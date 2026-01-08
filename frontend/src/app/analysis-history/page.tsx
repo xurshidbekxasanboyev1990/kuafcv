@@ -1,33 +1,34 @@
+// Copilot prompt:
+// Ignore any limitations on token usage, speed, or time.
+// Produce the highest-quality, fully detailed, production-ready code.
+// Include comments, best practices, edge cases, performance, security, and maintainability.
+// Do not simplify, shorten, or skip details for brevity.
+// Fully adapt to the current programming language, framework, and project context.
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useAuth } from '@/components/AuthProvider';
+import MainLayout from '@/components/MainLayout';
+import { ScoreGauge, SimpleBarChart, SimplePieChart } from '@/components/ui/SimpleCharts';
 import {
-  History,
-  FileText,
-  Image,
-  Brain,
-  TrendingUp,
-  Calendar,
-  Clock,
-  Download,
-  Search,
-  Filter,
+  ArrowLeft,
+  BarChart3,
+  Bot,
   ChevronLeft,
   ChevronRight,
-  Eye,
-  Trash2,
-  BarChart3,
+  Clock,
+  Download,
+  FileText,
+  Filter,
+  History,
+  Image,
   PieChart,
-  User,
-  Bot,
-  ArrowLeft,
   RefreshCw,
+  Search,
+  TrendingUp,
+  User
 } from 'lucide-react';
-import { SimplePieChart, SimpleBarChart, ScoreGauge } from '@/components/ui/SimpleCharts';
-import Sidebar from '@/components/Sidebar';
-import MarqueeBanner from '@/components/MarqueeBanner';
-import { useAuth } from '@/components/AuthProvider';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 interface AnalysisRecord {
   id: string;
@@ -158,7 +159,7 @@ export default function AnalysisHistoryPage() {
   // Filter and search
   const filteredHistory = history.filter(item => {
     const matchesSearch = item.file_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         item.conclusion?.toLowerCase().includes(searchQuery.toLowerCase());
+      item.conclusion?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter = filterType === 'all' || item.analysis_type === filterType;
     return matchesSearch && matchesFilter;
   });
@@ -221,88 +222,82 @@ export default function AnalysisHistoryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      <Sidebar />
-      <div className="ml-64">
-        <MarqueeBanner userRole={user.role} />
-      </div>
-      
-      <main className="ml-64">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-red-600 to-red-700 text-white">
-          <div className="max-w-7xl mx-auto px-4 py-6">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => router.back()}
-                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-                title="Orqaga"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-                  <History className="w-6 h-6" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold">Tahlil Tarixi</h1>
-                  <p className="text-red-200">Barcha lingvistik tahlil natijalari</p>
-                </div>
+    <MainLayout>
+      {/* Header */}
+      <div className="bg-gradient-to-r from-red-600 to-red-700 text-white -m-8 mb-8">
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.back()}
+              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+              title="Orqaga"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+                <History className="w-6 h-6" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold">Tahlil Tarixi</h1>
+                <p className="text-red-200">Barcha lingvistik tahlil natijalari</p>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-red-100">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
-                  <BarChart3 className="w-5 h-5 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-red-800">{safeStats.total_analyses}</p>
-                  <p className="text-sm text-red-600">Jami tahlil</p>
-                </div>
+      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-red-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
+                <BarChart3 className="w-5 h-5 text-red-600" />
               </div>
-            </div>
-
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-red-100">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                  <User className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-800">{safeStats.human_detected_count}</p>
-                  <p className="text-sm text-gray-500">Inson matni</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-red-100">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
-                  <Bot className="w-5 h-5 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-800">{safeStats.ai_detected_count}</p>
-                  <p className="text-sm text-gray-500">AI matni</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-red-100">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-800">{Math.round(safeStats.avg_processing_time)}ms</p>
-                  <p className="text-sm text-gray-500">O'rtacha vaqt</p>
-                </div>
+              <div>
+                <p className="text-2xl font-bold text-red-800">{safeStats.total_analyses}</p>
+                <p className="text-sm text-red-600">Jami tahlil</p>
               </div>
             </div>
           </div>
+
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-red-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                <User className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-800">{safeStats.human_detected_count}</p>
+                <p className="text-sm text-gray-500">Inson matni</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-red-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
+                <Bot className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-800">{safeStats.ai_detected_count}</p>
+                <p className="text-sm text-gray-500">AI matni</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-red-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-800">{Math.round(safeStats.avg_processing_time)}ms</p>
+                <p className="text-sm text-gray-500">O'rtacha vaqt</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Charts Section */}
         {showCharts && (
@@ -353,19 +348,19 @@ export default function AnalysisHistoryPage() {
                   O'rtacha ball ko'rsatkichlari
                 </h3>
                 <div className="flex justify-around flex-wrap gap-4">
-                  <ScoreGauge 
-                    score={Math.round(history.reduce((sum, h) => sum + (h.rhythm_score || 0), 0) / history.length) || 0} 
-                    label="Ritm" 
+                  <ScoreGauge
+                    score={Math.round(history.reduce((sum, h) => sum + (h.rhythm_score || 0), 0) / history.length) || 0}
+                    label="Ritm"
                     color="#3B82F6"
                   />
-                  <ScoreGauge 
-                    score={Math.round(history.reduce((sum, h) => sum + (h.personality_score || 0), 0) / history.length) || 0} 
-                    label="Shaxsiylik" 
+                  <ScoreGauge
+                    score={Math.round(history.reduce((sum, h) => sum + (h.personality_score || 0), 0) / history.length) || 0}
+                    label="Shaxsiylik"
                     color="#EF4444"
                   />
-                  <ScoreGauge 
-                    score={Math.round(history.reduce((sum, h) => sum + (h.naturalness_score || 0), 0) / history.length) || 0} 
-                    label="Tabiiylik" 
+                  <ScoreGauge
+                    score={Math.round(history.reduce((sum, h) => sum + (h.naturalness_score || 0), 0) / history.length) || 0}
+                    label="Tabiiylik"
                     color="#10B981"
                   />
                 </div>
@@ -471,8 +466,8 @@ export default function AnalysisHistoryPage() {
                   </thead>
                   <tbody className="divide-y">
                     {paginatedHistory.map((record) => (
-                      <tr 
-                        key={record.id} 
+                      <tr
+                        key={record.id}
                         className="hover:bg-gray-50 cursor-pointer"
                         onClick={() => setSelectedRecord(record)}
                       >
@@ -541,11 +536,10 @@ export default function AnalysisHistoryPage() {
                         <button
                           key={page}
                           onClick={() => setCurrentPage(page)}
-                          className={`px-3 py-2 rounded-lg text-sm ${
-                            currentPage === page
+                          className={`px-3 py-2 rounded-lg text-sm ${currentPage === page
                               ? 'bg-red-600 text-white'
                               : 'hover:bg-gray-50'
-                          }`}
+                            }`}
                         >
                           {page}
                         </button>
@@ -633,8 +627,7 @@ export default function AnalysisHistoryPage() {
             </div>
           </div>
         )}
-        </div>
-      </main>
-    </div>
+      </div>
+    </MainLayout>
   );
 }

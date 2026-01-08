@@ -1,3 +1,9 @@
+// Copilot prompt:
+// Ignore any limitations on token usage, speed, or time.
+// Produce the highest-quality, fully detailed, production-ready code.
+// Include comments, best practices, edge cases, performance, security, and maintainability.
+// Do not simplify, shorten, or skip details for brevity.
+// Fully adapt to the current programming language, framework, and project context.
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -135,18 +141,18 @@ export default function MarqueeBanner({ userRole = 'ALL' }: MarqueeBannerProps) 
         }} />
       </div>
 
-      <div className="relative flex items-center min-h-[48px] py-2">
+      <div className="relative flex items-stretch min-h-[56px] sm:min-h-[60px] md:min-h-[48px] py-1.5 sm:py-2">
         {/* Left badge */}
-        <div className="flex-shrink-0 bg-red-800/50 px-3 py-2 flex items-center gap-2 z-10 border-r border-red-500/30 self-stretch">
-          <Megaphone className="w-4 h-4 animate-pulse" />
-          <span className="text-xs font-semibold tracking-wide hidden sm:inline">E'LONLAR</span>
+        <div className="flex-shrink-0 bg-red-800/50 px-1.5 sm:px-2 md:px-3 py-1.5 sm:py-2 flex items-center gap-1.5 sm:gap-2 z-10 border-r border-red-500/30 self-stretch">
+          <Megaphone className="w-3.5 sm:w-4 h-3.5 sm:h-4 animate-pulse" />
+          <span className="text-[10px] sm:text-xs font-semibold tracking-wide hidden md:inline">E'LONLAR</span>
         </div>
 
         {/* Navigation - Previous */}
         {announcements.length > 1 && (
           <button
             onClick={prevAnnouncement}
-            className="flex-shrink-0 p-2 hover:bg-red-800/50 transition-colors z-10"
+            className="flex-shrink-0 p-1 sm:p-1.5 md:p-2 hover:bg-red-800/50 transition-colors z-10"
             title="Oldingi"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -155,7 +161,7 @@ export default function MarqueeBanner({ userRole = 'ALL' }: MarqueeBannerProps) 
 
         {/* Announcement content */}
         <div 
-          className="flex-1 overflow-hidden px-4"
+          className="flex-1 overflow-hidden px-2 md:px-4 min-w-0"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
         >
@@ -163,12 +169,12 @@ export default function MarqueeBanner({ userRole = 'ALL' }: MarqueeBannerProps) 
             className={`transition-all duration-300 ${isAnimating ? 'opacity-0 transform -translate-y-2' : 'opacity-100 transform translate-y-0'}`}
           >
             {/* Title row */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {getTypeIcon(currentAnnouncement.type)}
-              <span className="px-2 py-0.5 bg-white/20 rounded text-xs font-medium">
+            <div className="flex items-center gap-1 md:gap-2 flex-wrap">
+              <span className="flex-shrink-0">{getTypeIcon(currentAnnouncement.type)}</span>
+              <span className="px-1.5 md:px-2 py-0.5 bg-white/20 rounded text-[10px] md:text-xs font-medium flex-shrink-0">
                 {getTypeBadge(currentAnnouncement.type)}
               </span>
-              <span className="font-semibold text-sm">
+              <span className="font-semibold text-xs md:text-sm break-words">
                 {currentAnnouncement.title}
               </span>
               {currentAnnouncement.link_url && (
@@ -176,18 +182,18 @@ export default function MarqueeBanner({ userRole = 'ALL' }: MarqueeBannerProps) 
                   href={currentAnnouncement.link_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center text-yellow-300 hover:text-yellow-200 transition-colors ml-2"
+                  className="inline-flex items-center text-yellow-300 hover:text-yellow-200 transition-colors ml-1 md:ml-2 flex-shrink-0"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <span className="text-xs underline">{currentAnnouncement.link_text || "Batafsil"}</span>
-                  <ExternalLink className="w-3 h-3 ml-1" />
+                  <span className="text-[10px] md:text-xs underline">{currentAnnouncement.link_text || "Batafsil"}</span>
+                  <ExternalLink className="w-3 h-3 ml-0.5 md:ml-1" />
                 </a>
               )}
             </div>
             
-            {/* Content row - TO'LIQ KO'RSATISH */}
+            {/* Content row - responsive with word break */}
             {currentAnnouncement.content && (
-              <p className="text-sm text-white/90 mt-1 leading-relaxed">
+              <p className="text-[11px] md:text-sm text-white/90 mt-1 leading-relaxed break-words">
                 {currentAnnouncement.content}
               </p>
             )}
@@ -195,11 +201,11 @@ export default function MarqueeBanner({ userRole = 'ALL' }: MarqueeBannerProps) 
         </div>
 
         {/* Counter and controls */}
-        <div className="flex-shrink-0 flex items-center gap-1 pr-2 z-10">
+        <div className="flex-shrink-0 flex items-center gap-0.5 md:gap-1 pr-1 md:pr-2 z-10">
           {/* Pause/Play button */}
           <button
             onClick={() => setIsPaused(!isPaused)}
-            className="p-1.5 hover:bg-red-800/50 rounded transition-colors"
+            className="p-1 md:p-1.5 hover:bg-red-800/50 rounded transition-colors"
             title={isPaused ? "Davom ettirish" : "To'xtatish"}
           >
             {isPaused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
@@ -207,7 +213,7 @@ export default function MarqueeBanner({ userRole = 'ALL' }: MarqueeBannerProps) 
 
           {/* Counter */}
           {announcements.length > 1 && (
-            <span className="text-xs bg-red-800/50 px-2 py-1 rounded">
+            <span className="text-[10px] md:text-xs bg-red-800/50 px-1.5 md:px-2 py-0.5 md:py-1 rounded">
               {currentIndex + 1}/{announcements.length}
             </span>
           )}
@@ -217,7 +223,7 @@ export default function MarqueeBanner({ userRole = 'ALL' }: MarqueeBannerProps) 
         {announcements.length > 1 && (
           <button
             onClick={nextAnnouncement}
-            className="flex-shrink-0 p-2 hover:bg-red-800/50 transition-colors z-10"
+            className="flex-shrink-0 p-1 md:p-2 hover:bg-red-800/50 transition-colors z-10"
             title="Keyingi"
           >
             <ChevronRight className="w-4 h-4" />
@@ -227,7 +233,7 @@ export default function MarqueeBanner({ userRole = 'ALL' }: MarqueeBannerProps) 
         {/* Close button */}
         <button
           onClick={() => setIsVisible(false)}
-          className="flex-shrink-0 p-2 hover:bg-red-800/50 transition-colors z-10 border-l border-red-500/30"
+          className="flex-shrink-0 p-1 md:p-2 hover:bg-red-800/50 transition-colors z-10 border-l border-red-500/30"
           title="Yopish"
         >
           <X className="w-4 h-4" />
