@@ -11,6 +11,7 @@ import { useAuth } from '@/components/AuthProvider';
 import Filters from '@/components/Filters';
 import MainLayout from '@/components/MainLayout';
 import { FilterOptions, PortfolioItemWithOwner, registrar } from '@/lib/api';
+import { getFileUrl } from '@/lib/config';
 import {
   Brain,
   CheckCircle,
@@ -390,7 +391,7 @@ export default function RegistrarPage() {
                       </p>
                     </div>
                     <a
-                      href={`http://localhost:4000${selectedPortfolio.file_url}`}
+                      href={getFileUrl(selectedPortfolio.file_url)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
@@ -403,7 +404,7 @@ export default function RegistrarPage() {
                   {selectedPortfolio.mime_type?.startsWith('image/') && (
                     <div className="mt-3">
                       <img
-                        src={`http://localhost:4000${selectedPortfolio.file_url}`}
+                        src={getFileUrl(selectedPortfolio.file_url)}
                         alt={selectedPortfolio.title}
                         className="max-w-full h-auto rounded-lg border border-red-200"
                         style={{ maxHeight: '300px', objectFit: 'contain' }}
@@ -414,7 +415,7 @@ export default function RegistrarPage() {
                   {selectedPortfolio.mime_type?.startsWith('video/') && (
                     <div className="mt-3">
                       <video
-                        src={`http://localhost:4000${selectedPortfolio.file_url}`}
+                        src={getFileUrl(selectedPortfolio.file_url)}
                         controls
                         className="max-w-full rounded-lg border border-red-200"
                         style={{ maxHeight: '300px' }}

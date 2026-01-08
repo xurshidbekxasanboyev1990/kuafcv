@@ -9,6 +9,7 @@
 import { useAuth } from '@/components/AuthProvider';
 import MainLayout from '@/components/MainLayout';
 import { portfolio, PortfolioItem } from '@/lib/api';
+import { getFileUrl } from '@/lib/config';
 import { AlertCircle, CheckCircle, Clock, Code, Download, File, Plus, X, XCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -118,7 +119,7 @@ export default function TechnicalPortfolioPage() {
                       <File size={24} className="text-red-400" />
                       <p className="text-red-700 text-sm font-medium">{item.file_name}</p>
                     </div>
-                    <a href={`http://localhost:4000${item.file_url}`} target="_blank" rel="noopener noreferrer" className="p-2 bg-red-100 rounded-lg hover:bg-red-200 text-red-600" aria-label="Faylni yuklab olish">
+                    <a href={getFileUrl(item.file_url)} target="_blank" rel="noopener noreferrer" className="p-2 bg-red-100 rounded-lg hover:bg-red-200 text-red-600" aria-label="Faylni yuklab olish">
                       <Download size={18} />
                     </a>
                   </div>

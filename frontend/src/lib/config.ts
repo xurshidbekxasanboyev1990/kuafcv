@@ -12,6 +12,27 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost
 // WebSocket URL - defaults to localhost for development  
 export const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:4000';
 
+/**
+ * Get full URL for file uploads/downloads
+ * Returns domain root without /api path
+ */
+export const getFileUrl = (path?: string | null): string => {
+  if (!path) return '';
+  
+  // If path already has protocol, return as is
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+  
+  // Get base URL without /api suffix
+  const baseUrl = API_BASE_URL.replace(/\/api\/?$/, '');
+  
+  // Ensure path starts with /
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  
+  return `${baseUrl}${normalizedPath}`;
+};
+
 // Environment detection
 export const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 export const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';

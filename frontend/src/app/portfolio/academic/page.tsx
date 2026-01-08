@@ -9,6 +9,7 @@
 import { useAuth } from '@/components/AuthProvider';
 import MainLayout from '@/components/MainLayout';
 import { portfolio, PortfolioItem } from '@/lib/api';
+import { getFileUrl } from '@/lib/config';
 import {
   AlertCircle,
   CheckCircle,
@@ -185,7 +186,7 @@ export default function AcademicPortfolioPage() {
                       </div>
                     </div>
                     <a
-                      href={`http://localhost:4000${item.file_url}`}
+                      href={getFileUrl(item.file_url)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-2 bg-red-100 rounded-lg hover:bg-red-200 text-red-600"

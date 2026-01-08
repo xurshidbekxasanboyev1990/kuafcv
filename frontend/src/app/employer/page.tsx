@@ -12,6 +12,7 @@ import Filters from '@/components/Filters';
 import MainLayout from '@/components/MainLayout';
 import { BookmarkButton, PortfolioComments, PortfolioRating } from '@/components/PortfolioFeatures';
 import { employer, FilterOptions, PortfolioItem, User } from '@/lib/api';
+import { getFileUrl } from '@/lib/config';
 import { Brain, Briefcase, Download, Eye, FileText, GraduationCap, Mail, MessageCircle, Phone, Star, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -324,7 +325,7 @@ export default function EmployerPage() {
                         <div className="ml-auto flex gap-2">
                           {item.file_url && (
                             <a
-                              href={`http://localhost:4000${item.file_url}`}
+                              href={getFileUrl(item.file_url)}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="p-1.5 md:p-2 bg-red-100 rounded-lg hover:bg-red-200 text-red-600"
@@ -394,7 +395,7 @@ export default function EmployerPage() {
               {/* File download */}
               {selectedPortfolioForDetails.file_url && (
                 <a
-                  href={`http://localhost:4000${selectedPortfolioForDetails.file_url}`}
+                  href={getFileUrl(selectedPortfolioForDetails.file_url)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"

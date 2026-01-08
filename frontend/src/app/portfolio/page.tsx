@@ -12,6 +12,7 @@ import FileAnalysis from '@/components/FileAnalysis';
 import MainLayout from '@/components/MainLayout';
 import { PortfolioStatsCard } from '@/components/PortfolioFeatures';
 import { portfolio, PortfolioItem } from '@/lib/api';
+import { getFileUrl } from '@/lib/config';
 import {
   AlertCircle,
   BarChart3,
@@ -333,7 +334,7 @@ export default function PortfolioPage() {
                           </p>
                         </div>
                         <a
-                          href={`http://localhost:4000${file.url}`}
+                          href={getFileUrl(file.url)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-1.5 md:p-2 bg-red-100 rounded-lg hover:bg-red-200 text-red-600 flex-shrink-0"
@@ -346,7 +347,7 @@ export default function PortfolioPage() {
                       {/* AI Fayl Tahlili tugmasi */}
                       <button
                         onClick={() => setFileAnalysis({
-                          url: `http://localhost:4000${file.url}`,
+                          url: getFileUrl(file.url),
                           name: file.name || item.title,
                           type: item.type,
                           mimeType: file.mime_type
@@ -370,10 +371,10 @@ export default function PortfolioPage() {
                       </p>
                     </div>
                     <a
-                      href={`http://localhost:4000${item.file_url}`}
+                      href={getFileUrl(item.file_url)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-1.5 md:p-2 bg-red-100 rounded-lg hover:bg-red-200 text-red-600 flex-shrink-0"
+                      className="p-2 bg-red-100 rounded-lg hover:bg-red-200 text-red-600"
                       aria-label="Faylni yuklab olish"
                       title="Faylni yuklab olish"
                     >
@@ -383,7 +384,7 @@ export default function PortfolioPage() {
                   {/* AI Fayl Tahlili tugmasi */}
                   <button
                     onClick={() => setFileAnalysis({
-                      url: `http://localhost:4000${item.file_url}`,
+                      url: getFileUrl(item.file_url),
                       name: item.file_name || item.title,
                       type: item.type,
                       mimeType: item.mime_type
