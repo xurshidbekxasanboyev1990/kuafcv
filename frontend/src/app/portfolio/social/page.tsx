@@ -13,6 +13,7 @@ import { getFileUrl } from '@/lib/config';
 import {
   AlertCircle,
   Download,
+  Eye,
   File,
   FileText,
   Heart,
@@ -26,7 +27,7 @@ import { useEffect, useRef, useState } from 'react';
 
 // UI Components
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -43,6 +44,8 @@ export default function SocialPortfolioPage() {
   const [loadingData, setLoadingData] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [showFilesModal, setShowFilesModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null);
 
   useEffect(() => {
     if (!loading && (!user || user.role !== 'STUDENT')) {
@@ -226,6 +229,19 @@ export default function SocialPortfolioPage() {
                       )}
                     </div>
                   </CardContent>
+                  <CardFooter className="p-3 bg-gray-50 border-t">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedItem(item);
+                        setShowFilesModal(true);
+                      }}
+                      className="text-muted-foreground hover:text-primary w-full"
+                    >
+                      <Eye className="h-4 w-4 mr-2" /> Ko'rish
+                    </Button>
+                  </CardFooter>
                 </Card>
               ))}
             </div>
@@ -244,6 +260,93 @@ export default function SocialPortfolioPage() {
             setTimeout(() => setMessage(null), 5000);
           }}
         />
+      )}
+
+      {showFilesModal && selectedItem && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setShowFilesModal(false)}>
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 border-b flex justify-between items-start">
+              <div>
+                <h2 className="text-2xl font-bold mb-2">{selectedItem.title}</h2>
+                <div className="flex items-center gap-2">
+                  <StatusBadge status={selectedItem.approval_status} />
+                </div>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setShowFilesModal(false)} className="h-8 w-8">
+                <X size={20} />
+              </Button>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[calc(80vh-140px)]">
+              {selectedItem.description && (
+                <p className="text-muted-foreground mb-6">{selectedItem.description}</p>
+              )}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-lg mb-3">Fayllar ({selectedItem.files?.length || (selectedItem.file_url ? 1 : 0)})</h3>
+                {selectedItem.files && selectedItem.files.length > 0 ? (
+                  selectedItem.files.map((file, idx) => (
+                    <div key={idx} className="p-4 bg-muted/50 rounded-lg flex items-center justify-between hover:bg-muted transition-colors group">
+                      <div className="flex items-center gap-4 overflow-hidden flex-1">
+                        <div className="h-12 w-12 bg-background rounded-lg flex items-center justify-center border shrink-0">
+                          <File size={24} className="text-primary" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium truncate">{file.name || file.file_name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {file.size ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 ml-4">
+                        <Button variant="outline" size="sm" asChild className="gap-2">
+                          <a href={getFileUrl(file.url)} target="_blank" rel="noopener noreferrer">
+                            <Eye size={16} />
+                            Ochish
+                          </a>
+                        </Button>
+                        <Button variant="outline" size="sm" asChild className="gap-2">
+                          <a href={getFileUrl(file.url)} download>
+                            <Download size={16} />
+                            Yuklash
+                          </a>
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                ) : selectedItem.file_url ? (
+                  <div className="p-4 bg-muted/50 rounded-lg flex items-center justify-between hover:bg-muted transition-colors group">
+                    <div className="flex items-center gap-4 overflow-hidden flex-1">
+                      <div className="h-12 w-12 bg-background rounded-lg flex items-center justify-center border shrink-0">
+                        <File size={24} className="text-primary" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium truncate">{selectedItem.file_name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedItem.size_bytes ? `${(selectedItem.size_bytes / 1024 / 1024).toFixed(2)} MB` : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 ml-4">
+                      <Button variant="outline" size="sm" asChild className="gap-2">
+                        <a href={getFileUrl(selectedItem.file_url)} target="_blank" rel="noopener noreferrer">
+                          <Eye size={16} />
+                          Ochish
+                        </a>
+                      </Button>
+                      <Button variant="outline" size="sm" asChild className="gap-2">
+                        <a href={getFileUrl(selectedItem.file_url)} download>
+                          <Download size={16} />
+                          Yuklash
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">Fayl topilmadi</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </MainLayout>
   );
