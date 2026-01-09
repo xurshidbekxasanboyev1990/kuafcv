@@ -18,6 +18,7 @@ import {
   Briefcase,
   Download,
   Eye,
+  File,
   FileText,
   GraduationCap,
   Mail,
@@ -54,6 +55,8 @@ export default function EmployerPage() {
   } | null>(null);
   const [showAIAnalysis, setShowAIAnalysis] = useState<string | null>(null);
   const [selectedPortfolioForDetails, setSelectedPortfolioForDetails] = useState<PortfolioItem | null>(null);
+  const [showFilesModal, setShowFilesModal] = useState(false);
+  const [selectedPortfolioForFiles, setSelectedPortfolioForFiles] = useState<PortfolioItem | null>(null);
 
   useEffect(() => {
     if (!loading && (!user || user.role !== 'EMPLOYER')) {
@@ -345,6 +348,16 @@ export default function EmployerPage() {
 
                         {/* Action buttons */}
                         <div className="ml-auto flex gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedPortfolioForFiles(item);
+                              setShowFilesModal(true);
+                            }}
+                            className="p-1.5 md:p-2 bg-blue-100 rounded-lg hover:bg-blue-200 text-blue-600"
+                            title="Fayllarni ko'rish"
+                          >
+                            <Eye size={14} />
+                          </button>
                           {item.file_url && (
                             <a
                               href={getFileUrl(item.file_url)}
@@ -445,6 +458,102 @@ export default function EmployerPage() {
               <PortfolioComments
                 portfolioId={selectedPortfolioForDetails.id}
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Files Modal */}
+      {showFilesModal && selectedPortfolioForFiles && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setShowFilesModal(false)}>
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 border-b flex justify-between items-start">
+              <div>
+                <h2 className="text-2xl font-bold mb-2">{selectedPortfolioForFiles.title}</h2>
+                <p className="text-sm text-gray-500">{selectedPortfolioForFiles.type}</p>
+              </div>
+              <button onClick={() => setShowFilesModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[calc(80vh-140px)]">
+              {selectedPortfolioForFiles.description && (
+                <p className="text-muted-foreground mb-6">{selectedPortfolioForFiles.description}</p>
+              )}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-lg mb-3">Fayllar ({selectedPortfolioForFiles.files?.length || (selectedPortfolioForFiles.file_url ? 1 : 0)})</h3>
+                {selectedPortfolioForFiles.files && selectedPortfolioForFiles.files.length > 0 ? (
+                  selectedPortfolioForFiles.files.map((file, idx) => (
+                    <div key={idx} className="p-4 bg-muted/50 rounded-lg flex items-center justify-between hover:bg-muted transition-colors group">
+                      <div className="flex items-center gap-4 overflow-hidden flex-1">
+                        <div className="h-12 w-12 bg-background rounded-lg flex items-center justify-center border shrink-0">
+                          <File size={24} className="text-primary" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium truncate">{file.name || file.file_name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {file.size ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 ml-4">
+                        <a
+                          href={getFileUrl(file.url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm flex items-center gap-2"
+                        >
+                          <Eye size={16} />
+                          Ochish
+                        </a>
+                        <a
+                          href={getFileUrl(file.url)}
+                          download
+                          className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm flex items-center gap-2"
+                        >
+                          <Download size={16} />
+                          Yuklash
+                        </a>
+                      </div>
+                    </div>
+                  ))
+                ) : selectedPortfolioForFiles.file_url ? (
+                  <div className="p-4 bg-muted/50 rounded-lg flex items-center justify-between hover:bg-muted transition-colors group">
+                    <div className="flex items-center gap-4 overflow-hidden flex-1">
+                      <div className="h-12 w-12 bg-background rounded-lg flex items-center justify-center border shrink-0">
+                        <File size={24} className="text-primary" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium truncate">{selectedPortfolioForFiles.file_name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedPortfolioForFiles.size_bytes ? `${(selectedPortfolioForFiles.size_bytes / 1024 / 1024).toFixed(2)} MB` : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 ml-4">
+                      <a
+                        href={getFileUrl(selectedPortfolioForFiles.file_url)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm flex items-center gap-2"
+                      >
+                        <Eye size={16} />
+                        Ochish
+                      </a>
+                      <a
+                        href={getFileUrl(selectedPortfolioForFiles.file_url)}
+                        download
+                        className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm flex items-center gap-2"
+                      >
+                        <Download size={16} />
+                        Yuklash
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">Fayl topilmadi</p>
+                )}
+              </div>
             </div>
           </div>
         </div>

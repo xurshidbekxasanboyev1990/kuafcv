@@ -426,37 +426,82 @@ export default function RegistrarPage() {
                   )}
 
                   {/* Fayl */}
-                  {selectedPortfolio.file_url && (
+                  {(selectedPortfolio.files && selectedPortfolio.files.length > 0) || selectedPortfolio.file_url ? (
                     <div className="mb-6">
-                      <h4 className="text-red-700 font-medium mb-2">Fayl</h4>
-                      <div className="p-4 bg-red-50 rounded-lg flex items-center gap-4">
-                        {selectedPortfolio.mime_type?.startsWith('image/') ? (
-                          <Image size={32} className="text-blue-500" />
-                        ) : selectedPortfolio.mime_type?.startsWith('video/') ? (
-                          <Video size={32} className="text-purple-500" />
-                        ) : (
-                          <File size={32} className="text-red-500" />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-red-700 font-medium truncate">{selectedPortfolio.file_name}</p>
-                          <p className="text-red-400 text-sm">
-                            {selectedPortfolio.size_bytes
-                              ? `${(selectedPortfolio.size_bytes / 1024 / 1024).toFixed(2)} MB`
-                              : ''}
-                          </p>
-                        </div>
-                        <a
-                          href={getFileUrl(selectedPortfolio.file_url)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                        >
-                          <Download size={18} />
-                          <span>Yuklab olish</span>
-                        </a>
+                      <h4 className="text-red-700 font-medium mb-2">Fayllar ({selectedPortfolio.files?.length || 1})</h4>
+                      <div className="space-y-3">
+                        {selectedPortfolio.files && selectedPortfolio.files.length > 0 ? (
+                          selectedPortfolio.files.map((file, idx) => (
+                            <div key={idx} className="p-4 bg-red-50 rounded-lg flex items-center gap-4">
+                              <File size={32} className="text-red-500" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-red-700 font-medium truncate">{file.name || file.file_name}</p>
+                                <p className="text-red-400 text-sm">
+                                  {file.size ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : ''}
+                                </p>
+                              </div>
+                              <div className="flex gap-2">
+                                <a
+                                  href={getFileUrl(file.url)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                                >
+                                  <Eye size={16} />
+                                  Ochish
+                                </a>
+                                <a
+                                  href={getFileUrl(file.url)}
+                                  download
+                                  className="flex items-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
+                                >
+                                  <Download size={16} />
+                                  Yuklash
+                                </a>
+                              </div>
+                            </div>
+                          ))
+                        ) : selectedPortfolio.file_url ? (
+                          <div className="p-4 bg-red-50 rounded-lg flex items-center gap-4">
+                            {selectedPortfolio.mime_type?.startsWith('image/') ? (
+                              <Image size={32} className="text-blue-500" />
+                            ) : selectedPortfolio.mime_type?.startsWith('video/') ? (
+                              <Video size={32} className="text-purple-500" />
+                            ) : (
+                              <File size={32} className="text-red-500" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-red-700 font-medium truncate">{selectedPortfolio.file_name}</p>
+                              <p className="text-red-400 text-sm">
+                                {selectedPortfolio.size_bytes
+                                  ? `${(selectedPortfolio.size_bytes / 1024 / 1024).toFixed(2)} MB`
+                                  : ''}
+                              </p>
+                            </div>
+                            <div className="flex gap-2">
+                              <a
+                                href={getFileUrl(selectedPortfolio.file_url)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                              >
+                                <Eye size={16} />
+                                Ochish
+                              </a>
+                              <a
+                                href={getFileUrl(selectedPortfolio.file_url)}
+                                download
+                                className="flex items-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
+                              >
+                                <Download size={16} />
+                                Yuklash
+                              </a>
+                            </div>
+                          </div>
+                        ) : null}
                       </div>
-                      {/* Rasm preview */}
-                      {selectedPortfolio.mime_type?.startsWith('image/') && (
+                      {/* Rasm preview - faqat birinchi fayl uchun */}
+                      {selectedPortfolio.mime_type?.startsWith('image/') && selectedPortfolio.file_url && (
                         <div className="mt-3">
                           <img
                             src={getFileUrl(selectedPortfolio.file_url)}
@@ -466,8 +511,8 @@ export default function RegistrarPage() {
                           />
                         </div>
                       )}
-                      {/* Video preview */}
-                      {selectedPortfolio.mime_type?.startsWith('video/') && (
+                      {/* Video preview - faqat birinchi fayl uchun */}
+                      {selectedPortfolio.mime_type?.startsWith('video/') && selectedPortfolio.file_url && (
                         <div className="mt-3">
                           <video
                             src={getFileUrl(selectedPortfolio.file_url)}
@@ -478,7 +523,7 @@ export default function RegistrarPage() {
                         </div>
                       )}
                     </div>
-                  )}
+                  ) : null}
 
                   {/* Tags */}
                   {selectedPortfolio.tags && selectedPortfolio.tags.length > 0 && (
