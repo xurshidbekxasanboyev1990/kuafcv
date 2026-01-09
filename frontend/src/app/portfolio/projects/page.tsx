@@ -160,7 +160,35 @@ export default function ProjectsPortfolioPage() {
                     </p>
                   )}
 
-                  {item.file_url && (
+                  {/* Display all files */}
+                  {item.files && item.files.length > 0 ? (
+                    <div className="space-y-2">
+                      {item.files.map((file, idx) => (
+                        <div key={idx} className="p-3 bg-muted/50 rounded-lg flex items-center justify-between group-hover:bg-muted transition-colors">
+                          <div className="flex items-center gap-3 overflow-hidden">
+                            <div className="h-8 w-8 bg-background rounded flex items-center justify-center border shrink-0">
+                              <File size={16} className="text-primary" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">{file.name || file.file_name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {file.size ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : ''}
+                              </p>
+                            </div>
+                          </div>
+                          <a
+                            href={getFileUrl(file.url)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 hover:bg-background rounded-md text-muted-foreground hover:text-primary transition-colors focus:ring-2 ring-primary/20 outline-none"
+                            aria-label="Faylni yuklab olish"
+                          >
+                            <Download size={18} />
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  ) : item.file_url && (
                     <div className="p-3 bg-muted/50 rounded-lg flex items-center justify-between group-hover:bg-muted transition-colors">
                       <div className="flex items-center gap-3 overflow-hidden">
                         <div className="h-8 w-8 bg-background rounded flex items-center justify-center border shrink-0">

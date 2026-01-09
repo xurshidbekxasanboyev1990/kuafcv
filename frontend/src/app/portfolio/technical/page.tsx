@@ -179,7 +179,29 @@ export default function TechnicalPortfolioPage() {
 
                     {/* Footer */}
                     <div className="pt-4 mt-auto border-t">
-                      {item.file_url ? (
+                      {item.files && item.files.length > 0 ? (
+                        <div className="space-y-2">
+                          {item.files.map((file, idx) => (
+                            <div key={idx} className="flex items-center justify-between gap-3 bg-muted/50 p-2.5 rounded-md group-hover:bg-muted transition-colors">
+                              <div className="flex items-center gap-2 overflow-hidden">
+                                <FileText className="w-4 h-4 text-primary shrink-0" />
+                                <span className="text-xs font-medium truncate">
+                                  {file.name || file.file_name || 'Hujjat'}
+                                </span>
+                              </div>
+                              <a
+                                href={getFileUrl(file.url)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1.5 hover:bg-background rounded-md text-primary transition-colors focus:ring-2 focus:ring-ring"
+                                title="Faylni yuklab olish"
+                              >
+                                <Download className="w-4 h-4" />
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      ) : item.file_url ? (
                         <div className="flex items-center justify-between gap-3 bg-muted/50 p-2.5 rounded-md group-hover:bg-muted transition-colors">
                           <div className="flex items-center gap-2 overflow-hidden">
                             <FileText className="w-4 h-4 text-primary shrink-0" />

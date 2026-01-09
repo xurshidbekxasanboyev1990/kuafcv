@@ -318,7 +318,8 @@ export interface PortfolioItem {
 
 export interface FileInfo {
   url: string;
-  name: string;
+  name?: string;
+  file_name?: string; // Backend compatibility
   mime_type: string;
   size: number;
 }
