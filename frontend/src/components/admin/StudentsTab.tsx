@@ -6,18 +6,20 @@
 // Fully adapt to the current programming language, framework, and project context.
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { admin, FilterOptions, User } from '@/lib/api';
+import { getFileUrl } from '@/lib/config';
 import {
-  Search,
-  RefreshCw,
-  Upload,
-  X,
   CheckCircle,
-  Trash2,
   ChevronLeft,
   ChevronRight,
+  Lock,
+  RefreshCw,
+  Search,
+  Trash2,
+  Upload,
+  X,
 } from 'lucide-react';
-import { admin, User, FilterOptions } from '@/lib/api';
+import React, { useEffect, useState } from 'react';
 
 interface StudentsTabProps {
   setMessage: (message: { type: 'success' | 'error'; text: string }) => void;
@@ -36,6 +38,12 @@ export default function StudentsTab({ setMessage }: StudentsTabProps) {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 50;
+
+  // Password reset state
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [selectedUserForPassword, setSelectedUserForPassword] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
 
   const fetchStudents = async () => {
     setLoading(true);
@@ -86,6 +94,35 @@ export default function StudentsTab({ setMessage }: StudentsTabProps) {
       fetchStudents();
     } catch (err) {
       setMessage({ type: 'error', text: "O'chirishda xatolik" });
+    }
+  };
+
+  const openPasswordModal = (user: User) => {
+    setSelectedUserForPassword(user);
+    setNewPassword('');
+    setPasswordModalOpen(true);
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUserForPassword || !newPassword) return;
+
+    if (newPassword.length < 8) {
+      setMessage({ type: 'error', text: "Parol kamida 8 ta belgidan iborat bo'lishi kerak" });
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      await admin.changeUserPassword(selectedUserForPassword.id, newPassword);
+      setMessage({ type: 'success', text: "Parol muvaffaqiyatli o'zgartirildi" });
+      setPasswordModalOpen(false);
+      setSelectedUserForPassword(null);
+      setNewPassword('');
+    } catch (err) {
+      setMessage({ type: 'error', text: err instanceof Error ? err.message : "Parolni o'zgartirishda xatolik" });
+    } finally {
+      setPasswordLoading(false);
     }
   };
 
@@ -191,11 +228,21 @@ export default function StudentsTab({ setMessage }: StudentsTabProps) {
                   <tr key={u.id} className="hover:bg-red-50">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                          <span className="text-red-600 font-bold text-sm">
-                            {u.full_name.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
+                        {u.profile_image ? (
+                          <div className="w-10 h-10 rounded-full overflow-hidden border border-red-200">
+                            <img
+                              src={getFileUrl(u.profile_image)}
+                              alt="Profile"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                            <span className="text-red-600 font-bold text-sm">
+                              {u.full_name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
                         <div>
                           <p className="text-red-800 font-medium text-sm">{u.full_name}</p>
                           <p className="text-red-400 text-xs">{u.email}</p>
@@ -209,8 +256,16 @@ export default function StudentsTab({ setMessage }: StudentsTabProps) {
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
                         <button
+                          onClick={() => openPasswordModal(u)}
+                          className="p-2 text-yellow-500 hover:bg-yellow-50 rounded-lg"
+                          title="Parolni o'zgartirish"
+                        >
+                          <Lock size={16} />
+                        </button>
+                        <button
                           onClick={() => handleDelete(u.id)}
                           className="p-2 text-red-500 hover:bg-red-100 rounded-lg"
+                          title="O'chirish"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -233,14 +288,27 @@ export default function StudentsTab({ setMessage }: StudentsTabProps) {
             users.map((u) => (
               <div key={u.id} className="p-4">
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                    <span className="text-red-600 font-bold">{u.full_name.charAt(0).toUpperCase()}</span>
-                  </div>
+                  {u.profile_image ? (
+                    <div className="w-12 h-12 rounded-full overflow-hidden border border-red-200">
+                      <img
+                        src={getFileUrl(u.profile_image)}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                      <span className="text-red-600 font-bold">{u.full_name.charAt(0).toUpperCase()}</span>
+                    </div>
+                  )}
                   <div className="flex-1">
                     <p className="text-red-800 font-medium text-sm">{u.full_name}</p>
                     <p className="text-red-400 text-xs">{u.email}</p>
                     <p className="text-red-500 text-xs mt-1">ID: {u.student_id || '-'}</p>
                   </div>
+                  <button onClick={() => openPasswordModal(u)} className="p-2 text-yellow-500 hover:bg-yellow-50 rounded-lg">
+                    <Lock size={16} />
+                  </button>
                   <button onClick={() => handleDelete(u.id)} className="p-2 text-red-500 hover:bg-red-100 rounded-lg">
                     <Trash2 size={16} />
                   </button>
@@ -292,75 +360,128 @@ export default function StudentsTab({ setMessage }: StudentsTabProps) {
 
       {/* Import Modal */}
       {showImport && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-red-800">Talabalarni Import</h2>
-              <button onClick={() => setShowImport(false)} className="p-2 hover:bg-red-100 rounded-lg">
-                <X size={20} className="text-red-500" />
-              </button>
-            </div>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 relative">
+            <button
+              onClick={() => setShowImport(false)}
+              className="absolute right-4 top-4 text-gray-400 hover:text-gray-600"
+            >
+              <X size={20} />
+            </button>
+            <h3 className="text-lg font-bold text-gray-800 mb-4">Talabalarni import qilish</h3>
 
-            <div className="space-y-4">
-              <div
-                className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-                  importFile ? 'border-green-300 bg-green-50' : 'border-red-200 hover:border-red-400'
-                }`}
-                onClick={() => document.getElementById('import-file')?.click()}
-              >
-                <input
-                  id="import-file"
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                  className="hidden"
-                />
-                {importFile ? (
-                  <div>
-                    <CheckCircle className="mx-auto text-green-500 mb-2" size={28} />
-                    <p className="text-green-700 font-medium text-sm">{importFile.name}</p>
-                    <p className="text-green-600 text-xs">{(importFile.size / 1024 / 1024).toFixed(2)} MB</p>
-                  </div>
-                ) : (
-                  <div>
-                    <Upload className="mx-auto text-red-400 mb-2" size={28} />
-                    <p className="text-red-600 text-sm">Excel fayl tanlang</p>
-                    <p className="text-red-400 text-xs mt-1">.xlsx, .xls, .csv</p>
-                  </div>
-                )}
-              </div>
-
-              {importResult && (
-                <div className={`p-4 rounded-lg text-sm ${importResult.error ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
-                  {importResult.error ? (
-                    <p>{importResult.error}</p>
-                  ) : (
-                    <div>
-                      <p><strong>{importResult.imported}</strong> ta yangi qo'shildi</p>
-                      <p><strong>{importResult.updated}</strong> ta yangilandi</p>
-                      {importResult.skipped > 0 && <p><strong>{importResult.skipped}</strong> ta o'tkazib yuborildi</p>}
-                    </div>
-                  )}
+            {!importResult ? (
+              <div className="space-y-4">
+                <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center">
+                  <Upload className="mx-auto text-gray-400 mb-2" size={32} />
+                  <p className="text-sm text-gray-500 mb-4">Excel faylni yuklang (.xlsx, .xls)</p>
+                  <input
+                    type="file"
+                    accept=".xlsx, .xls"
+                    onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                    className="block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-full file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-red-50 file:text-red-700
+                      hover:file:bg-red-100"
+                  />
                 </div>
-              )}
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowImport(false)}
-                  className="flex-1 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 text-sm"
-                >
-                  Yopish
-                </button>
                 <button
                   onClick={handleImport}
                   disabled={!importFile || importing}
-                  className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-green-300 text-sm"
+                  className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
                 >
-                  {importing ? 'Import...' : 'Import'}
+                  {importing ? 'Yuklanmoqda...' : 'Import qilish'}
+                </button>
+              </div>
+            ) : (
+              <div className="text-center">
+                {importResult.error ? (
+                  <div className="text-red-600 mb-4">
+                    <p className="font-medium">Xatolik:</p>
+                    <p className="text-sm">{importResult.error}</p>
+                  </div>
+                ) : (
+                  <div className="text-green-600 mb-4">
+                    <CheckCircle className="mx-auto mb-2" size={32} />
+                    <p className="font-bold">Muvaffaqiyatli import qilindi!</p>
+                    <p className="text-sm mt-1">Yaratildi: {importResult.created}</p>
+                    <p className="text-sm">Yangilandi: {importResult.updated}</p>
+                    <p className="text-sm">Xatolar: {importResult.errors}</p>
+                  </div>
+                )}
+                <button
+                  onClick={() => {
+                    setShowImport(false);
+                    setImportResult(null);
+                    setImportFile(null);
+                  }}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                >
+                  Yopish
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Password Change Modal */}
+      {passwordModalOpen && selectedUserForPassword && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <form onSubmit={handlePasswordChange} className="bg-white rounded-xl max-w-md w-full p-6 relative">
+            <button
+              type="button"
+              onClick={() => setPasswordModalOpen(false)}
+              className="absolute right-4 top-4 text-gray-400 hover:text-gray-600"
+            >
+              <X size={20} />
+            </button>
+            <h3 className="text-lg font-bold text-gray-800 mb-1">Parolni o'zgartirish</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Talaba: <b>{selectedUserForPassword.full_name}</b>
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Yangi parol
+                </label>
+                <input
+                  type="text"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Yangi parol (min 8 ta belgi)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                  minLength={8}
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setPasswordModalOpen(false)}
+                  className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  type="submit"
+                  disabled={passwordLoading}
+                  className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 disabled:opacity-70 flex items-center gap-2"
+                >
+                  {passwordLoading ? (
+                    <RefreshCw className="animate-spin" size={16} />
+                  ) : (
+                    <Lock size={16} />
+                  )}
+                  O'zgartirish
                 </button>
               </div>
             </div>
-          </div>
+          </form>
         </div>
       )}
     </div>

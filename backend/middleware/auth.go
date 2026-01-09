@@ -20,7 +20,7 @@ func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var token string
 
-		// Try to get token from Authorization header first
+		// Try to get token from Authorization header first (preferred method)
 		authHeader := c.GetHeader("Authorization")
 		if authHeader != "" {
 			parts := strings.Split(authHeader, " ")
@@ -29,8 +29,9 @@ func AuthMiddleware() gin.HandlerFunc {
 			}
 		}
 
-		// If no header token, try query parameter (for WebSocket)
-		if token == "" {
+		// SECURITY: Only allow query parameter token for WebSocket connections
+		// URL parameters appear in logs and browser history - security risk for normal requests
+		if token == "" && IsWebSocketRequest(c) {
 			token = c.Query("token")
 		}
 

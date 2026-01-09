@@ -376,11 +376,13 @@ func CreatePortfolio(c *gin.Context) {
 // PUT /api/portfolio/:id - Portfolio yangilash
 func UpdatePortfolio(c *gin.Context) {
 	userID := c.GetString("user_id")
+	userRole := c.GetString("role")
 	portfolioID := c.Param("id")
 
 	// Faqat o'z portfoliosini yangilash mumkin
 	var ownerID string
-	err := database.DB.QueryRow(`SELECT owner_id FROM portfolio_items WHERE id = $1`, portfolioID).Scan(&ownerID)
+	var status string
+	err := database.DB.QueryRow(`SELECT owner_id, approval_status FROM portfolio_items WHERE id = $1`, portfolioID).Scan(&ownerID, &status)
 	if err == sql.ErrNoRows {
 		c.JSON(http.StatusNotFound, models.APIError{
 			Error:   "not_found",
@@ -389,10 +391,24 @@ func UpdatePortfolio(c *gin.Context) {
 		})
 		return
 	}
+
+	// Check ownership
 	if ownerID != userID {
 		c.JSON(http.StatusForbidden, models.APIError{
 			Error:   "forbidden",
 			Message: "Bu portfolioni yangilashga ruxsat yo'q",
+			Code:    403,
+		})
+		return
+	}
+
+	// Check status constraints for students
+	// Faqat PENDING statusda tahrirlash mumkin
+	// APPROVED yoki REJECTED bo'lsa tahrirlash taqiqlanadi (admin bundan mustasno bo'lishi mumkin, lekin talaba uchun yopiq)
+	if userRole == string(models.RoleStudent) && status != string(models.StatusPending) {
+		c.JSON(http.StatusForbidden, models.APIError{
+			Error:   "forbidden",
+			Message: "Tasdiqlangan yoki rad etilgan portfolioni o'zgartirib bo'lmaydi",
 			Code:    403,
 		})
 		return
@@ -502,7 +518,7 @@ func GetAllPortfolios(c *gin.Context) {
 		SELECT p.id, p.type, p.title, p.description, p.category, p.tags, p.file_url, p.file_name, 
 		       p.mime_type, p.size_bytes, COALESCE(p.files, '[]'::jsonb) as files, p.owner_id, p.approval_status, p.approved_by, 
 		       p.approved_at, p.rejection_reason, p.created_at, p.updated_at,
-		       u.id, u.email, u.role, u.full_name, u.student_id, u.student_data, u.created_at
+		       u.id, u.email, u.role, u.full_name, u.student_id, u.student_data, u.created_at, u.profile_image
 		FROM portfolio_items p
 		JOIN users u ON p.owner_id = u.id
 		WHERE 1=1
@@ -593,7 +609,7 @@ func GetAllPortfolios(c *gin.Context) {
 			&item.OwnerID, &item.ApprovalStatus, &item.ApprovedBy, &item.ApprovedAt,
 			&item.RejectionReason, &item.CreatedAt, &item.UpdatedAt,
 			&owner.ID, &owner.Email, &owner.Role, &owner.FullName, &owner.StudentID,
-			&studentDataJSON, &owner.CreatedAt,
+			&studentDataJSON, &owner.CreatedAt, &owner.ProfileImage,
 		)
 		if err != nil {
 			continue

@@ -12,8 +12,6 @@ import { portfolio, PortfolioItem } from '@/lib/api';
 import { getFileUrl } from '@/lib/config';
 import {
   AlertCircle,
-  CheckCircle,
-  Clock,
   Download,
   File,
   FileText,
@@ -21,10 +19,17 @@ import {
   Plus,
   Upload,
   X,
-  XCircle,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+
+// UI Components
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge, StatusBadge } from '@/components/ui/StatusBadge';
 
 const CATEGORY = 'ACADEMIC';
 const CATEGORY_LABEL = 'Akademik faoliyat';
@@ -62,32 +67,6 @@ export default function AcademicPortfolioPage() {
     }
   }, [user]);
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'APPROVED':
-        return (
-          <span className="flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-            <CheckCircle size={14} />
-            Tasdiqlangan
-          </span>
-        );
-      case 'REJECTED':
-        return (
-          <span className="flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
-            <XCircle size={14} />
-            Rad etilgan
-          </span>
-        );
-      default:
-        return (
-          <span className="flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
-            <Clock size={14} />
-            Kutilmoqda
-          </span>
-        );
-    }
-  };
-
   const getTypeLabel = (type: string) => {
     switch (type) {
       case 'PROJECT':
@@ -96,6 +75,10 @@ export default function AcademicPortfolioPage() {
         return '🏆 Sertifikat';
       case 'DOCUMENT':
         return '📄 Hujjat';
+      case 'PUBLICATION':
+        return '📚 Nashr';
+      case 'AWARD':
+        return '🥇 Mukofot';
       default:
         return '📁 Boshqa';
     }
@@ -103,110 +86,136 @@ export default function AcademicPortfolioPage() {
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-red-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-red-500 border-t-transparent"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
       </div>
     );
   }
 
   return (
     <MainLayout showMarquee={false}>
-      <div className="p-4 md:p-8">
+      <div className="p-4 md:p-8 space-y-6">
         {message && (
-          <div className={`mb-6 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+          <div className={`p-4 rounded-lg flex items-center gap-2 ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-destructive/10 text-destructive border border-destructive/20'
             }`}>
+            {message.type === 'error' && <AlertCircle size={18} />}
             {message.text}
           </div>
         )}
 
-        <div className="flex items-start justify-between mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-red-800 flex items-center gap-2">
-              <span className="text-3xl">{CATEGORY_ICON}</span>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
+              <span className="text-4xl">{CATEGORY_ICON}</span>
               {CATEGORY_LABEL}
             </h1>
-            <p className="text-red-600 mt-1">Jami: {items.length} ta</p>
-            <p className="text-sm text-red-500 mt-2">
-              Ilmiy maqolalar, tezislar, konferensiya ishtiroklar, grant loyihalar va boshqa akademik yutuqlar
+            <p className="text-muted-foreground mt-2 text-lg">
+              Ilmiy maqolalar, tezislar, konferensiya ishtiroklar, grant loyihalar va boshqa akademik yutuqlar.
             </p>
           </div>
-          <button
+          <Button
             onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            size="lg"
+            className="gap-2 shadow-sm"
           >
             <Plus size={20} />
-            <span>Yangi qo'shish</span>
-          </button>
+            Yangi qo'shish
+          </Button>
         </div>
 
         {loadingData ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-red-500 border-t-transparent"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="overflow-hidden">
+                <CardHeader className="pb-3">
+                  <Skeleton className="h-6 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-1/4" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-5/6" />
+                  <div className="mt-4 flex gap-2">
+                    <Skeleton className="h-6 w-16 rounded-full" />
+                    <Skeleton className="h-6 w-16 rounded-full" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         ) : items.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-xl border border-red-100">
-            <GraduationCap className="mx-auto text-red-300 mb-4" size={64} />
-            <h3 className="text-lg font-medium text-red-800 mb-2">Hozircha akademik portfolio yo'q</h3>
-            <p className="text-red-600 mb-4">Birinchi akademik yutuqingizni qo'shing</p>
-            <button
-              onClick={() => setShowModal(true)}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-            >
-              Portfolio qo'shish
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {items.map((item) => (
-              <div
-                key={item.id}
-                className="bg-white rounded-xl p-6 border border-red-100 shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-red-800">{item.title}</h3>
-                    <p className="text-red-500 text-sm">{getTypeLabel(item.type)}</p>
-                  </div>
-                  {getStatusBadge(item.approval_status)}
-                </div>
-
-                {item.description && (
-                  <p className="text-red-600 text-sm mb-4 line-clamp-2">{item.description}</p>
-                )}
-
-                {item.file_url && (
-                  <div className="p-3 bg-red-50 rounded-lg flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <File size={24} className="text-red-400" />
-                      <div>
-                        <p className="text-red-700 text-sm font-medium">{item.file_name}</p>
-                        <p className="text-red-400 text-xs">
-                          {item.size_bytes ? `${(item.size_bytes / 1024 / 1024).toFixed(2)} MB` : ''}
-                        </p>
-                      </div>
-                    </div>
-                    <a
-                      href={getFileUrl(item.file_url)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2 bg-red-100 rounded-lg hover:bg-red-200 text-red-600"
-                      aria-label="Faylni yuklab olish"
-                    >
-                      <Download size={18} />
-                    </a>
-                  </div>
-                )}
-
-                {item.tags && item.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    {item.tags.map((tag, idx) => (
-                      <span key={idx} className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
+          <Card className="border-dashed">
+            <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="bg-primary/10 p-4 rounded-full mb-4">
+                <GraduationCap className="h-12 w-12 text-primary" />
               </div>
+              <h3 className="text-xl font-semibold mb-2">Hozircha akademik portfolio yo'q</h3>
+              <p className="text-muted-foreground max-w-sm mb-6">
+                Birinchi akademik yutuqingizni qo'shing va ilmiy faoliyatingizni namoyish eting.
+              </p>
+              <Button onClick={() => setShowModal(true)}>
+                <Plus size={18} className="mr-2" />
+                Portfolio qo'shish
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {items.map((item) => (
+              <Card key={item.id} className="group hover:shadow-md transition-shadow duration-200">
+                <CardHeader className="pb-3 space-y-3">
+                  <div className="flex justify-between items-start gap-4">
+                    <Badge variant="secondary" className="font-normal">
+                      {getTypeLabel(item.type)}
+                    </Badge>
+                    <StatusBadge status={item.approval_status} />
+                  </div>
+                  <CardTitle className="text-xl leading-tight group-hover:text-primary transition-colors">
+                    {item.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {item.description && (
+                    <p className="text-muted-foreground text-sm line-clamp-3">
+                      {item.description}
+                    </p>
+                  )}
+
+                  {item.file_url && (
+                    <div className="p-3 bg-muted/50 rounded-lg flex items-center justify-between group-hover:bg-muted transition-colors">
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="h-8 w-8 bg-background rounded flex items-center justify-center border shrink-0">
+                          <File size={16} className="text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{item.file_name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {item.size_bytes ? `${(item.size_bytes / 1024 / 1024).toFixed(2)} MB` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <a
+                        href={getFileUrl(item.file_url)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 hover:bg-background rounded-md text-muted-foreground hover:text-primary transition-colors focus:ring-2 ring-primary/20 outline-none"
+                        aria-label="Faylni yuklab olish"
+                      >
+                        <Download size={18} />
+                      </a>
+                    </div>
+                  )}
+
+                  {item.tags && item.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-2">
+                      {item.tags.map((tag, idx) => (
+                        <span key={idx} className="px-2 py-0.5 bg-primary/5 text-primary text-[10px] uppercase font-bold tracking-wider rounded border border-primary/10">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             ))}
           </div>
         )}
@@ -218,7 +227,7 @@ export default function AcademicPortfolioPage() {
           onSuccess={() => {
             setShowModal(false);
             fetchPortfolios();
-            setMessage({ type: 'success', text: 'Akademik portfolio qo\'shildi' });
+            setMessage({ type: 'success', text: 'Akademik portfolio muvaffaqiyatli qo\'shildi' });
             setTimeout(() => setMessage(null), 3000);
           }}
         />
@@ -253,7 +262,7 @@ function AcademicPortfolioModal({
     setError('');
 
     if (!formData.title.trim()) {
-      setError('Sarlavha majburiy');
+      setError('Sarlavha kiritish majburiy');
       return;
     }
 
@@ -285,9 +294,8 @@ function AcademicPortfolioModal({
     });
   };
 
-  // File validation with comprehensive checks
   const validateFile = (selectedFile: File): boolean => {
-    const maxSize = 50 * 1024 * 1024; // 50MB limit for security and performance
+    const maxSize = 50 * 1024 * 1024;
     const allowedTypes = [
       'application/pdf',
       'application/msword',
@@ -296,22 +304,13 @@ function AcademicPortfolioModal({
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     ];
 
-    // File size validation
     if (selectedFile.size > maxSize) {
       setError('Fayl hajmi 50MB dan oshmasligi kerak');
       return false;
     }
 
-    // MIME type validation for security
     if (!allowedTypes.includes(selectedFile.type)) {
       setError('Faqat PDF, DOCX yoki XLSX formatdagi fayllar qabul qilinadi');
-      return false;
-    }
-
-    // File name sanitization check
-    const dangerousChars = /[<>:"/\\|?*\x00-\x1F]/g;
-    if (dangerousChars.test(selectedFile.name)) {
-      setError('Fayl nomi noto\'g\'ri belgilar saqlaydi');
       return false;
     }
 
@@ -347,228 +346,193 @@ function AcademicPortfolioModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 md:p-8 max-h-[90vh] overflow-y-auto transform transition-all animate-slideUp">
-        {/* Header with gradient accent */}
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-2xl">{CATEGORY_ICON}</span>
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+      <Card className="max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
+                <span className="text-xl">{CATEGORY_ICON}</span>
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">Akademik Portfolio Qo'shish</h2>
+                <p className="text-sm text-muted-foreground">Ilmiy yutuqlaringizni rasm yoki hujjatlar bilan yuklang</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-xl md:text-2xl font-bold text-gray-800">Akademik Portfolio</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Ilmiy yutuqlaringizni qo'shing</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-red-50 rounded-lg transition-colors group"
-            aria-label="Formani yopish"
-          >
-            <X size={22} className="text-gray-400 group-hover:text-red-500 transition-colors" />
-          </button>
-        </div>
-
-        {/* Error Alert with icon and animation */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg text-red-700 flex items-start gap-3 animate-shake">
-            <AlertCircle size={20} className="flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="font-medium text-sm">{error}</p>
-            </div>
-            <button onClick={() => setError('')} className="text-red-400 hover:text-red-600" aria-label="Xatoni yopish">
-              <X size={18} />
-            </button>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Academic Work Type Selection with enhanced UI */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
-              <FileText size={16} className="text-red-500" />
-              Akademik ish turi
-            </label>
-            <select
-              value={formData.type}
-              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-800 bg-white transition-all hover:border-gray-300"
-              aria-label="Akademik ish turini tanlang"
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="h-8 w-8 rounded-full"
             >
-              <option value="DOCUMENT">📄 Ilmiy maqola/tezis</option>
-              <option value="PUBLICATION">📚 Nashr etilgan ish</option>
-              <option value="CERTIFICATE">🏆 Konferensiya sertifikati</option>
-              <option value="PROJECT">🚀 Grant loyiha</option>
-              <option value="AWARD">🥇 Ilmiy mukofot</option>
-            </select>
-            <p className="text-xs text-gray-500 mt-1">Akademik faoliyatingiz turini tanlang</p>
+              <X size={18} />
+            </Button>
           </div>
 
-          {/* Title Input with character count */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
-              <span className="text-red-500">*</span>
-              Sarlavha
-              <span className="ml-auto text-xs font-normal text-gray-400">
-                {formData.title.length}/200
-              </span>
-            </label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value.slice(0, 200) })}
-              required
-              maxLength={200}
-              placeholder="Masalan: Machine Learning yordamida matn tahlili"
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-800 placeholder-gray-400 transition-all hover:border-gray-300"
-              aria-label="Ish sarlavhasi"
-            />
-            <p className="text-xs text-gray-500">To'liq va aniq sarlavha kiriting</p>
-          </div>
+          {error && (
+            <div className="mb-6 p-3 bg-destructive/10 text-destructive text-sm rounded-md flex items-center gap-2">
+              <AlertCircle size={16} />
+              {error}
+            </div>
+          )}
 
-          {/* Description Textarea with enhanced styling */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
-              Tavsif
-              <span className="ml-auto text-xs font-normal text-gray-400">
-                {formData.description.length}/1000
-              </span>
-            </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value.slice(0, 1000) })}
-              rows={4}
-              maxLength={1000}
-              placeholder="Ishingiz haqida qisqacha ma'lumot. Nimaga bag'ishlangan, qanday natijalar olindi..."
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-800 placeholder-gray-400 resize-none transition-all hover:border-gray-300"
-              aria-label="Ish tavsifi"
-            />
-            <p className="text-xs text-gray-500">Batafsil tavsif berish tavsiya etiladi</p>
-          </div>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label>Akademik ish turi</Label>
+              <select
+                value={formData.type}
+                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="DOCUMENT">📄 Ilmiy maqola/tezis</option>
+                <option value="PUBLICATION">📚 Nashr etilgan ish</option>
+                <option value="CERTIFICATE">🏆 Konferensiya sertifikati</option>
+                <option value="PROJECT">🚀 Grant loyiha</option>
+                <option value="AWARD">🥇 Ilmiy mukofot</option>
+              </select>
+            </div>
 
-          {/* File Upload with multiple files support */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
-              <Upload size={16} className="text-red-500" />
-              Fayllar yuklash ({files.length}/3)
-            </label>
-            <div className="relative">
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept=".pdf,.doc,.docx,.xls,.xlsx"
-                onChange={handleFileChange}
-                disabled={files.length >= 3}
-                className="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-800 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Fayllar tanlash"
+            <div className="space-y-2">
+              <Label>Sarlavha <span className="text-destructive">*</span></Label>
+              <Input
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value.slice(0, 200) })}
+                required
+                maxLength={200}
+                placeholder="Masalan: Machine Learning yordamida matn tahlili"
               />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>To'liq va aniq sarlavha kiriting</span>
+                <span>{formData.title.length}/200</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Tavsif</Label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value.slice(0, 1000) })}
+                rows={4}
+                maxLength={1000}
+                placeholder="Ishingiz haqida qisqacha ma'lumot..."
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
+              />
+              <div className="text-right text-xs text-muted-foreground">
+                {formData.description.length}/1000
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2">
+                <Upload size={16} />
+                Fayllar ({files.length}/3)
+              </Label>
+
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-muted-foreground/25 rounded-xl p-6 text-center hover:bg-muted/50 transition-colors cursor-pointer group"
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept=".pdf,.doc,.docx,.xls,.xlsx"
+                  onChange={handleFileChange}
+                  disabled={files.length >= 3}
+                  className="hidden"
+                />
+                <div className="bg-primary/5 h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-primary/10 transition-colors">
+                  <Upload size={20} className="text-primary" />
+                </div>
+                <p className="text-sm font-medium mb-1">Fayllarni yuklash uchun bosing</p>
+                <p className="text-xs text-muted-foreground">PDF, DOCX yoki XLSX (maks 50MB)</p>
+              </div>
+
               {files.length > 0 && (
-                <div className="mt-3 space-y-2">
+                <div className="space-y-2">
                   {files.map((file, index) => (
-                    <div key={index} className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
-                      <File size={20} className="text-green-600" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-green-800 truncate">{file.name}</p>
-                        <p className="text-xs text-green-600">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border">
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <FileText size={18} className="text-primary shrink-0" />
+                        <span className="text-sm truncate">{file.name}</span>
+                        <span className="text-xs text-muted-foreground shrink-0">
+                          {(file.size / 1024 / 1024).toFixed(2)} MB
+                        </span>
                       </div>
-                      <button
+                      <Button
                         type="button"
-                        onClick={() => removeFile(index)}
-                        className="p-1.5 hover:bg-green-100 rounded-lg transition-colors"
-                        aria-label="Faylni o'chirish"
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFile(index);
+                        }}
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors"
                       >
-                        <X size={16} className="text-green-700" />
-                      </button>
+                        <X size={16} />
+                      </Button>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-            <p className="text-xs text-gray-500">PDF, DOCX yoki XLSX (maks. 3 ta, har biri 50MB)</p>
-          </div>
 
-          {/* Tags Input with visual chips */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-700">Teglar</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    addTag();
-                  }
-                }}
-                placeholder="Teg kiriting va Enter bosing..."
-                className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-800 placeholder-gray-400 transition-all hover:border-gray-300"
-                aria-label="Teg kiritish"
-              />
-              <button
-                type="button"
-                onClick={addTag}
-                className="px-6 py-3 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 font-medium transition-all active:scale-95"
-                aria-label="Teg qo'shish"
-              >
-                Qo'shish
-              </button>
-            </div>
-            {formData.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-3 p-3 bg-gray-50 rounded-xl">
-                {formData.tags.map((tag, idx) => (
-                  <span
-                    key={idx}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-red-200 text-red-700 rounded-lg text-sm font-medium shadow-sm hover:shadow-md transition-all"
-                  >
-                    {tag}
-                    <button
-                      type="button"
-                      onClick={() => removeTag(tag)}
-                      className="hover:text-red-900 transition-colors"
-                      aria-label={`${tag} tegni o'chirish`}
-                    >
-                      <X size={14} />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-            <p className="text-xs text-gray-500">Masalan: ilmiy-tadqiqot, AI, dasturlash</p>
-          </div>
-
-          {/* Action Buttons with enhanced styling */}
-          <div className="flex gap-3 pt-6 border-t border-gray-100">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-3 px-6 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium transition-all active:scale-95"
-              aria-label="Bekor qilish"
-            >
-              Bekor qilish
-            </button>
-            <button
-              type="submit"
-              disabled={loading || !formData.title.trim()}
-              className="flex-1 py-3 px-6 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 font-medium shadow-lg hover:shadow-xl disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center justify-center gap-2"
-              aria-label={loading ? 'Saqlanmoqda...' : "Qo'shish"}
-            >
-              {loading ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Saqlanmoqda...
-                </>
-              ) : (
-                <>
-                  <Upload size={18} />
+            <div className="space-y-2">
+              <Label>Teglar</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addTag();
+                    }
+                  }}
+                  placeholder="Masalan: AI"
+                  className="flex-1"
+                />
+                <Button type="button" onClick={addTag} variant="secondary">
                   Qo'shish
-                </>
+                </Button>
+              </div>
+
+              {formData.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {formData.tags.map((tag, idx) => (
+                    <Badge key={idx} variant="outline" className="pl-2 pr-1 py-1 flex gap-1 items-center">
+                      #{tag}
+                      <X
+                        size={14}
+                        className="cursor-pointer hover:text-destructive ml-1"
+                        onClick={() => removeTag(tag)}
+                      />
+                    </Badge>
+                  ))}
+                </div>
               )}
-            </button>
-          </div>
-        </form>
-      </div>
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={onClose}
+              >
+                Bekor qilish
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1"
+                disabled={loading}
+              >
+                {loading ? 'Saqlanmoqda...' : 'Saqlash'}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </Card>
     </div>
   );
 }

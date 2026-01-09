@@ -17,20 +17,20 @@ export const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:4000';
  * Returns domain root without /api path
  */
 export const getFileUrl = (path?: string | null): string => {
-  if (!path) return '';
-  
-  // If path already has protocol, return as is
-  if (path.startsWith('http://') || path.startsWith('https://')) {
-    return path;
-  }
-  
-  // Get base URL without /api suffix
-  const baseUrl = API_BASE_URL.replace(/\/api\/?$/, '');
-  
-  // Ensure path starts with /
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  
-  return `${baseUrl}${normalizedPath}`;
+    if (!path) return '';
+
+    // If path already has protocol, return as is
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+        return path;
+    }
+
+    // Get base URL without /api suffix
+    const baseUrl = API_BASE_URL.replace(/\/api\/?$/, '');
+
+    // Ensure path starts with /
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+
+    return `${baseUrl}${normalizedPath}`;
 };
 
 // Environment detection

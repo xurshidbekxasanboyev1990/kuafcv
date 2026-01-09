@@ -661,3 +661,58 @@ func GetJWTInfo(c *gin.Context) {
 		"message":      "JWT secret ma'lumotlari",
 	})
 }
+
+// PUT /api/admin/users/:id/password
+func ChangeUserPassword(c *gin.Context) {
+	targetUserID := c.Param("id")
+	var req struct {
+		NewPassword string `json:"new_password" binding:"required,min=6"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.APIError{
+			Error:   "validation_error",
+			Message: "Yangi parol noto'g'ri (kamida 6 ta belgi)",
+			Code:    400,
+		})
+		return
+	}
+
+	hash, err := auth.HashPassword(req.NewPassword)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIError{
+			Error:   "hash_error",
+			Message: "Server xatoligi",
+			Code:    500,
+		})
+		return
+	}
+
+	result, err := database.DB.Exec(`
+		UPDATE users SET password_hash = $1 WHERE id = $2
+	`, hash, targetUserID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIError{
+			Error:   "database_error",
+			Message: "Parolni yangilashda xatolik",
+			Code:    500,
+		})
+		return
+	}
+
+	affected, _ := result.RowsAffected()
+	if affected == 0 {
+		c.JSON(http.StatusNotFound, models.APIError{
+			Error:   "not_found",
+			Message: "Foydalanuvchi topilmadi",
+			Code:    404,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APISuccess{
+		Success: true,
+		Message: "Parol muvaffaqiyatli o'zgartirildi",
+	})
+}

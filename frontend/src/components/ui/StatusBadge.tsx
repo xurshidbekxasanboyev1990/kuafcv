@@ -3,145 +3,92 @@
  * Reusable component for displaying portfolio approval status
  */
 
-import { CheckCircle, Clock, XCircle } from 'lucide-react';
+import { cva, type VariantProps } from "class-variance-authority";
+import { AlertCircle, CheckCircle, Clock, XCircle } from "lucide-react";
+import * as React from "react";
 
-export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+import { cn } from "@/lib/utils";
 
-export interface StatusBadgeProps {
-    status: ApprovalStatus;
-    size?: 'sm' | 'md' | 'lg';
-    showIcon?: boolean;
-    showText?: boolean;
-    className?: string;
-}
-
-/**
- * Status Badge Component
- * 
- * @param status - The approval status (PENDING, APPROVED, REJECTED)
- * @param size - Size variant (sm, md, lg)
- * @param showIcon - Whether to show the icon (default: true)
- * @param showText - Whether to show the text (default: true)
- * @param className - Additional CSS classes
- */
-export function StatusBadge({
-    status,
-    size = 'md',
-    showIcon = true,
-    showText = true,
-    className = '',
-}: StatusBadgeProps) {
-    // Size configurations
-    const sizeConfig = {
-        sm: {
-            icon: 10,
-            text: 'text-[9px] sm:text-[10px]',
-            px: 'px-1.5 md:px-2',
-            py: 'py-0.5',
-            gap: 'gap-0.5',
+const badgeVariants = cva(
+    "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+    {
+        variants: {
+            variant: {
+                default:
+                    "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
+                secondary:
+                    "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+                destructive:
+                    "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
+                outline: "text-foreground",
+                success:
+                    "border-transparent bg-green-100 text-green-700 hover:bg-green-200",
+                warning:
+                    "border-transparent bg-yellow-100 text-yellow-700 hover:bg-yellow-200",
+                info: "border-transparent bg-blue-100 text-blue-700 hover:bg-blue-200",
+            },
         },
-        md: {
-            icon: 12,
-            text: 'text-[10px] md:text-xs',
-            px: 'px-2 md:px-3',
-            py: 'py-0.5 md:py-1',
-            gap: 'gap-1',
+        defaultVariants: {
+            variant: "default",
         },
-        lg: {
-            icon: 14,
-            text: 'text-xs md:text-sm',
-            px: 'px-3 md:px-4',
-            py: 'py-1 md:py-1.5',
-            gap: 'gap-1.5',
-        },
-    };
+    }
+);
 
-    const config = sizeConfig[size];
+export interface BadgeProps
+    extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof badgeVariants> { }
 
-    // Status configurations
-    const statusConfig = {
-        APPROVED: {
-            bg: 'bg-green-100',
-            text: 'text-green-700',
-            icon: <CheckCircle size={config.icon} />,
-            label: 'Tasdiqlangan',
-            shortLabel: '✓',
-        },
-        REJECTED: {
-            bg: 'bg-red-100',
-            text: 'text-red-700',
-            icon: <XCircle size={config.icon} />,
-            label: 'Rad etilgan',
-            shortLabel: '✗',
-        },
-        PENDING: {
-            bg: 'bg-orange-100',
-            text: 'text-orange-700',
-            icon: <Clock size={config.icon} />,
-            label: 'Kutilmoqda',
-            shortLabel: '⏳',
-        },
-    };
-
-    const statusInfo = statusConfig[status];
-
+function Badge({ className, variant, ...props }: BadgeProps) {
     return (
-        <span
-            className={`
-        inline-flex items-center
-        ${config.gap}
-        ${config.px}
-        ${config.py}
-        ${statusInfo.bg}
-        ${statusInfo.text}
-        ${config.text}
-        font-medium
-        rounded-full
-        whitespace-nowrap
-        ${className}
-      `}
-            title={statusInfo.label}
-            aria-label={`Status: ${statusInfo.label}`}
-        >
-            {showIcon && statusInfo.icon}
-            {showText && (
-                <>
-                    <span className="hidden sm:inline">{statusInfo.label}</span>
-                    <span className="sm:hidden">{statusInfo.shortLabel}</span>
-                </>
-            )}
-        </span>
+        <div className={cn(badgeVariants({ variant }), className)} {...props} />
     );
 }
 
-/**
- * Get status color for use in other components
- */
-export function getStatusColor(status: ApprovalStatus): string {
-    switch (status) {
-        case 'APPROVED':
-            return 'green';
-        case 'REJECTED':
-            return 'red';
-        case 'PENDING':
-            return 'orange';
-        default:
-            return 'gray';
-    }
+// Backward compatibility or specific logic for Portfolio Status
+export type ApprovalStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+interface StatusBadgeProps extends React.HTMLAttributes<HTMLDivElement> {
+    status: ApprovalStatus;
+    showIcon?: boolean;
 }
 
-/**
- * Get status label
- */
-export function getStatusLabel(status: ApprovalStatus): string {
-    switch (status) {
-        case 'APPROVED':
-            return 'Tasdiqlangan';
-        case 'REJECTED':
-            return 'Rad etilgan';
-        case 'PENDING':
-            return 'Kutilmoqda';
-        default:
-            return 'Noma\'lum';
-    }
+export function StatusBadge({
+    status,
+    showIcon = true,
+    className,
+    ...props
+}: StatusBadgeProps) {
+    const config = {
+        PENDING: {
+            label: "Kutilmoqda",
+            icon: Clock,
+            variant: "warning" as const,
+        },
+        APPROVED: {
+            label: "Tasdiqlandi",
+            icon: CheckCircle,
+            variant: "success" as const,
+        },
+        REJECTED: {
+            label: "Rad etildi",
+            icon: XCircle,
+            variant: "destructive" as const,
+        },
+    };
+
+    const { label, icon: Icon, variant } = config[status] || {
+        label: status,
+        icon: AlertCircle,
+        variant: "secondary" as const,
+    };
+
+    return (
+        <Badge variant={variant} className={cn("gap-1", className)} {...props}>
+            {showIcon && <Icon className="h-3 w-3" />}
+            {label}
+        </Badge>
+    );
 }
+
+export { Badge, badgeVariants };
+export default StatusBadge;

@@ -1,4 +1,5 @@
 # 🚀 KUAFCV - Ubuntu Server Deployment Guide
+
 ## SSH: root@77.237.239.235
 
 ---
@@ -50,12 +51,14 @@ cd kuafcv
 
 ### 4️⃣ Configure Environment Variables
 
-#### Backend Environment:
+#### Backend Environment
+
 ```bash
 nano backend/.env.production
 ```
 
 Paste this (change passwords!):
+
 ```env
 # Database
 DB_HOST=postgres
@@ -81,12 +84,14 @@ MAX_FILE_SIZE=52428800
 UPLOAD_PATH=./uploads
 ```
 
-#### Frontend Environment:
+#### Frontend Environment
+
 ```bash
 nano frontend/.env.production
 ```
 
 Paste this:
+
 ```env
 NEXT_PUBLIC_API_URL=https://sysmasters.uz
 NEXT_PUBLIC_WS_URL=wss://sysmasters.uz
@@ -209,6 +214,7 @@ docker-compose logs -f nginx
 ## 📊 Service Management
 
 ### View Logs
+
 ```bash
 # All services
 docker-compose logs -f
@@ -221,6 +227,7 @@ docker-compose logs -f nginx
 ```
 
 ### Restart Services
+
 ```bash
 # Restart all
 docker-compose restart
@@ -231,6 +238,7 @@ docker-compose restart frontend
 ```
 
 ### Stop/Start
+
 ```bash
 # Stop all
 docker-compose down
@@ -244,11 +252,13 @@ docker-compose up -d
 ## 🗄️ Database Management
 
 ### Access Database
+
 ```bash
 docker-compose exec postgres psql -U kuafcv_user -d kuafcv_db
 ```
 
 ### Backup Database
+
 ```bash
 # Create backup
 docker-compose exec postgres pg_dump -U kuafcv_user kuafcv_db > backup_$(date +%Y%m%d).sql
@@ -274,12 +284,14 @@ crontab -e
 ## 🐛 Troubleshooting
 
 ### Container won't start
+
 ```bash
 docker-compose logs [service-name]
 docker-compose restart [service-name]
 ```
 
 ### Port already in use
+
 ```bash
 # Find process using port
 lsof -i :80
@@ -290,6 +302,7 @@ kill -9 [PID]
 ```
 
 ### Database issues
+
 ```bash
 # Check database logs
 docker-compose logs postgres
@@ -302,6 +315,7 @@ docker-compose exec postgres psql -U kuafcv_user -d kuafcv_db
 ```
 
 ### SSL issues
+
 ```bash
 # Check certificate
 openssl x509 -in nginx/ssl/fullchain.pem -noout -dates
@@ -315,6 +329,7 @@ certbot renew
 ## 📈 Monitoring
 
 ### System Resources
+
 ```bash
 # Container stats
 docker stats
@@ -325,6 +340,7 @@ docker system df
 ```
 
 ### Clean Up
+
 ```bash
 # Remove unused containers
 docker container prune
@@ -373,8 +389,8 @@ docker-compose exec postgres pg_dump -U kuafcv_user kuafcv_db > backup.sql
 - [ ] Environment variables configured
 - [ ] SSL certificates installed
 - [ ] Services running (docker-compose ps)
-- [ ] Frontend accessible (https://sysmasters.uz)
-- [ ] Backend API working (https://sysmasters.uz/api/health)
+- [ ] Frontend accessible (<https://sysmasters.uz>)
+- [ ] Backend API working (<https://sysmasters.uz/api/health>)
 - [ ] Database connected
 - [ ] Firewall configured
 - [ ] SSL auto-renewal configured

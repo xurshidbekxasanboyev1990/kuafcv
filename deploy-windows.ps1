@@ -12,7 +12,8 @@ try {
     docker --version | Out-Null
     docker-compose --version | Out-Null
     Write-Host "✓ Docker is installed" -ForegroundColor Green
-} catch {
+}
+catch {
     Write-Host "✗ Docker or Docker Compose not installed!" -ForegroundColor Red
     Write-Host "Please install Docker Desktop for Windows" -ForegroundColor Red
     exit 1
@@ -25,7 +26,8 @@ $update = Read-Host "Pull latest code from GitHub? (y/n)"
 if ($update -eq 'y') {
     git pull origin master
     Write-Host "✓ Code updated" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "⚠ Skipping code update" -ForegroundColor Yellow
 }
 
@@ -93,7 +95,8 @@ docker-compose up --build -d
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "✓ Containers started" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "✗ Failed to start containers" -ForegroundColor Red
     Write-Host "Check logs with: docker-compose logs" -ForegroundColor Yellow
     exit 1

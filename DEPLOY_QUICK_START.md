@@ -6,13 +6,15 @@
 
 ## 📋 Prerequisites
 
-### Required Software:
+### Required Software
+
 - ✅ Docker (v20.10+)
 - ✅ Docker Compose (v2.0+)
 - ✅ Git
 - ✅ Domain: sysmasters.uz with DNS pointed to server
 
-### System Requirements:
+### System Requirements
+
 - **OS**: Ubuntu 20.04+ / CentOS 8+ / Debian 11+
 - **RAM**: 4GB minimum (8GB recommended)
 - **CPU**: 2 cores minimum (4 cores recommended)
@@ -32,7 +34,7 @@ cd kuafcv
 
 ### 2️⃣ Configure Environment
 
-#### Backend Environment (`backend/.env.production`):
+#### Backend Environment (`backend/.env.production`)
 
 ```bash
 # Database
@@ -55,7 +57,7 @@ GO_ENV=production
 CORS_ORIGINS=https://sysmasters.uz,https://www.sysmasters.uz
 ```
 
-#### Frontend Environment (`frontend/.env.production`):
+#### Frontend Environment (`frontend/.env.production`)
 
 ```bash
 NEXT_PUBLIC_API_URL=https://sysmasters.uz
@@ -102,14 +104,14 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 
 ### 4️⃣ Deploy
 
-#### Using Deployment Script (Recommended):
+#### Using Deployment Script (Recommended)
 
 ```bash
 chmod +x deploy.sh
 ./deploy.sh
 ```
 
-#### Manual Deployment:
+#### Manual Deployment
 
 ```bash
 # Stop old containers
@@ -151,6 +153,7 @@ docker-compose logs -f nginx
 ### Docker Compose (`docker-compose.yml`)
 
 Services:
+
 - ✅ PostgreSQL database
 - ✅ Go backend API
 - ✅ Next.js frontend
@@ -160,6 +163,7 @@ Services:
 ### Nginx (`nginx/nginx.conf`)
 
 Features:
+
 - ✅ HTTPS with SSL/TLS
 - ✅ HTTP to HTTPS redirect
 - ✅ Reverse proxy to backend/frontend
@@ -176,8 +180,8 @@ After successful deployment:
 
 | Service | URL | Port |
 |---------|-----|------|
-| **Frontend** | https://sysmasters.uz | 443 |
-| **Backend API** | https://sysmasters.uz/api | 443 |
+| **Frontend** | <https://sysmasters.uz> | 443 |
+| **Backend API** | <https://sysmasters.uz/api> | 443 |
 | **WebSocket** | wss://sysmasters.uz/ws | 443 |
 | **Database** | localhost:5432 | 5432 |
 | **Redis** | localhost:6379 | 6379 |
@@ -359,6 +363,7 @@ docker system prune -a
 ## 📞 Support
 
 For issues or questions:
+
 1. Check logs: `docker-compose logs -f`
 2. Check container status: `docker-compose ps`
 3. Review documentation: `PRODUCTION_DEPLOYMENT_SYSMASTERS.md`

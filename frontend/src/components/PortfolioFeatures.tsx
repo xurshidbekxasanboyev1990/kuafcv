@@ -6,12 +6,24 @@
 // Fully adapt to the current programming language, framework, and project context.
 'use client';
 
-import { useState, useEffect } from 'react';
-import { 
-  Eye, Star, MessageCircle, Bookmark, TrendingUp, Users, 
-  Calendar, BarChart3, Send, Edit2, Trash2, Reply, Lock,
-  Download, FileText, ChevronDown, ChevronUp, X
+import { getFileUrl } from '@/lib/config';
+import {
+  BarChart3,
+  Bookmark,
+  ChevronDown, ChevronUp,
+  Download,
+  Edit2,
+  Eye,
+  Lock,
+  MessageCircle,
+  Reply,
+  Send,
+  Star,
+  Trash2,
+  TrendingUp
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useAuth } from './AuthProvider';
 
 interface PortfolioStats {
   total_views: number;
@@ -31,6 +43,7 @@ interface Rating {
     id: string;
     full_name: string;
     role: string;
+    profile_image?: string;
   };
 }
 
@@ -46,6 +59,7 @@ interface Comment {
     id: string;
     full_name: string;
     role: string;
+    profile_image?: string;
   };
   can_edit: boolean;
   replies?: Comment[];
@@ -93,7 +107,7 @@ export function PortfolioStatsCard({ portfolioId, isOwner = false }: { portfolio
 
   return (
     <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-      <div 
+      <div
         className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50"
         onClick={() => setExpanded(!expanded)}
       >
@@ -144,7 +158,7 @@ export function PortfolioStatsCard({ portfolioId, isOwner = false }: { portfolio
                   const height = (day.views / maxViews) * 100;
                   return (
                     <div key={i} className="flex-1 flex flex-col items-center">
-                      <div 
+                      <div
                         className="w-full bg-red-500 rounded-t"
                         style={{ height: `${Math.max(height, 5)}%` }}
                         title={`${day.date}: ${day.views} ko'rish`}
@@ -165,12 +179,12 @@ export function PortfolioStatsCard({ portfolioId, isOwner = false }: { portfolio
 }
 
 // Rating Component
-export function PortfolioRating({ 
-  portfolioId, 
+export function PortfolioRating({
+  portfolioId,
   canRate = false,
-  onRated 
-}: { 
-  portfolioId: string; 
+  onRated
+}: {
+  portfolioId: string;
   canRate?: boolean;
   onRated?: () => void;
 }) {
@@ -250,8 +264,8 @@ export function PortfolioRating({
           <p className="text-4xl font-bold text-gray-800">{ratings.avg_rating.toFixed(1)}</p>
           <div className="flex gap-0.5 justify-center my-1">
             {[1, 2, 3, 4, 5].map(star => (
-              <Star 
-                key={star} 
+              <Star
+                key={star}
                 className={`w-4 h-4 ${star <= Math.round(ratings.avg_rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
               />
             ))}
@@ -269,7 +283,7 @@ export function PortfolioRating({
                 <span className="w-4 text-gray-600">{star}</span>
                 <Star className="w-3 h-3 text-yellow-400" />
                 <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-yellow-400 rounded-full"
                     style={{ width: `${percent}%` }}
                   />
@@ -299,12 +313,11 @@ export function PortfolioRating({
                       aria-label={`${star} yulduz`}
                       title={`${star} yulduz`}
                     >
-                      <Star 
-                        className={`w-6 h-6 transition-colors ${
-                          star <= (hoveredStar || myRating) 
-                            ? 'text-yellow-400 fill-yellow-400' 
+                      <Star
+                        className={`w-6 h-6 transition-colors ${star <= (hoveredStar || myRating)
+                            ? 'text-yellow-400 fill-yellow-400'
                             : 'text-gray-300'
-                        }`}
+                          }`}
                       />
                     </button>
                   ))}
@@ -351,11 +364,21 @@ export function PortfolioRating({
           {ratings.reviews.map((review, i) => (
             <div key={i} className="p-3 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                  <span className="text-red-600 font-medium text-sm">
-                    {review.user.full_name.charAt(0)}
-                  </span>
-                </div>
+                {review.user.profile_image ? (
+                  <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
+                    <img
+                      src={getFileUrl(review.user.profile_image)}
+                      alt={review.user.full_name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                    <span className="text-red-600 font-medium text-sm">
+                      {review.user.full_name.charAt(0)}
+                    </span>
+                  </div>
+                )}
                 <div>
                   <p className="font-medium text-sm">{review.user.full_name}</p>
                   <p className="text-xs text-gray-500">
@@ -364,7 +387,7 @@ export function PortfolioRating({
                 </div>
                 <div className="ml-auto flex gap-0.5">
                   {[1, 2, 3, 4, 5].map(star => (
-                    <Star 
+                    <Star
                       key={star}
                       className={`w-3 h-3 ${star <= review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
                     />
@@ -384,13 +407,14 @@ export function PortfolioRating({
 }
 
 // Comments Component
-export function PortfolioComments({ 
+export function PortfolioComments({
   portfolioId,
-  currentUserId 
-}: { 
+  currentUserId
+}: {
   portfolioId: string;
   currentUserId?: string;
 }) {
+  const { user } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
@@ -429,10 +453,10 @@ export function PortfolioComments({
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({ 
-          content: content.trim(), 
+        body: JSON.stringify({
+          content: content.trim(),
           parent_id: parentId || null,
-          is_private: isPrivate 
+          is_private: isPrivate
         })
       });
 
@@ -491,18 +515,28 @@ export function PortfolioComments({
   };
 
   const renderComment = (comment: Comment, depth = 0) => (
-    <div 
-      key={comment.id} 
+    <div
+      key={comment.id}
       className={`${depth > 0 ? 'ml-8 border-l-2 border-gray-200 pl-4' : ''}`}
     >
       <div className={`p-3 rounded-lg ${comment.is_private ? 'bg-yellow-50' : 'bg-gray-50'}`}>
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-              <span className="text-red-600 font-medium text-sm">
-                {comment.user.full_name.charAt(0)}
-              </span>
-            </div>
+            {comment.user.profile_image ? (
+              <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
+                <img
+                  src={getFileUrl(comment.user.profile_image)}
+                  alt={comment.user.full_name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                <span className="text-gray-600 font-medium text-sm">
+                  {comment.user.full_name.charAt(0)}
+                </span>
+              </div>
+            )}
             <div>
               <p className="font-medium text-sm">{comment.user.full_name}</p>
               <p className="text-xs text-gray-500">
@@ -518,7 +552,7 @@ export function PortfolioComments({
           </div>
           {comment.can_edit && (
             <div className="flex gap-1">
-              <button 
+              <button
                 onClick={() => { setEditingId(comment.id); setEditContent(comment.content); }}
                 className="p-1 hover:bg-gray-200 rounded"
                 aria-label="Tahrirlash"
@@ -526,7 +560,7 @@ export function PortfolioComments({
               >
                 <Edit2 className="w-4 h-4 text-gray-500" />
               </button>
-              <button 
+              <button
                 onClick={() => deleteComment(comment.id)}
                 className="p-1 hover:bg-red-100 rounded"
                 aria-label="O'chirish"
@@ -580,30 +614,42 @@ export function PortfolioComments({
       {/* Reply Form */}
       {replyingTo === comment.id && (
         <div className="mt-2 ml-8 flex gap-2">
-          <input
-            type="text"
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Javob yozing..."
-            className="flex-1 px-3 py-2 border rounded-lg text-sm"
-          />
-          <button
-            onClick={() => submitComment(comment.id)}
-            disabled={submitting || !newComment.trim()}
-            className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
-            aria-label="Javobni yuborish"
-            title="Javobni yuborish"
-          >
-            <Send className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => { setReplyingTo(null); setNewComment(''); }}
-            className="px-3 py-2 border rounded-lg hover:bg-gray-50"
-            aria-label="Bekor qilish"
-            title="Bekor qilish"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          {user && (
+            user.profile_image ? (
+              <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200 flex-shrink-0">
+                <img
+                  src={getFileUrl(user.profile_image)}
+                  alt="Me"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-red-600 font-medium text-xs">
+                  {user.full_name.charAt(0)}
+                </span>
+              </div>
+            )
+          )}
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Javob yozing..."
+              className="w-full p-3 border rounded-lg pr-10 focus:ring-2 focus:ring-red-500"
+              aria-label="Javob yozish"
+            />
+            <button
+              onClick={() => submitComment(comment.id)}
+              disabled={submitting || !newComment.trim()}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+              aria-label="Javobni yuborish"
+              title="Javobni yuborish"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -663,12 +709,12 @@ export function PortfolioComments({
 }
 
 // Bookmark Button
-export function BookmarkButton({ 
-  portfolioId, 
+export function BookmarkButton({
+  portfolioId,
   initialBookmarked = false,
-  onToggle 
-}: { 
-  portfolioId: string; 
+  onToggle
+}: {
+  portfolioId: string;
   initialBookmarked?: boolean;
   onToggle?: (bookmarked: boolean) => void;
 }) {
@@ -698,11 +744,10 @@ export function BookmarkButton({
     <button
       onClick={toggle}
       disabled={loading}
-      className={`p-2 rounded-lg transition-colors ${
-        bookmarked 
-          ? 'bg-purple-100 text-purple-600' 
+      className={`p-2 rounded-lg transition-colors ${bookmarked
+          ? 'bg-purple-100 text-purple-600'
           : 'bg-gray-100 text-gray-600 hover:bg-purple-50 hover:text-purple-600'
-      }`}
+        }`}
       title={bookmarked ? "Saqlangan" : "Saqlash"}
     >
       <Bookmark className={`w-5 h-5 ${bookmarked ? 'fill-current' : ''}`} />
@@ -745,7 +790,7 @@ export function ExportPDFButton({ portfolioId }: { portfolioId: string }) {
 
       if (res.ok) {
         const data = await res.json();
-        
+
         // Generate PDF using browser
         const printWindow = window.open('', '_blank');
         if (printWindow) {

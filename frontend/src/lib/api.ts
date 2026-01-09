@@ -19,7 +19,7 @@ export async function apiFetch<T>(
   const { token, ...fetchOptions } = options;
 
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
+    ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
     ...(options.headers || {}),
   };
 
@@ -34,8 +34,8 @@ export async function apiFetch<T>(
     headers,
   });
 
-  // 401 - Token yaroqsiz
-  if (response.status === 401) {
+  // 401 - Token yaroqsiz (Login bundan mustasno)
+  if (response.status === 401 && !endpoint.includes('/auth/login')) {
     // Avtomatik redirect qilmaslik - AuthProvider o'zi boshqaradi
     throw new Error('Avtorizatsiya muddati tugagan');
   }
@@ -43,7 +43,10 @@ export async function apiFetch<T>(
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.message || 'Xatolik yuz berdi');
+    const errorMsg = data.errors && Array.isArray(data.errors)
+      ? `${data.message || 'Xatolik'}: ${data.errors.join('. ')}`
+      : (data.message || 'Xatolik yuz berdi');
+    throw new Error(errorMsg);
   }
 
   return data;
@@ -62,6 +65,29 @@ export const auth = {
 
   me: () => apiFetch<User>('/auth/me'),
 
+  updateProfile: async (data: { full_name?: string; email?: string }, file?: File) => {
+    const formData = new FormData();
+    if (data.full_name) formData.append('full_name', data.full_name);
+    if (data.email) formData.append('email', data.email);
+    if (file) formData.append('avatar', file);
+
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/auth/profile`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const result = await response.json();
+      throw new Error(result.message || 'Profilni yangilashda xatolik');
+    }
+    return response.json();
+  },
+
+  changePassword: (data: any) =>
+    apiFetch('/auth/change-password', { method: 'POST', body: JSON.stringify(data) }),
+
   logout: () => apiFetch('/auth/logout', { method: 'POST' }),
 };
 
@@ -77,6 +103,12 @@ export const admin = {
 
   deleteUser: (id: string) =>
     apiFetch(`/admin/users/${id}`, { method: 'DELETE' }),
+
+  changeUserPassword: (id: string, password: string) =>
+    apiFetch(`/admin/users/${id}/password`, {
+      method: 'PUT',
+      body: JSON.stringify({ new_password: password }),
+    }),
 
   importStudents: async (file: File) => {
     const formData = new FormData();
@@ -170,6 +202,12 @@ export const registrar = {
     const query = params ? '?' + new URLSearchParams(params).toString() : '';
     return apiFetch<StudentsResponse>(`/registrar/students${query}`);
   },
+
+  changeStudentPassword: (id: string, password: string) =>
+    apiFetch(`/registrar/students/${id}/password`, {
+      method: 'PUT',
+      body: JSON.stringify({ new_password: password }),
+    }),
 };
 
 // Employer

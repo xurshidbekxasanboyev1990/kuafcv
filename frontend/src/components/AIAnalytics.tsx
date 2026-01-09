@@ -6,24 +6,24 @@
 // Fully adapt to the current programming language, framework, and project context.
 'use client';
 
-import { useState } from 'react';
+import { getFileUrl } from '@/lib/config';
 import {
-  Brain,
-  Sparkles,
-  TrendingUp,
-  Award,
   AlertCircle,
-  CheckCircle2,
-  Loader2,
-  User,
-  GraduationCap,
+  Award,
+  BarChart3,
+  Brain,
   FileText,
+  GraduationCap,
+  Lightbulb,
+  Loader2,
+  Sparkles,
   Star,
   Target,
-  Lightbulb,
-  BarChart3,
-  X,
+  TrendingUp,
+  User,
+  X
 } from 'lucide-react';
+import { useState } from 'react';
 
 interface StudentInfo {
   id: string;
@@ -33,6 +33,7 @@ interface StudentInfo {
   specialty: string;
   course: number;
   group: string;
+  profile_image?: string | null;
 }
 
 interface AnalysisResult {
@@ -92,7 +93,7 @@ export default function AIAnalytics({ studentId, onClose, isModal = false }: AIA
 
   const parseAnalysis = (text: string) => {
     const sections: { title: string; content: string; icon: React.ReactNode; color: string }[] = [];
-    
+
     // Extract sections
     const kuchliMatch = text.match(/KUCHLI TOMONLAR[:\s]*([\s\S]*?)(?=RIVOJLANTIRISH|TAVSIYALAR|UMUMIY|$)/i);
     const rivojMatch = text.match(/RIVOJLANTIRISH[^:]*[:\s]*([\s\S]*?)(?=TAVSIYALAR|UMUMIY|$)/i);
@@ -175,8 +176,8 @@ export default function AIAnalytics({ studentId, onClose, isModal = false }: AIA
             </div>
           </div>
           {isModal && onClose && (
-            <button 
-              onClick={onClose} 
+            <button
+              onClick={onClose}
               className="p-2 hover:bg-white/20 rounded-lg transition-colors"
               aria-label="Yopish"
             >
@@ -250,9 +251,19 @@ export default function AIAnalytics({ studentId, onClose, isModal = false }: AIA
             {/* Student Info Card */}
             <div className="bg-gradient-to-r from-gray-50 to-purple-50 rounded-xl p-4 border border-gray-200">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center text-white text-xl font-bold">
-                  {result.student.full_name?.charAt(0) || 'T'}
-                </div>
+                {result.student.profile_image ? (
+                  <div className="w-14 h-14 rounded-xl overflow-hidden border border-purple-200">
+                    <img
+                      src={getFileUrl(result.student.profile_image)}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center text-white text-xl font-bold">
+                    {result.student.full_name?.charAt(0) || 'T'}
+                  </div>
+                )}
                 <div className="flex-1">
                   <h3 className="font-bold text-gray-900">{result.student.full_name}</h3>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-gray-600">

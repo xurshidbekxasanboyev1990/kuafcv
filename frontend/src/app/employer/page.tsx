@@ -13,7 +13,19 @@ import MainLayout from '@/components/MainLayout';
 import { BookmarkButton, PortfolioComments, PortfolioRating } from '@/components/PortfolioFeatures';
 import { employer, FilterOptions, PortfolioItem, User } from '@/lib/api';
 import { getFileUrl } from '@/lib/config';
-import { Brain, Briefcase, Download, Eye, FileText, GraduationCap, Mail, MessageCircle, Phone, Star, X } from 'lucide-react';
+import {
+  Brain,
+  Briefcase,
+  Download,
+  Eye,
+  FileText,
+  GraduationCap,
+  Mail,
+  MessageCircle,
+  Phone,
+  Star,
+  X
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -149,11 +161,21 @@ export default function EmployerPage() {
             >
               <div className="flex items-start justify-between mb-3 md:mb-4">
                 <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-red-600 font-bold text-base md:text-lg">
-                      {student.full_name.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
+                  {student.profile_image ? (
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden border border-red-200 flex-shrink-0">
+                      <img
+                        src={getFileUrl(student.profile_image)}
+                        alt={student.full_name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 md:w-12 md:h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-red-600 font-bold text-base md:text-lg">
+                        {student.full_name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
                   <div className="min-w-0 flex-1">
                     <h3 className="font-semibold text-red-800 text-sm md:text-base truncate">{student.full_name}</h3>
                     <p className="text-red-500 text-xs md:text-sm truncate">ID: {student.student_id}</p>

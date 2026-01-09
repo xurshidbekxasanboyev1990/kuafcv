@@ -1,5 +1,7 @@
 'use client';
 
+import { getFileUrl } from '@/lib/config';
+import { cn } from '@/lib/utils';
 import {
   BarChart3,
   Bell,
@@ -13,6 +15,8 @@ import {
   FileCheck,
   GraduationCap,
   Heart,
+  LayoutDashboard,
+  LogOut,
   Settings,
   Target,
   TrendingUp,
@@ -25,6 +29,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from './AuthProvider';
+import { useLayout } from './LayoutProvider';
 
 interface NavItem {
   href: string;
@@ -35,6 +40,12 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
+  {
+    href: '/dashboard',
+    icon: LayoutDashboard,
+    label: 'Bosh sahifa',
+    roles: ['student', 'admin', 'registrar', 'employer'],
+  },
   {
     href: '/portfolio',
     icon: Briefcase,
@@ -105,25 +116,39 @@ const navItems: NavItem[] = [
     label: 'Bildirishnomalar',
     roles: ['student', 'employer', 'admin', 'registrar'],
   },
+  {
+    href: '/settings',
+    icon: Settings,
+    label: 'Sozlamalar',
+    roles: ['student', 'admin', 'registrar', 'employer'],
+  },
 ];
 
-export default function Sidebar() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [expandedItems, setExpandedItems] = useState<string[]>(['/portfolio']);
+export default function Sidebar({ className }: { className?: string }) {
+  const { user, logout } = useAuth();
+  const { sidebarCollapsed, setSidebarCollapsed, isMobile, setSidebarOpenMobile } = useLayout();
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (window.innerWidth < 1024) {
-      setIsSidebarOpen(false);
+    setMounted(true);
+  }, []);
+
+  // Expand parent if child is active
+  useEffect(() => {
+    const activeParent = navItems.find((item) =>
+      item.children?.some((child) => child.href === pathname)
+    );
+    if (activeParent && !expandedItems.includes(activeParent.href)) {
+      setExpandedItems((prev) => [...prev, activeParent.href]);
     }
   }, [pathname]);
 
-  const handleLogout = async () => {
-    await logout();
-    router.push('/login');
-  };
+  if (!mounted || !user) return null;
+
+  const userRole = (user.role || 'student').toLowerCase();
 
   const toggleExpanded = (href: string) => {
     setExpandedItems((prev) =>
@@ -131,81 +156,87 @@ export default function Sidebar() {
     );
   };
 
-  if (!user) return null;
-
-  const userRole = user.role?.toLowerCase() || '';
-  const filteredItems = navItems.filter((item) => item.roles.includes(userRole));
-
   const renderNavItem = (item: NavItem, isChild = false) => {
-    const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+    const isActive = pathname === item.href;
     const isExpanded = expandedItems.includes(item.href);
     const hasChildren = item.children && item.children.length > 0;
 
-    if (!isSidebarOpen && !isChild) {
-      // Collapsed state - faqat ikonka
+    // Check if any child is active
+    const isChildActive = item.children?.some(child => child.href === pathname);
+
+    if (sidebarCollapsed && !isMobile && !isChild) {
+      // Collapsed Desktop View
       return (
-        <li key={item.href} className="relative group">
-          {hasChildren ? (
-            <button
-              onClick={() => {
-                setIsSidebarOpen(true);
-                toggleExpanded(item.href);
-              }}
-              className={`w-full flex items-center justify-center p-3 rounded-lg transition-all ${isActive ? 'bg-white' : 'text-white hover:bg-white/10'
-                }`}
-              style={isActive ? { color: '#991B1B' } : {}}
-              title={item.label}
-            >
-              <item.icon size={20} />
-            </button>
-          ) : (
-            <Link
-              href={item.href}
-              className={`flex items-center justify-center p-3 rounded-lg transition-all ${isActive ? 'bg-white' : 'text-white hover:bg-white/10'
-                }`}
-              style={isActive ? { color: '#991B1B' } : {}}
-              title={item.label}
-            >
-              <item.icon size={20} />
-            </Link>
-          )}
-          {/* Tooltip */}
-          <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+        <li key={item.href} className="relative group px-1 mb-1">
+          <button
+            onClick={() => {
+              if (hasChildren) {
+                setSidebarCollapsed(false);
+                setExpandedItems([item.href]);
+              } else {
+                router.push(item.href);
+              }
+            }}
+            className={cn(
+              "flex h-10 w-10 items-center justify-center rounded-md transition-all mx-auto",
+              isActive || isChildActive
+                ? "bg-white text-primary"
+                : "text-white hover:bg-white/10"
+            )}
+            title={item.label}
+          >
+            <item.icon size={20} strokeWidth={isActive || isChildActive ? 2.5 : 2} />
+          </button>
+
+          {/* Tooltip for collapsed state */}
+          <div className="absolute left-full top-0 ml-2 z-50 hidden px-2 py-1 text-xs text-primary bg-white rounded shadow-md group-hover:block whitespace-nowrap animate-in fade-in zoom-in-50 duration-200">
             {item.label}
           </div>
         </li>
       );
     }
 
-    // Expanded state - to'liq ko'rinish
+    // Expanded / Mobile View
     return (
-      <li key={item.href}>
+      <li key={item.href} className="px-3 mb-1">
         {hasChildren ? (
           <button
             onClick={() => toggleExpanded(item.href)}
-            className={`w-full flex items-center justify-between px-4 py-2 rounded-lg transition-all ${isActive ? 'bg-white font-medium shadow-lg' : 'text-white hover:bg-white/10'
-              } ${isChild ? 'pl-8 text-sm' : ''}`}
-            style={isActive ? { color: '#991B1B' } : {}}
+            className={cn(
+              "flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              isActive || isExpanded || isChildActive
+                ? "bg-white/10 text-white"
+                : "text-white/70 hover:bg-white/10 hover:text-white",
+              isChild && "pl-8 text-xs"
+            )}
           >
             <div className="flex items-center gap-3">
-              <item.icon size={18} />
+              <item.icon size={isChild ? 16 : 18} />
               <span>{item.label}</span>
             </div>
-            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           </button>
         ) : (
           <Link
             href={item.href}
-            className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all ${isActive ? 'bg-white font-medium shadow-lg' : 'text-white hover:bg-white/10'
-              } ${isChild ? 'pl-8 text-sm' : ''}`}
-            style={isActive ? { color: '#991B1B' } : {}}
+            onClick={() => {
+              if (isMobile) setSidebarOpenMobile(false);
+            }}
+            className={cn(
+              "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              isActive
+                ? "bg-white text-primary shadow-sm"
+                : "text-white/70 hover:bg-white/10 hover:text-white",
+              isChild && "pl-8 text-xs"
+            )}
           >
-            <item.icon size={18} />
+            <item.icon size={isChild ? 16 : 18} strokeWidth={isActive ? 2.5 : 2} />
             <span>{item.label}</span>
           </Link>
         )}
+
         {hasChildren && isExpanded && (
-          <ul className="mt-1 space-y-1">
+          <ul className="mt-1 space-y-0.5">
             {item.children
               ?.filter((child) => child.roles.includes(userRole))
               .map((child) => renderNavItem(child, true))}
@@ -216,125 +247,93 @@ export default function Sidebar() {
   };
 
   return (
-    <>
-      <aside
-        className={`fixed left-0 top-0 h-screen text-white flex flex-col shadow-xl transition-all duration-300 z-40 ${isSidebarOpen ? 'w-64' : 'w-20'
-          }`}
-        style={{ backgroundColor: '#991B1B' }}
-      >
-        {/* Header with Logo - collapsible */}
-        <div className="p-4 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.2)' }}>
-          {isSidebarOpen ? (
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-white rounded-lg p-1 flex items-center justify-center">
-                <Image
-                  src="/logo.png"
-                  alt="KUAFCV Logo"
-                  width={40}
-                  height={40}
-                  className="object-contain"
+    <div
+      className={cn(
+        "flex h-full flex-col bg-primary text-primary-foreground transition-all duration-300 border-r border-primary/10",
+        sidebarCollapsed && !isMobile ? "w-16" : "w-64",
+        className
+      )}
+    >
+      {/* Header */}
+      <div className={cn(
+        "flex h-16 items-center px-4 border-b border-white/10",
+        sidebarCollapsed && !isMobile ? "justify-center px-2" : "justify-between"
+      )}>
+        <Link
+          href="/"
+          onClick={() => isMobile && setSidebarOpenMobile(false)}
+          className="flex items-center gap-3 overflow-hidden"
+        >
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white p-1 shadow-sm">
+            <Image src="/logo.png" alt="Logo" width={24} height={24} className="h-full w-full object-contain" />
+          </div>
+          {(!sidebarCollapsed || isMobile) && (
+            <span className="text-lg font-bold tracking-tight text-white">KUAFCV</span>
+          )}
+        </Link>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto py-4 scrollbar-hide">
+        <ul className="space-y-1">
+          {navItems
+            .filter((item) => item.roles.includes(userRole))
+            .map((item) => renderNavItem(item))}
+        </ul>
+      </nav>
+
+      {/* Footer */}
+      <div className="border-t border-white/10 p-4">
+        {(!sidebarCollapsed || isMobile) ? (
+          <div className="mb-4 flex items-center gap-3 rounded-md bg-white/10 p-3">
+            {user.profile_image ? (
+              <div className="h-9 w-9 overflow-hidden rounded-full border border-white/20">
+                <img
+                  src={getFileUrl(user.profile_image)}
+                  alt="Profile"
+                  className="h-full w-full object-cover"
                 />
               </div>
-              <div>
-                <h1 className="text-lg font-bold leading-tight">KUAFCV</h1>
-                <p className="text-xs" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Portfolio Tizimi</p>
+            ) : (
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-primary text-sm font-bold">
+                {user.full_name?.charAt(0) || user.email?.charAt(0)}
               </div>
+            )}
+            <div className="overflow-hidden">
+              <p className="truncate text-sm font-medium text-white">{user.full_name || user.email}</p>
+              <p className="truncate text-xs text-white/70 capitalize">{user.role}</p>
             </div>
-          ) : (
-            <div className="flex justify-center">
-              <div className="w-12 h-12 bg-white rounded-lg p-1 flex items-center justify-center">
-                <Image
-                  src="/logo.png"
-                  alt="KUAFCV Logo"
-                  width={40}
-                  height={40}
-                  className="object-contain"
+          </div>
+        ) : (
+          <div className="mb-4 flex justify-center">
+            {user.profile_image ? (
+              <div className="h-8 w-8 overflow-hidden rounded-full border border-white/20" title={user.full_name || ''}>
+                <img
+                  src={getFileUrl(user.profile_image)}
+                  alt="Profile"
+                  className="h-full w-full object-cover"
                 />
               </div>
-            </div>
-          )}
-        </div>
-
-        {/* User Info - collapsible */}
-        <div className="p-4 border-b" style={{ borderColor: 'rgba(255, 255, 255, 0.2)' }}>
-          {isSidebarOpen ? (
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                <span className="font-bold text-lg" style={{ color: '#991B1B' }}>
-                  {user.full_name?.charAt(0)?.toUpperCase() || 'A'}
-                </span>
+            ) : (
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-primary text-xs font-bold" title={user.full_name || ''}>
+                {user.full_name?.charAt(0) || user.email?.charAt(0)}
               </div>
-              <div>
-                <p className="font-medium text-sm truncate max-w-[140px]">{user.full_name || 'User'}</p>
-                <p className="text-xs" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>{user.role}</p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex justify-center">
-              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                <span className="font-bold text-lg" style={{ color: '#991B1B' }}>
-                  {user.full_name?.charAt(0)?.toUpperCase() || 'A'}
-                </span>
-              </div>
-            </div>
+            )}
+          </div>
+        )}
+
+        <button
+          onClick={logout}
+          className={cn(
+            "flex w-full items-center gap-2 rounded-md py-2 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors",
+            (sidebarCollapsed && !isMobile) ? "justify-center" : "px-3"
           )}
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 p-4 overflow-y-auto">
-          <ul className="space-y-1">
-            {filteredItems.map((item) => renderNavItem(item))}
-          </ul>
-        </nav>
-
-        {/* Footer with Profile and Logout */}
-        <div className="p-4 border-t" style={{ borderColor: 'rgba(255, 255, 255, 0.2)' }}>
-          {isSidebarOpen ? (
-            <>
-              <Link
-                href="/profile"
-                className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all mb-2 ${pathname === '/profile' ? 'bg-white font-medium shadow-lg' : 'text-white hover:bg-white/10'
-                  }`}
-                style={pathname === '/profile' ? { color: '#991B1B' } : {}}
-              >
-                <Settings size={20} />
-                <span>Profil</span>
-              </Link>
-
-              <button
-                onClick={() => setIsSidebarOpen(false)}
-                className="flex items-center gap-3 px-4 py-2 w-full rounded-lg text-white transition-all hover:bg-white/10"
-              >
-                <ChevronRight size={20} />
-                <span>Yig'ish</span>
-              </button>
-            </>
-          ) : (
-            <>
-              <Link
-                href="/profile"
-                className={`flex items-center justify-center p-3 rounded-lg transition-all mb-2 ${pathname === '/profile' ? 'bg-white' : 'text-white hover:bg-white/10'
-                  }`}
-                style={pathname === '/profile' ? { color: '#991B1B' } : {}}
-                title="Profil"
-              >
-                <Settings size={20} />
-              </Link>
-
-              <button
-                onClick={() => setIsSidebarOpen(true)}
-                className="flex items-center justify-center p-3 w-full rounded-lg text-white transition-all hover:bg-white/10"
-                title="Ochish"
-              >
-                <ChevronDown size={20} />
-              </button>
-            </>
-          )}
-        </div>
-      </aside>
-
-      {/* Spacer for content */}
-      <div className={`transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-20'}`} />
-    </>
+          title="Chiqish"
+        >
+          <LogOut size={18} />
+          {(!sidebarCollapsed || isMobile) && <span>Chiqish</span>}
+        </button>
+      </div>
+    </div>
   );
 }

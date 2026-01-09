@@ -9,7 +9,12 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"kuafcv-backend/auth"
 	"kuafcv-backend/database"
@@ -169,7 +174,7 @@ func Register(c *gin.Context) {
 	if exists {
 		c.JSON(http.StatusConflict, models.APIError{
 			Error:   "email_exists",
-			Message: "Bu email allaqachon ro'yxatdan o'tgan",
+			Message: "Bu email allaqon ro'yxatdan o'tgan",
 			Code:    409,
 		})
 		return
@@ -200,52 +205,226 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, models.APISuccess{
-		Success: true,
-		Message: "Foydalanuvchi yaratildi",
-	})
-}
-
-// GET /api/auth/password-requirements - Get password policy requirements
-func GetPasswordRequirements(c *gin.Context) {
-	requirements := auth.GeneratePasswordRequirements()
-
-	c.JSON(http.StatusOK, gin.H{
-		"success":      true,
-		"requirements": requirements,
-		"message":      "Parol talablari",
-	})
-}
-
-// POST /api/auth/validate-password - Validate password strength (for frontend feedback)
-func ValidatePasswordStrength(c *gin.Context) {
-	var req struct {
-		Password string `json:"password" binding:"required"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, models.APIError{
-			Error:   "validation_error",
-			Message: "Parol kiritish shart",
-			Code:    400,
-		})
-		return
-	}
-
-	result := auth.ValidatePassword(req.Password)
-
-	c.JSON(http.StatusOK, gin.H{
-		"valid":    result.Valid,
-		"strength": result.Strength.String(),
-		"score":    result.Score,
-		"errors":   result.Errors,
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Foydalanuvchi muvaffaqiyatli yaratildi",
+		"id":      id,
 	})
 }
 
 // POST /api/auth/logout
 func Logout(c *gin.Context) {
-	c.JSON(http.StatusOK, models.APISuccess{
-		Success: true,
-		Message: "Tizimdan chiqdingiz",
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Muvaffaqiyatli chiqildi",
 	})
+}
+
+// PUT /api/auth/profile
+func UpdateProfile(c *gin.Context) {
+	userID := c.GetString("user_id")
+
+	// Parse multipart form
+	if err := c.Request.ParseMultipartForm(10 << 20); err != nil { // 10 MB max
+		c.JSON(http.StatusBadRequest, models.APIError{
+			Error:   "parse_error",
+			Message: "Fayl hajmi juda katta",
+			Code:    400,
+		})
+		return
+	}
+
+	fullName := c.Request.FormValue("full_name")
+	// email := c.Request.FormValue("email") // Optional: allow email update?
+
+	// Handle file upload
+	file, header, err := c.Request.FormFile("avatar")
+	if err == nil {
+		defer file.Close()
+
+		// Validate file type (allow all common image formats)
+		ext := strings.ToLower(filepath.Ext(header.Filename))
+		allowedExts := map[string]bool{
+			".jpg": true, ".jpeg": true, ".png": true, ".webp": true,
+			".svg": true, ".gif": true, ".bmp": true, ".ico": true,
+			".tiff": true, ".tif": true, ".heic": true,
+		}
+
+		if !allowedExts[ext] {
+			c.JSON(http.StatusBadRequest, models.APIError{
+				Error:   "invalid_file",
+				Message: "Faqat rasm fayllari qabul qilinadi (jpg, png, svg, gif va h.k)",
+				Code:    400,
+			})
+			return
+		}
+
+		// Ensure upload directory exists
+		uploadDir := filepath.Join("uploads", "profiles")
+		if err := os.MkdirAll(uploadDir, 0755); err != nil {
+			c.JSON(http.StatusInternalServerError, models.APIError{
+				Error:   "filesystem_error",
+				Message: "Serverda xatolik",
+				Code:    500,
+			})
+			return
+		}
+
+		// Generate unique filename
+		filename := fmt.Sprintf("%s%s", uuid.New().String(), ext)
+		path := filepath.Join(uploadDir, filename)
+
+		// Create file
+		out, err := os.Create(path)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, models.APIError{
+				Error:   "save_error",
+				Message: "Rasmni saqlashda xatolik",
+				Code:    500,
+			})
+			return
+		}
+		defer out.Close()
+
+		// Copy data
+		if _, err := io.Copy(out, file); err != nil {
+			c.JSON(http.StatusInternalServerError, models.APIError{
+				Error:   "write_error",
+				Message: "Faylni yozishda xatolik",
+				Code:    500,
+			})
+			return
+		}
+
+		// Update profile_image in DB
+		webPath := "/uploads/profiles/" + filename
+		_, err = database.DB.Exec("UPDATE users SET profile_image = $1, updated_at = NOW() WHERE id = $2", webPath, userID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, models.APIError{
+				Error:   "database_error",
+				Message: "Bazaga yozishda xatolik",
+				Code:    500,
+			})
+			return
+		}
+	}
+
+	// Update text fields
+	if fullName != "" {
+		_, err := database.DB.Exec("UPDATE users SET full_name = $1, updated_at = NOW() WHERE id = $2", fullName, userID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, models.APIError{
+				Error:   "database_error",
+				Message: "Ismni yangilashda xatolik",
+				Code:    500,
+			})
+			return
+		}
+	}
+	// Note: Email updates usually require verification, skipping for now unless requested.
+
+	// Return updated user data (reuses GetCurrentUser logic basically)
+	GetCurrentUser(c)
+}
+
+// POST /api/auth/change-password
+func ChangePassword(c *gin.Context) {
+	userID := c.GetString("user_id")
+	var req struct {
+		CurrentPassword string `json:"current_password" binding:"required"`
+		NewPassword     string `json:"new_password" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.APIError{
+			Error:   "validation_error",
+			Message: "Ma'lumotlar to'liq emas",
+			Code:    400,
+		})
+		return
+	}
+
+	// Verify current password
+	var currentHash string
+	err := database.DB.QueryRow("SELECT password_hash FROM users WHERE id = $1", userID).Scan(&currentHash)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIError{
+			Error:   "database_error",
+			Message: "Foydalanuvchi topilmadi",
+			Code:    500,
+		})
+		return
+	}
+
+	if !auth.CheckPassword(req.CurrentPassword, currentHash) {
+		c.JSON(http.StatusUnauthorized, models.APIError{
+			Error:   "invalid_credentials",
+			Message: "Joriy parol noto'g'ri",
+			Code:    401,
+		})
+		return
+	}
+
+	// Validate new password strength
+	passwordValidation := auth.ValidatePassword(req.NewPassword)
+	if !passwordValidation.Valid {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "weak_password",
+			"message": "Yangi parol talablarga javob bermaydi",
+			"errors":  passwordValidation.Errors,
+		})
+		return
+	}
+
+	// Update password
+	newHash, err := auth.HashPassword(req.NewPassword)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIError{
+			Error:   "hash_error",
+			Message: "Xatolik yuz berdi",
+			Code:    500,
+		})
+		return
+	}
+
+	_, err = database.DB.Exec("UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2", newHash, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIError{
+			Error:   "database_error",
+			Message: "Parolni yangilashda xatolik",
+			Code:    500,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Parol muvaffaqiyatli yangilandi",
+	})
+}
+
+// GET /api/auth/password-requirements
+func GetPasswordRequirements(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"min_length":        8,
+		"require_uppercase": true,
+		"require_lowercase": true,
+		"require_number":    true,
+		"require_special":   true,
+	})
+}
+
+// POST /api/auth/validate-password
+func ValidatePasswordStrength(c *gin.Context) {
+	var req struct {
+		Password string `json:"password"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.APIError{
+			Error:   "validation_error",
+			Message: "Parol kiritilishi shart",
+			Code:    400,
+		})
+		return
+	}
+
+	validation := auth.ValidatePassword(req.Password)
+	c.JSON(http.StatusOK, validation)
 }

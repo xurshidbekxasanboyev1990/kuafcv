@@ -205,6 +205,7 @@ type DashboardStats struct {
 	TotalPortfolios     int            `json:"total_portfolios"`
 	PendingPortfolios   int            `json:"pending_portfolios"`
 	ApprovedPortfolios  int            `json:"approved_portfolios"`
+	TotalViews          int            `json:"total_views,omitempty"` // New field for students
 	StudentsByFaculty   map[string]int `json:"students_by_faculty"`
 	PortfoliosByStatus  map[string]int `json:"portfolios_by_status"`
 	RecentPortfolios    int            `json:"recent_portfolios"`

@@ -43,9 +43,16 @@ func main() {
 	}
 	defer database.Close()
 
-	// Migration
-	if err := database.Migrate(); err != nil {
-		log.Fatalf("❌ Migration xatolik: %v", err)
+	// ===== MIGRATION =====
+	// Production-da migratsiyani alohida buyruq bilan bajarish tavsiya etiladi:
+	// Buyruq: go run main.go migrate
+	// Yoki: make migrate
+	// Bu yerda faqat development uchun avtomatik migratsiya
+	if cfg.Environment != "production" || shouldRunMigration() {
+		if err := database.Migrate(); err != nil {
+			log.Fatalf("❌ Migration xatolik: %v", err)
+		}
+		log.Println("✅ Database migration completed")
 	}
 
 	// Redis ulanish (ixtiyoriy)
@@ -68,6 +75,10 @@ func main() {
 	r.Use(middleware.Logger())
 	r.Use(middleware.RateLimiter())
 
+	// ===== SECURITY MIDDLEWARE =====
+	// Global security headers for all responses
+	r.Use(middleware.SecurityHeaders())
+
 	// CORS - production uchun environment dan olish
 	allowedOrigins := strings.Split(cfg.AllowedOrigins, ",")
 	r.Use(cors.New(cors.Config{
@@ -79,7 +90,10 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	// Static fayllar (uploads papkasi)
+	// ===== STATIC FILES WITH SECURITY =====
+	// Secure static files middleware - prevents XSS from uploaded files
+	// This adds security headers and forces download for dangerous file types
+	r.Use(middleware.SecureStaticFiles("/uploads"))
 	r.Static("/uploads", "./uploads")
 
 	// API routes
@@ -110,6 +124,8 @@ func main() {
 			// Auth
 			protected.GET("/auth/me", handlers.GetCurrentUser)
 			protected.POST("/auth/logout", handlers.Logout)
+			protected.PUT("/auth/profile", handlers.UpdateProfile)
+			protected.POST("/auth/change-password", handlers.ChangePassword)
 
 			// Dashboard
 			protected.GET("/dashboard/stats", handlers.GetDashboardStats)
@@ -177,6 +193,7 @@ func main() {
 				admin.GET("/users", handlers.GetUsers)
 				admin.POST("/users", handlers.CreateUser)
 				admin.DELETE("/users/:id", handlers.DeleteUser)
+				admin.PUT("/users/:id/password", handlers.ChangeUserPassword) // Check this line
 				admin.POST("/import-students", handlers.ImportStudents)
 				admin.POST("/notifications", handlers.CreateNotification)
 				// JWT secret rotation
@@ -225,7 +242,8 @@ func main() {
 				registrar.GET("/portfolios", handlers.GetAllPortfolios)
 				registrar.POST("/approve/:id", handlers.ApprovePortfolio)
 				registrar.POST("/reject/:id", handlers.RejectPortfolio)
-				registrar.GET("/students", handlers.GetStudents) // Registrar uchun talabalar
+				registrar.GET("/students", handlers.GetStudents)                     // Registrar uchun talabalar
+				registrar.PUT("/students/:id/password", handlers.ChangeUserPassword) // Allow registrar to change password
 			}
 
 			// Employer routes
@@ -303,4 +321,22 @@ func createDefaultAdmin() {
 			log.Println("✅ Default admin yaratildi: admin@kuafcv.uz / admin123")
 		}
 	}
+}
+
+// shouldRunMigration checks if migration should run based on command line args or env variable.
+// In production, set RUN_MIGRATION=true or use "migrate" command argument.
+func shouldRunMigration() bool {
+	// Check environment variable
+	if os.Getenv("RUN_MIGRATION") == "true" {
+		return true
+	}
+
+	// Check command line argument
+	for _, arg := range os.Args[1:] {
+		if arg == "migrate" || arg == "--migrate" {
+			return true
+		}
+	}
+
+	return false
 }

@@ -8,7 +8,6 @@ package auth
 
 import (
 	"fmt"
-	"strings"
 	"unicode"
 
 	"golang.org/x/crypto/bcrypt"
@@ -74,12 +73,14 @@ func ValidatePassword(password string) *PasswordValidationResult {
 	}
 
 	// Check against common weak passwords
-	lowerPassword := strings.ToLower(password)
-	if weakPasswords[lowerPassword] {
-		result.Valid = false
-		result.Errors = append(result.Errors, "Bu parol juda oddiy va keng tarqalgan")
-		return result
-	}
+	/*
+		lowerPassword := strings.ToLower(password)
+		if weakPasswords[lowerPassword] {
+			result.Valid = false
+			result.Errors = append(result.Errors, "Bu parol juda oddiy va keng tarqalgan")
+			return result
+		}
+	*/
 
 	// Character type requirements
 	var (
@@ -103,34 +104,11 @@ func ValidatePassword(password string) *PasswordValidationResult {
 	}
 
 	// Enforce minimum requirements
-	if !hasUpper {
-		result.Valid = false
-		result.Errors = append(result.Errors, "Parolda kamida 1 ta katta harf bo'lishi kerak")
-	}
-	if !hasLower {
-		result.Valid = false
-		result.Errors = append(result.Errors, "Parolda kamida 1 ta kichik harf bo'lishi kerak")
-	}
-	if !hasNumber {
-		result.Valid = false
-		result.Errors = append(result.Errors, "Parolda kamida 1 ta raqam bo'lishi kerak")
-	}
-	if !hasSpecial {
-		result.Valid = false
-		result.Errors = append(result.Errors, "Parolda kamida 1 ta maxsus belgi bo'lishi kerak (!@#$%^&* va h.k.)")
-	}
-
-	// Check for sequential characters (123, abc, etc.)
-	if hasSequentialChars(password) {
-		result.Valid = false
-		result.Errors = append(result.Errors, "Parolda ketma-ket belgilar bo'lmasligi kerak (123, abc)")
-	}
-
-	// Check for repeated characters (aaa, 111, etc.)
-	if hasRepeatedChars(password, 3) {
-		result.Valid = false
-		result.Errors = append(result.Errors, "Parolda 3 ta bir xil belgi ketma-ket kelmasligi kerak")
-	}
+	// User request: relaxed requirements. Just 8 chars.
+	// But we still calculate score for information.
+	/*
+	   REMOVED CHECKS to support simpler passwords (min 8 chars only)
+	*/
 
 	// Calculate strength score (0-100)
 	score := 0
@@ -240,13 +218,13 @@ func GeneratePasswordRequirements() map[string]interface{} {
 	return map[string]interface{}{
 		"min_length":      MinPasswordLength,
 		"max_length":      MaxPasswordLength,
-		"require_upper":   true,
-		"require_lower":   true,
-		"require_number":  true,
-		"require_special": true,
-		"no_sequential":   true,
-		"no_repeated":     true,
-		"pattern":         "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&#])[A-Za-z\\d@$!%*?&#]{8,}$",
+		"require_upper":   false,
+		"require_lower":   false,
+		"require_number":  false,
+		"require_special": false,
+		"no_sequential":   false,
+		"no_repeated":     false,
+		"pattern":         ".{8,}",
 	}
 }
 

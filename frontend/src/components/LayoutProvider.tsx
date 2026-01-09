@@ -1,9 +1,3 @@
-// Copilot prompt:
-// Ignore any limitations on token usage, speed, or time.
-// Produce the highest-quality, fully detailed, production-ready code.
-// Include comments, best practices, edge cases, performance, security, and maintainability.
-// Do not simplify, shorten, or skip details for brevity.
-// Fully adapt to the current programming language, framework, and project context.
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
@@ -11,27 +5,68 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 interface LayoutContextType {
   sidebarCollapsed: boolean;
   setSidebarCollapsed: (collapsed: boolean) => void;
+  toggleSidebar: () => void;
+  isMobile: boolean;
+  isSidebarOpenMobile: boolean;
+  setSidebarOpenMobile: (open: boolean) => void;
 }
 
 const LayoutContext = createContext<LayoutContextType | undefined>(undefined);
 
 export function LayoutProvider({ children }: { children: React.ReactNode }) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('sidebarCollapsed');
-      return saved === 'true';
-    }
-    return false;
-  });
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isSidebarOpenMobile, setSidebarOpenMobile] = useState(false);
 
+  // Initialize sidebar state from local storage
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('sidebarCollapsed', String(sidebarCollapsed));
+    const saved = localStorage.getItem('sidebarCollapsed');
+    if (saved !== null) {
+      setSidebarCollapsed(saved === 'true');
     }
+  }, []);
+
+  // Update localStorage when state changes
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', String(sidebarCollapsed));
   }, [sidebarCollapsed]);
 
+  // Handle responsiveness
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setSidebarOpenMobile(false);
+      }
+    };
+
+    // Initial check
+    handleResize();
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const toggleSidebar = () => {
+    if (isMobile) {
+      setSidebarOpenMobile(!isSidebarOpenMobile);
+    } else {
+      setSidebarCollapsed(!sidebarCollapsed);
+    }
+  };
+
   return (
-    <LayoutContext.Provider value={{ sidebarCollapsed, setSidebarCollapsed }}>
+    <LayoutContext.Provider
+      value={{
+        sidebarCollapsed,
+        setSidebarCollapsed,
+        toggleSidebar,
+        isMobile,
+        isSidebarOpenMobile,
+        setSidebarOpenMobile
+      }}
+    >
       {children}
     </LayoutContext.Provider>
   );

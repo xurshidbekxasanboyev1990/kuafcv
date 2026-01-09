@@ -233,9 +233,9 @@ func AnalyzePortfolio(c *gin.Context) {
 	var student models.User
 	var studentDataJSON []byte
 	err := database.DB.QueryRow(`
-		SELECT id, email, full_name, student_id, student_data 
+		SELECT id, email, full_name, student_id, student_data, profile_image 
 		FROM users WHERE id = $1
-	`, targetID).Scan(&student.ID, &student.Email, &student.FullName, &student.StudentID, &studentDataJSON)
+	`, targetID).Scan(&student.ID, &student.Email, &student.FullName, &student.StudentID, &studentDataJSON, &student.ProfileImage)
 
 	if err != nil {
 		c.JSON(http.StatusNotFound, models.APIError{
@@ -1370,7 +1370,8 @@ func GetAnalysisHistory(c *gin.Context) {
 	if strings.ToUpper(userRole) == "ADMIN" {
 		rows, err = database.DB.Query(`
 			SELECT id, file_name, file_type, analysis_type, conclusion, 
-			       confidence_level, ai_probability_range, processing_time_ms, created_at
+			       confidence_level, ai_probability_range, processing_time_ms, created_at,
+				   text_length, rhythm_score, personality_score, naturalness_score, document_type
 			FROM file_analysis_results
 			ORDER BY created_at DESC
 			LIMIT $1 OFFSET $2
@@ -1378,7 +1379,8 @@ func GetAnalysisHistory(c *gin.Context) {
 	} else {
 		rows, err = database.DB.Query(`
 			SELECT id, file_name, file_type, analysis_type, conclusion, 
-			       confidence_level, ai_probability_range, processing_time_ms, created_at
+			       confidence_level, ai_probability_range, processing_time_ms, created_at,
+				   text_length, rhythm_score, personality_score, naturalness_score, document_type
 			FROM file_analysis_results
 			WHERE user_id = $1
 			ORDER BY created_at DESC
@@ -1398,13 +1400,14 @@ func GetAnalysisHistory(c *gin.Context) {
 
 	var history []map[string]interface{}
 	for rows.Next() {
-		var id, fileName, fileType, analysisType string
+		var id, fileName, fileType, analysisType, docType string
 		var conclusion, confidenceLevel, aiProbRange *string
-		var processingTime *int
+		var processingTime, textLength, rhythm, personality, naturalness *int
 		var createdAt time.Time
 
 		if err := rows.Scan(&id, &fileName, &fileType, &analysisType, &conclusion,
-			&confidenceLevel, &aiProbRange, &processingTime, &createdAt); err != nil {
+			&confidenceLevel, &aiProbRange, &processingTime, &createdAt,
+			&textLength, &rhythm, &personality, &naturalness, &docType); err != nil {
 			continue
 		}
 
@@ -1418,6 +1421,11 @@ func GetAnalysisHistory(c *gin.Context) {
 			"ai_probability_range": aiProbRange,
 			"processing_time_ms":   processingTime,
 			"created_at":           createdAt,
+			"text_length":          textLength,
+			"rhythm_score":         rhythm,
+			"personality_score":    personality,
+			"naturalness_score":    naturalness,
+			"document_type":        docType,
 		}
 		history = append(history, item)
 	}

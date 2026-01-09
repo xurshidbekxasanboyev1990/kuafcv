@@ -351,7 +351,7 @@ func GetPortfolioRatings(c *gin.Context) {
 	// Get reviews with ratings
 	rows, _ := database.DB.Query(`
 		SELECT pr.rating, pr.review, pr.created_at, pr.updated_at,
-			   u.id, u.full_name, u.role
+			   u.id, u.full_name, u.role, u.profile_image
 		FROM portfolio_ratings pr
 		JOIN users u ON pr.user_id = u.id
 		WHERE pr.portfolio_id = $1 AND pr.review IS NOT NULL AND pr.review != ''
@@ -366,7 +366,9 @@ func GetPortfolioRatings(c *gin.Context) {
 		var review sql.NullString
 		var createdAt, updatedAt time.Time
 		var userID, fullName, userRole string
-		rows.Scan(&rating, &review, &createdAt, &updatedAt, &userID, &fullName, &userRole)
+		var profileImage sql.NullString // profile_image can be null
+
+		rows.Scan(&rating, &review, &createdAt, &updatedAt, &userID, &fullName, &userRole, &profileImage)
 
 		reviews = append(reviews, map[string]interface{}{
 			"rating":     rating,
@@ -374,9 +376,10 @@ func GetPortfolioRatings(c *gin.Context) {
 			"created_at": createdAt,
 			"updated_at": updatedAt,
 			"user": map[string]interface{}{
-				"id":        userID,
-				"full_name": fullName,
-				"role":      userRole,
+				"id":            userID,
+				"full_name":     fullName,
+				"role":          userRole,
+				"profile_image": profileImage.String,
 			},
 		})
 	}
@@ -519,7 +522,7 @@ func GetPortfolioComments(c *gin.Context) {
 	query := `
 		SELECT c.id, c.content, c.parent_id, c.is_private, c.is_edited, 
 			   c.created_at, c.updated_at, c.user_id,
-			   u.full_name, u.role
+			   u.full_name, u.role, u.profile_image
 		FROM portfolio_comments c
 		JOIN users u ON c.user_id = u.id
 		WHERE c.portfolio_id = $1
@@ -569,9 +572,10 @@ func GetPortfolioComments(c *gin.Context) {
 		var c Comment
 		var parentID sql.NullInt64
 		var userID, fullName, userRole string
+		var profileImage sql.NullString
 
 		rows.Scan(&c.ID, &c.Content, &parentID, &c.IsPrivate, &c.IsEdited,
-			&c.CreatedAt, &c.UpdatedAt, &userID, &fullName, &userRole)
+			&c.CreatedAt, &c.UpdatedAt, &userID, &fullName, &userRole, &profileImage)
 
 		if parentID.Valid {
 			pid := int(parentID.Int64)
@@ -579,9 +583,10 @@ func GetPortfolioComments(c *gin.Context) {
 		}
 
 		c.User = map[string]interface{}{
-			"id":        userID,
-			"full_name": fullName,
-			"role":      userRole,
+			"id":            userID,
+			"full_name":     fullName,
+			"role":          userRole,
+			"profile_image": profileImage.String,
 		}
 		c.CanEdit = (userID == c.User["id"]) || isAdmin
 
