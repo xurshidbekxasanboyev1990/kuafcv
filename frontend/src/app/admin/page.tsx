@@ -1099,6 +1099,8 @@ function PortfoliosTab() {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
       const data = await res.json();
+      console.log('Admin portfolios data:', data);
+      console.log('First portfolio files:', data.items?.[0]?.files);
       setPortfolios(data.items || []);
       setTotal(data.total || 0);
     } catch (err) {
