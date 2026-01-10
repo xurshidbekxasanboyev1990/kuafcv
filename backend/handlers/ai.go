@@ -306,6 +306,10 @@ func AnalyzePortfolio(c *gin.Context) {
 	}
 
 	// Build analysis prompt with categories
+	studentIDStr := ""
+	if student.StudentID != nil {
+		studentIDStr = *student.StudentID
+	}
 	portfolioText := fmt.Sprintf(`
 TALABA MA'LUMOTLARI:
 - Ism: %s
@@ -318,7 +322,7 @@ TALABA MA'LUMOTLARI:
 KATEGORIYALAR BO'YICHA TAQSIMOT:
 `,
 		student.FullName,
-		student.StudentID,
+		studentIDStr,
 		student.StudentData["faculty"],
 		student.StudentData["specialty"],
 		student.StudentData["course"],

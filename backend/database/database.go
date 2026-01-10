@@ -502,6 +502,72 @@ func Migrate() error {
 		}
 	}
 
+	// Migration v4: Webhooks support
+	var v4Applied bool
+	DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM schema_migrations WHERE version = 4 AND success = true)`).Scan(&v4Applied)
+
+	if !v4Applied {
+		log.Println("🔄 Applying migration v4: Webhooks support...")
+
+		webhookSchema := `
+		-- Webhooks jadvalini yaratish
+		CREATE TABLE IF NOT EXISTS webhooks (
+			id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+			name TEXT NOT NULL,
+			url TEXT NOT NULL,
+			secret TEXT,
+			events TEXT[] NOT NULL DEFAULT '{}',
+			is_active BOOLEAN DEFAULT TRUE,
+			retry_count INTEGER DEFAULT 3,
+			timeout_seconds INTEGER DEFAULT 30,
+			headers JSONB DEFAULT '{}',
+			created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+			created_at TIMESTAMP DEFAULT NOW(),
+			updated_at TIMESTAMP DEFAULT NOW()
+		);
+
+		-- Webhook logs jadvalini yaratish
+		CREATE TABLE IF NOT EXISTS webhook_logs (
+			id SERIAL PRIMARY KEY,
+			webhook_id TEXT REFERENCES webhooks(id) ON DELETE CASCADE,
+			event_type TEXT NOT NULL,
+			payload JSONB NOT NULL,
+			response_status INTEGER,
+			response_body TEXT,
+			error_message TEXT,
+			attempt INTEGER DEFAULT 1,
+			duration_ms INTEGER,
+			created_at TIMESTAMP DEFAULT NOW()
+		);
+
+		-- Indekslar
+		CREATE INDEX IF NOT EXISTS idx_webhooks_active ON webhooks(is_active);
+		CREATE INDEX IF NOT EXISTS idx_webhooks_events ON webhooks USING GIN(events);
+		CREATE INDEX IF NOT EXISTS idx_webhook_logs_webhook_id ON webhook_logs(webhook_id);
+		CREATE INDEX IF NOT EXISTS idx_webhook_logs_created ON webhook_logs(created_at DESC);
+		CREATE INDEX IF NOT EXISTS idx_webhook_logs_event ON webhook_logs(event_type);
+
+		-- Update trigger
+		DROP TRIGGER IF EXISTS webhooks_updated_at ON webhooks;
+		CREATE TRIGGER webhooks_updated_at
+			BEFORE UPDATE ON webhooks
+			FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+		`
+
+		if _, err := DB.Exec(webhookSchema); err != nil {
+			log.Printf("⚠️ Webhook jadvallarini yaratishda xatolik: %v", err)
+		} else {
+			log.Println("✅ Webhook jadvallari yaratildi")
+		}
+
+		// Record migration
+		if _, err := DB.Exec(`INSERT INTO schema_migrations (version) VALUES (4)`); err != nil {
+			log.Printf("⚠️ Migration v4 yozishda xatolik: %v", err)
+		} else {
+			log.Println("✅ Migration v4 completed")
+		}
+	}
+
 	log.Println("✅ Database migration bajarildi (version tracking enabled)")
 	return nil
 }

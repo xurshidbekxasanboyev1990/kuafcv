@@ -202,8 +202,8 @@ export default function RegistrarPage() {
         <button
           onClick={() => setActiveTab('portfolios')}
           className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'portfolios'
-              ? 'bg-red-50 text-red-700 shadow-sm'
-              : 'text-gray-500 hover:text-red-600'
+            ? 'bg-red-50 text-red-700 shadow-sm'
+            : 'text-gray-500 hover:text-red-600'
             }`}
         >
           <Briefcase size={18} />
@@ -212,8 +212,8 @@ export default function RegistrarPage() {
         <button
           onClick={() => setActiveTab('students')}
           className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'students'
-              ? 'bg-red-50 text-red-700 shadow-sm'
-              : 'text-gray-500 hover:text-red-600'
+            ? 'bg-red-50 text-red-700 shadow-sm'
+            : 'text-gray-500 hover:text-red-600'
             }`}
         >
           <GraduationCap size={18} />

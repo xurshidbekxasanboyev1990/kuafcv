@@ -385,6 +385,78 @@ export interface CreatePortfolioData {
   tags?: string[];
 }
 
+// Webhook types
+export interface Webhook {
+  id: string;
+  name: string;
+  url: string;
+  secret?: string;
+  events: string[];
+  is_active: boolean;
+  retry_count: number;
+  timeout_seconds: number;
+  headers?: Record<string, string>;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+  log_count?: number;
+  error_count?: number;
+}
+
+export interface WebhookLog {
+  id: number;
+  webhook_id: string;
+  event_type: string;
+  payload: unknown;
+  response_status?: number;
+  response_body?: string;
+  error_message?: string;
+  attempt: number;
+  duration_ms?: number;
+  created_at: string;
+}
+
+export interface WebhookEvent {
+  value: string;
+  label: string;
+}
+
+// Webhooks API
+export const webhooks = {
+  getAll: () => apiFetch<{ webhooks: Webhook[]; total: number; available_events: string[] }>('/admin/webhooks'),
+
+  getOne: (id: string) => apiFetch<Webhook>(`/admin/webhooks/${id}`),
+
+  getEvents: () => apiFetch<{ events: WebhookEvent[] }>('/admin/webhooks/events'),
+
+  create: (data: Partial<Webhook>) =>
+    apiFetch<{ success: boolean; message: string; id: string }>('/admin/webhooks', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: string, data: Partial<Webhook>) =>
+    apiFetch(`/admin/webhooks/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: string) => apiFetch(`/admin/webhooks/${id}`, { method: 'DELETE' }),
+
+  toggle: (id: string) => apiFetch(`/admin/webhooks/${id}/toggle`, { method: 'PUT' }),
+
+  test: (id: string) =>
+    apiFetch<{ success: boolean; status_code?: number; response_body?: string; error?: string; duration_ms: number }>(
+      `/admin/webhooks/${id}/test`,
+      { method: 'POST' }
+    ),
+
+  getLogs: (id: string, limit?: number) =>
+    apiFetch<{ logs: WebhookLog[]; total: number }>(`/admin/webhooks/${id}/logs${limit ? `?limit=${limit}` : ''}`),
+
+  clearLogs: (id: string) => apiFetch(`/admin/webhooks/${id}/logs`, { method: 'DELETE' }),
+};
+
 // Generic API helper for simple REST calls
 export const api = {
   auth,
@@ -393,6 +465,7 @@ export const api = {
   registrar,
   employer,
   notifications,
+  webhooks,
   get: <T = unknown>(endpoint: string) => apiFetch<T>(endpoint, { method: 'GET' }),
   post: <T = unknown>(endpoint: string, data?: unknown) => apiFetch<T>(endpoint, {
     method: 'POST',

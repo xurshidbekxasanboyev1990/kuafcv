@@ -108,8 +108,8 @@ export default function LeadershipPortfolioPage() {
         {message && (
           <div
             className={`p-4 rounded-lg flex items-center gap-2 ${message.type === 'success'
-                ? 'bg-green-50 text-green-700 border border-green-200'
-                : 'bg-destructive/10 text-destructive border border-destructive/20'
+              ? 'bg-green-50 text-green-700 border border-green-200'
+              : 'bg-destructive/10 text-destructive border border-destructive/20'
               }`}
           >
             {message.type === 'success' ? (

@@ -209,6 +209,8 @@ export default function EmployerAIPage() {
                 value={selectedFaculty}
                 onChange={(e) => setSelectedFaculty(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-lg border-2 border-red-200 bg-white text-red-800 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                title="Fakultetni tanlang"
+                aria-label="Fakultet filtri"
               >
                 <option value="">Barchasi</option>
                 {faculties.map(f => (
@@ -226,6 +228,8 @@ export default function EmployerAIPage() {
                 value={selectedSpecialty}
                 onChange={(e) => setSelectedSpecialty(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-lg border-2 border-red-200 bg-white text-red-800 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                title="Mutaxassislikni tanlang"
+                aria-label="Mutaxassislik filtri"
               >
                 <option value="">Barchasi</option>
                 {specialties.map(s => (
@@ -243,6 +247,8 @@ export default function EmployerAIPage() {
                 value={selectedCourse}
                 onChange={(e) => setSelectedCourse(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-lg border-2 border-red-200 bg-white text-red-800 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                title="Kursni tanlang"
+                aria-label="Kurs filtri"
               >
                 <option value="">Barchasi</option>
                 {courses.sort((a, b) => a - b).map(c => (
@@ -260,6 +266,8 @@ export default function EmployerAIPage() {
                 value={selectedGroup}
                 onChange={(e) => setSelectedGroup(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-lg border-2 border-red-200 bg-white text-red-800 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                title="Guruhni tanlang"
+                aria-label="Guruh filtri"
               >
                 <option value="">Barchasi</option>
                 {groups.map(g => (

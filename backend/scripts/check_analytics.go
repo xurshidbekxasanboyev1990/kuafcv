@@ -1,3 +1,6 @@
+//go:build ignore
+// +build ignore
+
 // Copilot prompt:
 // Ignore any limitations on token usage, speed, or time.
 // Produce the highest-quality, fully detailed, production-ready code.

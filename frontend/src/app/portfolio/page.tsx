@@ -9,7 +9,9 @@
 import {
   BarChart3,
   Brain,
+  Download,
   Eye,
+  File,
   FileText,
   Image as ImageIcon,
   MessageCircle,
@@ -17,9 +19,7 @@ import {
   Star,
   Trash2,
   Video,
-  X,
-  Download,
-  File
+  X
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, useTransition } from 'react';
@@ -69,7 +69,7 @@ export default function PortfolioPage() {
   // AI & Analysis State
   const [showAIAnalysis, setShowAIAnalysis] = useState(false);
   const [fileAnalysis, setFileAnalysis] = useState<{ url: string; name: string; type?: string; mimeType?: string } | null>(null);
-  
+
   // Files Modal State
   const [showFilesModal, setShowFilesModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null);
@@ -374,7 +374,7 @@ export default function PortfolioPage() {
               <div>
                 <h2 className="text-2xl font-bold mb-2">{selectedItem.title}</h2>
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary">{getCategoryLabel(selectedItem.category)}</Badge>
+                  <Badge variant="secondary">{getCategoryLabel(selectedItem.category || '')}</Badge>
                   <StatusBadge status={selectedItem.approval_status} />
                 </div>
               </div>
@@ -395,7 +395,7 @@ export default function PortfolioPage() {
 
               <div className="space-y-3">
                 <h3 className="font-semibold text-lg mb-3">Fayllar ({selectedItem.files?.length || (selectedItem.file_url ? 1 : 0)})</h3>
-                
+
                 {selectedItem.files && selectedItem.files.length > 0 ? (
                   selectedItem.files.map((file, idx) => (
                     <div key={idx} className="p-4 bg-muted/50 rounded-lg flex items-center justify-between hover:bg-muted transition-colors group">

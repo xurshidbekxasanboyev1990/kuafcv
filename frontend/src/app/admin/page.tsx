@@ -9,7 +9,8 @@
 import AIAnalytics from '@/components/AIAnalytics';
 import { useAuth } from '@/components/AuthProvider';
 import MainLayout from '@/components/MainLayout';
-import { admin, CreateUserData, FilterOptions, User } from '@/lib/api';
+import { admin, CreateUserData, FilterOptions, User, webhooks as webhooksApi, Webhook as WebhookType, WebhookLog, WebhookEvent } from '@/lib/api';
+import { getFileUrl } from '@/lib/config';
 import {
   AlertCircle,
   BarChart3,
@@ -22,6 +23,7 @@ import {
   ChevronRight,
   Clock,
   Database,
+  Download,
   Edit,
   Eye,
   FileText,
@@ -46,12 +48,13 @@ import {
   Upload,
   UserPlus,
   Users,
+  Webhook,
   X
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-type TabType = 'dashboard' | 'students' | 'staff' | 'portfolios' | 'ai-analytics' | 'announcements' | 'notifications' | 'settings' | 'categories';
+type TabType = 'dashboard' | 'students' | 'staff' | 'portfolios' | 'ai-analytics' | 'announcements' | 'notifications' | 'settings' | 'categories' | 'webhooks';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -79,6 +82,7 @@ export default function AdminPage() {
     { id: 'staff', label: 'Xodimlar', icon: <Shield size={20} /> },
     { id: 'portfolios', label: 'Portfoliolar', icon: <FileText size={20} /> },
     { id: 'categories', label: 'Kategoriyalar', icon: <Palette size={20} /> },
+    { id: 'webhooks', label: 'Webhooks', icon: <Webhook size={20} /> },
     { id: 'ai-analytics', label: 'AI Tahlil', icon: <Brain size={20} /> },
     { id: 'announcements', label: "E'lonlar", icon: <Megaphone size={20} /> },
     { id: 'notifications', label: 'Bildirishnomalar', icon: <Bell size={20} /> },
@@ -103,8 +107,8 @@ export default function AdminPage() {
             key={tab.id}
             onClick={() => setActiveTab(tab.id as TabType)}
             className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg whitespace-nowrap transition-all text-sm md:text-base ${activeTab === tab.id
-                ? 'bg-red-600 text-white shadow-lg'
-                : 'bg-white text-red-700 border border-red-200 hover:bg-red-50'
+              ? 'bg-red-600 text-white shadow-lg'
+              : 'bg-white text-red-700 border border-red-200 hover:bg-red-50'
               }`}
           >
             {tab.icon}
@@ -117,13 +121,13 @@ export default function AdminPage() {
       {message && (
         <div
           className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${message.type === 'success'
-              ? 'bg-green-50 border border-green-200 text-green-700'
-              : 'bg-red-50 border border-red-200 text-red-700'
+            ? 'bg-green-50 border border-green-200 text-green-700'
+            : 'bg-red-50 border border-red-200 text-red-700'
             }`}
         >
           {message.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
           <span>{message.text}</span>
-          <button onClick={() => setMessage(null)} className="ml-auto">
+          <button onClick={() => setMessage(null)} className="ml-auto" title="Yopish" aria-label="Xabarni yopish">
             <X size={18} />
           </button>
         </div>
@@ -135,6 +139,7 @@ export default function AdminPage() {
       {activeTab === 'staff' && <StaffTab setMessage={setMessage} />}
       {activeTab === 'portfolios' && <PortfoliosTab />}
       {activeTab === 'categories' && <CategoriesTab setMessage={setMessage} />}
+      {activeTab === 'webhooks' && <WebhooksTab setMessage={setMessage} />}
       {activeTab === 'ai-analytics' && <AIAnalytics />}
       {activeTab === 'announcements' && <AnnouncementsTab setMessage={setMessage} />}
       {activeTab === 'notifications' && <NotificationsTab setMessage={setMessage} />}
@@ -358,9 +363,9 @@ function DashboardTab() {
               {recentActivity.map((a: any, idx: number) => (
                 <div key={idx} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                   <div className={`w-8 h-8 flex items-center justify-center rounded-full ${a.type === 'view' ? 'bg-purple-100 text-purple-600' :
-                      a.type === 'rating' ? 'bg-yellow-100 text-yellow-600' :
-                        a.type === 'comment' ? 'bg-blue-100 text-blue-600' :
-                          'bg-pink-100 text-pink-600'
+                    a.type === 'rating' ? 'bg-yellow-100 text-yellow-600' :
+                      a.type === 'comment' ? 'bg-blue-100 text-blue-600' :
+                        'bg-pink-100 text-pink-600'
                     }`}>
                     {a.type === 'view' ? <Eye size={16} /> :
                       a.type === 'rating' ? <Star size={16} /> :
@@ -782,7 +787,7 @@ function StudentsTab({ setMessage }: { setMessage: (m: any) => void }) {
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-4 md:p-6">
             <div className="flex items-center justify-between mb-4 md:mb-6">
               <h2 className="text-lg md:text-xl font-bold text-red-800">Talabalarni Import</h2>
-              <button onClick={() => setShowImport(false)} className="p-2 hover:bg-red-100 rounded-lg">
+              <button onClick={() => setShowImport(false)} className="p-2 hover:bg-red-100 rounded-lg" title="Yopish" aria-label="Import oynasini yopish">
                 <X size={20} className="text-red-500" />
               </button>
             </div>
@@ -992,7 +997,7 @@ function StaffTab({ setMessage }: { setMessage: (m: any) => void }) {
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-red-800">Yangi xodim</h2>
-              <button onClick={() => setShowCreate(false)} className="p-2 hover:bg-red-100 rounded-lg">
+              <button onClick={() => setShowCreate(false)} className="p-2 hover:bg-red-100 rounded-lg" title="Yopish" aria-label="Yangi xodim oynasini yopish">
                 <X size={20} className="text-red-500" />
               </button>
             </div>
@@ -1153,8 +1158,8 @@ function PortfoliosTab() {
             key={s}
             onClick={() => setStatus(s)}
             className={`px-3 md:px-4 py-2 rounded-lg transition-all text-xs md:text-sm ${status === s
-                ? 'bg-red-600 text-white'
-                : 'bg-white text-red-700 border border-red-200 hover:bg-red-50'
+              ? 'bg-red-600 text-white'
+              : 'bg-white text-red-700 border border-red-200 hover:bg-red-50'
               }`}
           >
             {s === 'PENDING' && 'Kutilmoqda'}
@@ -1181,8 +1186,8 @@ function PortfoliosTab() {
                   <p className="text-red-500 text-xs md:text-sm">{p.type}</p>
                 </div>
                 <span className={`px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs font-medium whitespace-nowrap flex-shrink-0 ${p.approval_status === 'APPROVED' ? 'bg-green-100 text-green-700' :
-                    p.approval_status === 'REJECTED' ? 'bg-red-100 text-red-700' :
-                      'bg-orange-100 text-orange-700'
+                  p.approval_status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                    'bg-orange-100 text-orange-700'
                   }`}>
                   {p.approval_status}
                 </span>
@@ -1240,7 +1245,7 @@ function PortfoliosTab() {
                 <h2 className="text-2xl font-bold mb-2">{selectedPortfolio.title}</h2>
                 <p className="text-sm text-gray-500">{selectedPortfolio.type}</p>
               </div>
-              <button onClick={() => setShowFilesModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+              <button onClick={() => setShowFilesModal(false)} className="p-2 hover:bg-gray-100 rounded-lg" title="Yopish" aria-label="Fayllar oynasini yopish">
                 <X size={20} />
               </button>
             </div>
@@ -1547,8 +1552,8 @@ function SettingsTab() {
           <button
             onClick={() => handleValueChange(setting.key, !value)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${value
-                ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              ? 'bg-green-100 text-green-700 hover:bg-green-200'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               } ${isEdited ? 'ring-2 ring-blue-500' : ''}`}
           >
             {value ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
@@ -1662,7 +1667,7 @@ function SettingsTab() {
         >
           {message.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
           <span>{message.text}</span>
-          <button onClick={() => setMessage(null)} className="ml-auto">
+          <button onClick={() => setMessage(null)} className="ml-auto" title="Yopish" aria-label="Xabarni yopish">
             <X size={18} />
           </button>
         </div>
@@ -1675,8 +1680,8 @@ function SettingsTab() {
             key={cat.id}
             onClick={() => setActiveCategory(cat.id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-all ${activeCategory === cat.id
-                ? 'bg-red-600 text-white shadow-lg'
-                : 'bg-white text-red-700 border border-red-200 hover:bg-red-50'
+              ? 'bg-red-600 text-white shadow-lg'
+              : 'bg-white text-red-700 border border-red-200 hover:bg-red-50'
               }`}
           >
             {cat.icon}
@@ -1841,7 +1846,7 @@ function AddSettingModal({
         <div className="p-6 border-b border-red-100">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-red-800">Yangi sozlama qo'shish</h2>
-            <button onClick={onClose} className="p-2 hover:bg-red-100 rounded-lg">
+            <button onClick={onClose} className="p-2 hover:bg-red-100 rounded-lg" title="Yopish" aria-label="Sozlama oynasini yopish">
               <X size={20} className="text-red-500" />
             </button>
           </div>
@@ -2162,8 +2167,8 @@ function AnnouncementsTab({ setMessage }: { setMessage: (msg: { type: 'success' 
                     <button
                       onClick={() => toggleAnnouncement(announcement.id)}
                       className={`p-2 rounded-lg transition-colors ${announcement.is_active
-                          ? 'bg-green-100 text-green-600 hover:bg-green-200'
-                          : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                        ? 'bg-green-100 text-green-600 hover:bg-green-200'
+                        : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
                         }`}
                       title={announcement.is_active ? "O'chirish" : 'Yoqish'}
                     >
@@ -2298,7 +2303,7 @@ function AnnouncementModal({
           <h3 className="text-xl font-bold text-red-800">
             {announcement ? "E'lonni tahrirlash" : "Yangi e'lon qo'shish"}
           </h3>
-          <button onClick={onClose} className="p-2 hover:bg-red-100 rounded-lg">
+          <button onClick={onClose} className="p-2 hover:bg-red-100 rounded-lg" title="Yopish" aria-label="E'lon oynasini yopish">
             <X size={20} />
           </button>
         </div>
@@ -2314,8 +2319,8 @@ function AnnouncementModal({
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, type: type.value }))}
                   className={`p-3 rounded-lg border-2 text-left transition-colors ${formData.type === type.value
-                      ? 'border-red-500 bg-red-50'
-                      : 'border-gray-200 hover:border-red-200'
+                    ? 'border-red-500 bg-red-50'
+                    : 'border-gray-200 hover:border-red-200'
                     }`}
                 >
                   <span className="text-xl mr-2">{type.icon}</span>
@@ -2405,8 +2410,8 @@ function AnnouncementModal({
                   type="button"
                   onClick={() => toggleRole(role.value)}
                   className={`px-3 py-1 rounded-full text-sm transition-colors ${formData.target_roles.includes(role.value)
-                      ? 'bg-red-600 text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                 >
                   {role.label}
@@ -2802,6 +2807,8 @@ function CategoryModal({
             <button
               onClick={onClose}
               className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+              title="Yopish"
+              aria-label="Kategoriya oynasini yopish"
             >
               <X size={24} />
             </button>
@@ -2981,3 +2988,508 @@ function CategoryModal({
   );
 }
 
+// ==================== WEBHOOKS TAB ====================
+
+function WebhooksTab({ setMessage }: { setMessage: (msg: { type: 'success' | 'error'; text: string } | null) => void }) {
+  const [webhookList, setWebhookList] = useState<WebhookType[]>([]);
+  const [events, setEvents] = useState<WebhookEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [editingWebhook, setEditingWebhook] = useState<WebhookType | null>(null);
+  const [showLogs, setShowLogs] = useState<string | null>(null);
+  const [logs, setLogs] = useState<WebhookLog[]>([]);
+  const [testingId, setTestingId] = useState<string | null>(null);
+
+  const fetchWebhooks = async () => {
+    try {
+      setLoading(true);
+      const [webhooksRes, eventsRes] = await Promise.all([
+        webhooksApi.getAll(),
+        webhooksApi.getEvents(),
+      ]);
+      setWebhookList(webhooksRes.webhooks || []);
+      setEvents(eventsRes.events || []);
+    } catch (err) {
+      console.error('Webhooks fetch error:', err);
+      setMessage({ type: 'error', text: 'Webhooklarni yuklashda xatolik' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWebhooks();
+  }, []);
+
+  const handleToggle = async (id: string) => {
+    try {
+      await webhooksApi.toggle(id);
+      fetchWebhooks();
+      setMessage({ type: 'success', text: 'Webhook holati o\'zgartirildi' });
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Xatolik yuz berdi' });
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Webhook o\'chirilsinmi?')) return;
+    try {
+      await webhooksApi.delete(id);
+      fetchWebhooks();
+      setMessage({ type: 'success', text: 'Webhook o\'chirildi' });
+    } catch (err) {
+      setMessage({ type: 'error', text: 'O\'chirishda xatolik' });
+    }
+  };
+
+  const handleTest = async (id: string) => {
+    setTestingId(id);
+    try {
+      const result = await webhooksApi.test(id);
+      if (result.success) {
+        setMessage({ type: 'success', text: `Test muvaffaqiyatli! (${result.duration_ms}ms)` });
+      } else {
+        setMessage({ type: 'error', text: `Test xatolik: ${result.error || 'Noma\'lum xatolik'}` });
+      }
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Test xatolik' });
+    } finally {
+      setTestingId(null);
+    }
+  };
+
+  const handleShowLogs = async (id: string) => {
+    try {
+      const result = await webhooksApi.getLogs(id, 50);
+      setLogs(result.logs || []);
+      setShowLogs(id);
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Loglarni yuklashda xatolik' });
+    }
+  };
+
+  const handleClearLogs = async (id: string) => {
+    if (!confirm('Barcha loglar o\'chirilsinmi?')) return;
+    try {
+      await webhooksApi.clearLogs(id);
+      setLogs([]);
+      setMessage({ type: 'success', text: 'Loglar tozalandi' });
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Xatolik' });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl p-8 text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-4 border-red-500 border-t-transparent mx-auto"></div>
+        <p className="text-red-600 mt-4">Yuklanmoqda...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-red-800 flex items-center gap-2">
+            <Webhook className="text-red-500" size={24} />
+            Webhooks
+          </h2>
+          <p className="text-red-600 text-sm">Tashqi tizimlar bilan integratsiya</p>
+        </div>
+        <button
+          onClick={() => setShowCreate(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        >
+          <Plus size={18} />
+          Yangi webhook
+        </button>
+      </div>
+
+      {/* Webhooks List */}
+      {webhookList.length === 0 ? (
+        <div className="bg-white rounded-xl p-8 text-center border border-red-100">
+          <Webhook className="mx-auto text-red-300 mb-4" size={48} />
+          <p className="text-red-600">Webhooklar mavjud emas</p>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="mt-4 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
+          >
+            Birinchi webhookni yaratish
+          </button>
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {webhookList.map((wh) => (
+            <div
+              key={wh.id}
+              className={`bg-white rounded-xl p-4 border ${wh.is_active ? 'border-green-200' : 'border-gray-200'} shadow-sm`}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-semibold text-red-800 truncate">{wh.name}</h3>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${wh.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                      {wh.is_active ? 'Faol' : 'O\'chirilgan'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500 truncate mb-2">{wh.url}</p>
+                  <div className="flex flex-wrap gap-1">
+                    {wh.events.slice(0, 3).map((event) => (
+                      <span key={event} className="px-2 py-0.5 bg-red-50 text-red-600 rounded text-xs">
+                        {event}
+                      </span>
+                    ))}
+                    {wh.events.length > 3 && (
+                      <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
+                        +{wh.events.length - 3}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {wh.error_count !== undefined && wh.error_count > 0 && (
+                    <span className="px-2 py-1 bg-red-100 text-red-600 rounded text-xs" title="Xatoliklar soni">
+                      {wh.error_count} xatolik
+                    </span>
+                  )}
+                  <button
+                    onClick={() => handleTest(wh.id)}
+                    disabled={testingId === wh.id}
+                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    title="Test qilish"
+                    aria-label="Test qilish"
+                  >
+                    {testingId === wh.id ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
+                    ) : (
+                      <Globe size={18} />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => handleShowLogs(wh.id)}
+                    className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                    title="Loglarni ko'rish"
+                    aria-label="Loglarni ko'rish"
+                  >
+                    <Database size={18} />
+                  </button>
+                  <button
+                    onClick={() => handleToggle(wh.id)}
+                    className={`p-2 rounded-lg transition-colors ${wh.is_active ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-50'}`}
+                    title={wh.is_active ? 'O\'chirish' : 'Yoqish'}
+                    aria-label={wh.is_active ? 'O\'chirish' : 'Yoqish'}
+                  >
+                    {wh.is_active ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+                  </button>
+                  <button
+                    onClick={() => setEditingWebhook(wh)}
+                    className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                    title="Tahrirlash"
+                    aria-label="Tahrirlash"
+                  >
+                    <Edit size={18} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(wh.id)}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="O'chirish"
+                    aria-label="O'chirish"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Create/Edit Modal */}
+      {(showCreate || editingWebhook) && (
+        <WebhookModal
+          webhook={editingWebhook}
+          events={events}
+          onClose={() => {
+            setShowCreate(false);
+            setEditingWebhook(null);
+          }}
+          onSuccess={() => {
+            setShowCreate(false);
+            setEditingWebhook(null);
+            fetchWebhooks();
+            setMessage({ type: 'success', text: editingWebhook ? 'Webhook yangilandi' : 'Webhook yaratildi' });
+          }}
+        />
+      )}
+
+      {/* Logs Modal */}
+      {showLogs && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-3xl w-full max-h-[80vh] overflow-hidden">
+            <div className="p-4 border-b flex items-center justify-between">
+              <h3 className="text-lg font-bold text-red-800">Webhook Loglari</h3>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleClearLogs(showLogs)}
+                  className="px-3 py-1 text-red-600 hover:bg-red-50 rounded-lg text-sm"
+                >
+                  Tozalash
+                </button>
+                <button 
+                  onClick={() => setShowLogs(null)} 
+                  className="p-2 hover:bg-gray-100 rounded-lg"
+                  title="Yopish"
+                  aria-label="Loglar oynasini yopish"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-[60vh]">
+              {logs.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">Loglar mavjud emas</p>
+              ) : (
+                <div className="space-y-2">
+                  {logs.map((log) => (
+                    <div
+                      key={log.id}
+                      className={`p-3 rounded-lg border ${log.error_message ? 'border-red-200 bg-red-50' : log.response_status && log.response_status >= 200 && log.response_status < 300 ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-medium text-sm">{log.event_type}</span>
+                        <span className="text-xs text-gray-500">
+                          {new Date(log.created_at).toLocaleString('uz-UZ')}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs">
+                        {log.response_status && (
+                          <span className={`px-2 py-0.5 rounded ${log.response_status >= 200 && log.response_status < 300 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                            {log.response_status}
+                          </span>
+                        )}
+                        {log.duration_ms && (
+                          <span className="text-gray-500">{log.duration_ms}ms</span>
+                        )}
+                        <span className="text-gray-400">Attempt: {log.attempt}</span>
+                      </div>
+                      {log.error_message && (
+                        <p className="text-red-600 text-xs mt-2">{log.error_message}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Webhook Modal Component
+function WebhookModal({
+  webhook,
+  events,
+  onClose,
+  onSuccess,
+}: {
+  webhook: WebhookType | null;
+  events: WebhookEvent[];
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [formData, setFormData] = useState({
+    name: webhook?.name || '',
+    url: webhook?.url || '',
+    secret: '',
+    events: webhook?.events || [],
+    is_active: webhook?.is_active ?? true,
+    retry_count: webhook?.retry_count || 3,
+    timeout_seconds: webhook?.timeout_seconds || 30,
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!formData.name || !formData.url) {
+      setError('Nom va URL majburiy');
+      return;
+    }
+
+    if (formData.events.length === 0) {
+      setError('Kamida bitta event tanlang');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (webhook) {
+        await webhooksApi.update(webhook.id, formData);
+      } else {
+        await webhooksApi.create(formData);
+      }
+      onSuccess();
+    } catch (err: any) {
+      setError(err.message || 'Xatolik yuz berdi');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleEvent = (event: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      events: prev.events.includes(event)
+        ? prev.events.filter((e) => e !== event)
+        : [...prev.events, event],
+    }));
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-red-800">
+              {webhook ? 'Webhookni tahrirlash' : 'Yangi webhook'}
+            </h2>
+            <button onClick={onClose} className="p-2 hover:bg-red-100 rounded-lg" title="Yopish" aria-label="Yopish">
+              <X size={20} className="text-red-500" />
+            </button>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && (
+            <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{error}</div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-red-700 mb-1">Nom *</label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full px-4 py-2 border border-red-200 rounded-lg focus:ring-2 focus:ring-red-500"
+              placeholder="Webhook nomi"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-red-700 mb-1">URL *</label>
+            <input
+              type="url"
+              value={formData.url}
+              onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+              className="w-full px-4 py-2 border border-red-200 rounded-lg focus:ring-2 focus:ring-red-500"
+              placeholder="https://example.com/webhook"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-red-700 mb-1">Secret (ixtiyoriy)</label>
+            <input
+              type="password"
+              value={formData.secret}
+              onChange={(e) => setFormData({ ...formData, secret: e.target.value })}
+              className="w-full px-4 py-2 border border-red-200 rounded-lg focus:ring-2 focus:ring-red-500"
+              placeholder="HMAC imzolash uchun"
+            />
+            <p className="text-xs text-gray-500 mt-1">So'rovlarni X-Webhook-Signature header bilan imzolash uchun</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-red-700 mb-2">Eventlar *</label>
+            <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border border-red-100 rounded-lg">
+              {events.map((event) => (
+                <label
+                  key={event.value}
+                  className={`flex items-center gap-2 p-2 rounded cursor-pointer transition-colors ${formData.events.includes(event.value) ? 'bg-red-100 text-red-800' : 'hover:bg-gray-50'}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={formData.events.includes(event.value)}
+                    onChange={() => toggleEvent(event.value)}
+                    className="rounded text-red-600 focus:ring-red-500"
+                  />
+                  <span className="text-sm">{event.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-red-700 mb-1">Retry soni</label>
+              <input
+                type="number"
+                min="0"
+                max="10"
+                value={formData.retry_count}
+                onChange={(e) => setFormData({ ...formData, retry_count: parseInt(e.target.value) || 3 })}
+                className="w-full px-4 py-2 border border-red-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                title="Retry soni"
+                placeholder="3"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-red-700 mb-1">Timeout (sekund)</label>
+              <input
+                type="number"
+                min="5"
+                max="120"
+                value={formData.timeout_seconds}
+                onChange={(e) => setFormData({ ...formData, timeout_seconds: parseInt(e.target.value) || 30 })}
+                className="w-full px-4 py-2 border border-red-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                title="Timeout sekundlarda"
+                placeholder="30"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="is_active"
+              checked={formData.is_active}
+              onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+              className="rounded text-red-600 focus:ring-red-500"
+            />
+            <label htmlFor="is_active" className="text-sm text-red-700">Faol</label>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            >
+              Bekor qilish
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+              ) : (
+                <>
+                  <Save size={18} />
+                  {webhook ? 'Saqlash' : 'Yaratish'}
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

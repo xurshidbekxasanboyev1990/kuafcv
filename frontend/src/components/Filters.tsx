@@ -50,6 +50,8 @@ export default function Filters({ filters, values, onChange, onClear }: FiltersP
             value={values.faculty}
             onChange={(e) => onChange('faculty', e.target.value)}
             className="w-full px-2 sm:px-2.5 md:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-red-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-red-800 bg-white"
+            title="Fakultet tanlash"
+            aria-label="Fakultet tanlash"
           >
             <option value="">Barchasi</option>
             {filters.faculties.map((f) => (
@@ -65,6 +67,8 @@ export default function Filters({ filters, values, onChange, onClear }: FiltersP
             value={values.specialty}
             onChange={(e) => onChange('specialty', e.target.value)}
             className="w-full px-2 sm:px-2.5 md:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-red-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-red-800 bg-white"
+            title="Mutaxassislik tanlash"
+            aria-label="Mutaxassislik tanlash"
           >
             <option value="">Barchasi</option>
             {filters.specialties.map((s) => (
@@ -80,6 +84,8 @@ export default function Filters({ filters, values, onChange, onClear }: FiltersP
             value={values.course}
             onChange={(e) => onChange('course', e.target.value)}
             className="w-full px-2 sm:px-2.5 md:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-red-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-red-800 bg-white"
+            title="Kurs tanlash"
+            aria-label="Kurs tanlash"
           >
             <option value="">Barchasi</option>
             {filters.courses.map((c) => (
@@ -95,6 +101,8 @@ export default function Filters({ filters, values, onChange, onClear }: FiltersP
             value={values.group}
             onChange={(e) => onChange('group', e.target.value)}
             className="w-full px-2 sm:px-2.5 md:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-red-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-red-800 bg-white"
+            title="Guruh tanlash"
+            aria-label="Guruh tanlash"
           >
             <option value="">Barchasi</option>
             {filters.groups.map((g) => (
