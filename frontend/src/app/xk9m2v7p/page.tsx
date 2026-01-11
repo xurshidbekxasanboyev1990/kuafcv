@@ -58,26 +58,50 @@ export default function SuperAdminPage() {
 
   useEffect(() => {
     const token = sessionStorage.getItem('xk_super_token_9m2v7p');
-    if (token === 'xk_super_authenticated_9m2v7p') {
+    const jwtToken = localStorage.getItem('super_admin_token');
+    if (token === 'xk_super_authenticated_9m2v7p' && jwtToken) {
       setIsAuthenticated(true);
     }
     setLoading(false);
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
 
-    if (email === 'xurshidbekxasanboyev@kuafcv.uz' && password === 'otamonam9900') {
-      sessionStorage.setItem('xk_super_token_9m2v7p', 'xk_super_authenticated_9m2v7p');
-      setIsAuthenticated(true);
-    } else {
+    // First check super admin credentials
+    if (email !== 'xurshidbekxasanboyev@kuafcv.uz' || password !== 'otamonam9900') {
       setLoginError('Email yoki parol noto\'g\'ri');
+      return;
+    }
+
+    try {
+      // Login to backend to get real JWT token
+      const response = await fetch(`${API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Store JWT token for API calls
+        localStorage.setItem('super_admin_token', data.token);
+        sessionStorage.setItem('xk_super_token_9m2v7p', 'xk_super_authenticated_9m2v7p');
+        setIsAuthenticated(true);
+      } else {
+        // Backend login failed - user not in database
+        setLoginError('Foydalanuvchi topilmadi. Admin sifatida ro\'yxatdan o\'ting.');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setLoginError('Server bilan bog\'lanib bo\'lmadi');
     }
   };
 
   const handleLogout = () => {
     sessionStorage.removeItem('xk_super_token_9m2v7p');
+    localStorage.removeItem('super_admin_token');
     setIsAuthenticated(false);
     router.push('/login');
   };
@@ -248,7 +272,7 @@ function DashboardTab() {
 
   const fetchDashboardData = async (showRefreshing = false) => {
     if (showRefreshing) setRefreshing(true);
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('super_admin_token');
     const headers = { Authorization: `Bearer ${token}` };
 
     try {
@@ -614,7 +638,7 @@ function StudentsTab({ setMessage }: { setMessage: (m: any) => void }) {
 
       const queryString = new URLSearchParams(params).toString();
       const response = await fetch(`${API_URL}/api/admin/users?${queryString}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem('super_admin_token')}` },
       });
       const data = await response.json();
       setUsers(data.students || []);
@@ -642,7 +666,7 @@ function StudentsTab({ setMessage }: { setMessage: (m: any) => void }) {
 
       const response = await fetch(`${API_URL}/api/admin/students/import`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem('super_admin_token')}` },
         body: formData,
       });
 
@@ -661,7 +685,7 @@ function StudentsTab({ setMessage }: { setMessage: (m: any) => void }) {
     try {
       await fetch(`${API_URL}/api/admin/users/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem('super_admin_token')}` },
       });
       setMessage({ type: 'success', text: "Talaba o'chirildi" });
       fetchStudents();
@@ -925,7 +949,7 @@ function StaffTab({ setMessage }: { setMessage: (m: any) => void }) {
     setLoading(true);
     try {
       const response = await fetch(`${API_URL}/api/admin/users?role=ADMIN,REGISTRAR,EMPLOYER`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem('super_admin_token')}` },
       });
       const data = await response.json();
       setStaff(data.users || []);
@@ -947,7 +971,7 @@ function StaffTab({ setMessage }: { setMessage: (m: any) => void }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${localStorage.getItem('super_admin_token')}`,
         },
         body: JSON.stringify(formData),
       });
@@ -970,7 +994,7 @@ function StaffTab({ setMessage }: { setMessage: (m: any) => void }) {
     try {
       await fetch(`${API_URL}/api/admin/users/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem('super_admin_token')}` },
       });
       setMessage({ type: 'success', text: "Foydalanuvchi o'chirildi" });
       fetchStaff();
@@ -1128,7 +1152,7 @@ function PortfoliosTab() {
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/api/registrar/portfolios?status=${status}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem('super_admin_token')}` },
       });
       const data = await res.json();
       setPortfolios(data.items || []);
@@ -1148,7 +1172,7 @@ function PortfoliosTab() {
     try {
       await fetch(`${API_URL}/api/registrar/approve/${id}`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem('super_admin_token')}` },
       });
       fetchPortfolios();
     } catch (err) {
@@ -1164,7 +1188,7 @@ function PortfoliosTab() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${localStorage.getItem('super_admin_token')}`,
         },
         body: JSON.stringify({ rejection_reason: reason }),
       });
@@ -1375,7 +1399,7 @@ function CategoriesTab({ setMessage }: { setMessage: (msg: { type: 'success' | '
     setLoading(true);
     try {
       const response = await fetch(`${API_URL}/api/admin/categories`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem('super_admin_token')}` },
       });
       const data = await response.json();
       if (data.categories) {
@@ -1398,7 +1422,7 @@ function CategoriesTab({ setMessage }: { setMessage: (msg: { type: 'success' | '
     try {
       const response = await fetch(`${API_URL}/api/admin/categories/${categoryValue}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem('super_admin_token')}` },
       });
 
       if (!response.ok) {
@@ -1588,7 +1612,7 @@ function CategoryModal({ category, onClose, onSuccess }: any) {
       const response = await fetch(url, {
         method,
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${localStorage.getItem('super_admin_token')}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData),
@@ -1783,7 +1807,7 @@ function WebhooksTab({ setMessage }: { setMessage: (m: any) => void }) {
     setLoading(true);
     try {
       const response = await fetch(`${API_URL}/api/admin/webhooks`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem('super_admin_token')}` },
       });
       const data = await response.json();
       setWebhooks(data.webhooks || []);
@@ -1805,7 +1829,7 @@ function WebhooksTab({ setMessage }: { setMessage: (m: any) => void }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${localStorage.getItem('super_admin_token')}`,
         },
         body: JSON.stringify(formData),
       });
@@ -1825,7 +1849,7 @@ function WebhooksTab({ setMessage }: { setMessage: (m: any) => void }) {
     try {
       await fetch(`${API_URL}/api/admin/webhooks/${id}/toggle`, {
         method: 'PUT',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem('super_admin_token')}` },
       });
       fetchWebhooks();
     } catch (err) {
@@ -1838,7 +1862,7 @@ function WebhooksTab({ setMessage }: { setMessage: (m: any) => void }) {
     try {
       await fetch(`${API_URL}/api/admin/webhooks/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem('super_admin_token')}` },
       });
       setMessage({ type: 'success', text: 'Webhook o\'chirildi' });
       fetchWebhooks();
@@ -2000,7 +2024,7 @@ function AIAnalyticsTab() {
     const fetchAnalytics = async () => {
       try {
         const response = await fetch(`${API_URL}/api/admin/ai/analytics`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          headers: { Authorization: `Bearer ${localStorage.getItem('super_admin_token')}` },
         });
         const data = await response.json();
         setAnalytics(data);
@@ -2103,7 +2127,7 @@ function AnnouncementsTab({ setMessage }: { setMessage: (msg: { type: 'success' 
     try {
       const url = filter === 'all' ? '/api/announcements' : `/api/announcements?type=${filter}`;
       const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem('super_admin_token')}` },
       });
       const data = await res.json();
       setAnnouncements(data.announcements || []);
@@ -2117,7 +2141,7 @@ function AnnouncementsTab({ setMessage }: { setMessage: (msg: { type: 'success' 
     try {
       const res = await fetch(`${API_URL}/api/announcements/${id}/toggle`, {
         method: 'PUT',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem('super_admin_token')}` },
       });
       if (res.ok) {
         fetchAnnouncements();
@@ -2133,7 +2157,7 @@ function AnnouncementsTab({ setMessage }: { setMessage: (msg: { type: 'success' 
     try {
       const res = await fetch(`${API_URL}/api/announcements/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem('super_admin_token')}` },
       });
       if (res.ok) {
         fetchAnnouncements();
@@ -2343,7 +2367,7 @@ function AnnouncementModal({ announcement, onClose, onSuccess, setMessage }: any
         method,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${localStorage.getItem('super_admin_token')}`,
         },
         body: JSON.stringify({
           ...formData,
@@ -2554,7 +2578,7 @@ function NotificationsTab({ setMessage }: { setMessage: (m: any) => void }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${localStorage.getItem('super_admin_token')}`,
         },
         body: JSON.stringify({
           title,
@@ -2657,7 +2681,7 @@ function SettingsTab() {
   const fetchSettings = async () => {
     try {
       const res = await fetch(`${API_URL}/api/settings`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem('super_admin_token')}` },
       });
       const data = await res.json();
       setSettings(data.settings || []);
@@ -2703,7 +2727,7 @@ function SettingsTab() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${localStorage.getItem('super_admin_token')}`,
         },
         body: JSON.stringify({ settings: editedValues }),
       });
@@ -2729,7 +2753,7 @@ function SettingsTab() {
     try {
       const res = await fetch(`${API_URL}/api/settings/${key}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: { Authorization: `Bearer ${localStorage.getItem('super_admin_token')}` },
       });
 
       if (res.ok) {
@@ -2991,7 +3015,7 @@ function AddSettingModal({ onClose, onSuccess, categories }: any) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${localStorage.getItem('super_admin_token')}`,
         },
         body: JSON.stringify({ ...formData, value: parsedValue }),
       });
@@ -3153,7 +3177,7 @@ function SystemTab() {
     const fetchSystemInfo = async () => {
       try {
         const response = await fetch(`${API_URL}/api/admin/system/info`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          headers: { Authorization: `Bearer ${localStorage.getItem('super_admin_token')}` },
         });
         const data = await response.json();
         setSystemInfo(data);
