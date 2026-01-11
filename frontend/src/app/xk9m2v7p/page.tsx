@@ -44,6 +44,8 @@ import { useEffect, useState } from 'react';
 
 type TabType = 'dashboard' | 'students' | 'staff' | 'portfolios' | 'categories' | 'webhooks' | 'ai' | 'announcements' | 'notifications' | 'settings' | 'system';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+
 export default function SuperAdminPage() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -253,11 +255,11 @@ function DashboardTab() {
 
     try {
       const [statsRes, analyticsRes, topRes, activityRes, categoryRes] = await Promise.all([
-        fetch('/api/dashboard/stats', { headers }),
-        fetch('/api/admin/analytics/overview', { headers }),
-        fetch('/api/admin/analytics/top-portfolios?sort=views', { headers }),
-        fetch('/api/admin/analytics/recent-activity?limit=10', { headers }),
-        fetch('/api/admin/analytics/categories', { headers }),
+        fetch(`${API_URL}/api/dashboard/stats`, { headers }),
+        fetch(`${API_URL}/api/admin/analytics/overview`, { headers }),
+        fetch(`${API_URL}/api/admin/analytics/top-portfolios?sort=views`, { headers }),
+        fetch(`${API_URL}/api/admin/analytics/recent-activity?limit=10`, { headers }),
+        fetch(`${API_URL}/api/admin/analytics/categories`, { headers }),
       ]);
 
       const [statsData, analyticsData, topData, activityData, categoryData] = await Promise.all([
@@ -615,7 +617,7 @@ function StudentsTab({ setMessage }: { setMessage: (m: any) => void }) {
       if (filterValues.group) params.group = filterValues.group;
 
       const queryString = new URLSearchParams(params).toString();
-      const response = await fetch(`/api/admin/users?${queryString}`, {
+      const response = await fetch(`${API_URL}/api/admin/users?${queryString}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
       const data = await response.json();
@@ -642,7 +644,7 @@ function StudentsTab({ setMessage }: { setMessage: (m: any) => void }) {
       const formData = new FormData();
       formData.append('file', importFile);
 
-      const response = await fetch('/api/admin/students/import', {
+      const response = await fetch(`${API_URL}/api/admin/students/import`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         body: formData,
@@ -661,7 +663,7 @@ function StudentsTab({ setMessage }: { setMessage: (m: any) => void }) {
   const handleDelete = async (id: string) => {
     if (!confirm("Bu talabani o'chirishga ishonchingiz komilmi?")) return;
     try {
-      await fetch(`/api/admin/users/${id}`, {
+      await fetch(`${API_URL}/api/admin/users/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
@@ -927,7 +929,7 @@ function StaffTab({ setMessage }: { setMessage: (m: any) => void }) {
   const fetchStaff = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/users?role=ADMIN,REGISTRAR,EMPLOYER', {
+      const response = await fetch(`${API_URL}/api/admin/users?role=ADMIN,REGISTRAR,EMPLOYER`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
       const data = await response.json();
@@ -946,7 +948,7 @@ function StaffTab({ setMessage }: { setMessage: (m: any) => void }) {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/admin/users', {
+      const response = await fetch(`${API_URL}/api/admin/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -971,7 +973,7 @@ function StaffTab({ setMessage }: { setMessage: (m: any) => void }) {
   const handleDelete = async (id: string) => {
     if (!confirm("Bu foydalanuvchini o'chirishga ishonchingiz komilmi?")) return;
     try {
-      await fetch(`/api/admin/users/${id}`, {
+      await fetch(`${API_URL}/api/admin/users/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
@@ -1130,7 +1132,7 @@ function PortfoliosTab() {
   const fetchPortfolios = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/registrar/portfolios?status=${status}`, {
+      const res = await fetch(`${API_URL}/api/registrar/portfolios?status=${status}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
       const data = await res.json();
@@ -1149,7 +1151,7 @@ function PortfoliosTab() {
 
   const handleApprove = async (id: string) => {
     try {
-      await fetch(`/api/registrar/approve/${id}`, {
+      await fetch(`${API_URL}/api/registrar/approve/${id}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
@@ -1163,7 +1165,7 @@ function PortfoliosTab() {
     const reason = prompt('Rad etish sababi:');
     if (reason === null) return;
     try {
-      await fetch(`/api/registrar/reject/${id}`, {
+      await fetch(`${API_URL}/api/registrar/reject/${id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1379,7 +1381,7 @@ function CategoriesTab({ setMessage }: { setMessage: (msg: { type: 'success' | '
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/categories', {
+      const response = await fetch(`${API_URL}/api/admin/categories`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
       const data = await response.json();
@@ -1401,7 +1403,7 @@ function CategoriesTab({ setMessage }: { setMessage: (msg: { type: 'success' | '
     if (!confirm(`${categoryValue} kategoriyasini o'chirishni xohlaysizmi?`)) return;
 
     try {
-      const response = await fetch(`/api/admin/categories/${categoryValue}`, {
+      const response = await fetch(`${API_URL}/api/admin/categories/${categoryValue}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
@@ -1787,7 +1789,7 @@ function WebhooksTab({ setMessage }: { setMessage: (m: any) => void }) {
   const fetchWebhooks = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/webhooks', {
+      const response = await fetch(`${API_URL}/api/admin/webhooks`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
       const data = await response.json();
@@ -1806,7 +1808,7 @@ function WebhooksTab({ setMessage }: { setMessage: (m: any) => void }) {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/admin/webhooks', {
+      const response = await fetch(`${API_URL}/api/admin/webhooks`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1828,7 +1830,7 @@ function WebhooksTab({ setMessage }: { setMessage: (m: any) => void }) {
 
   const handleToggle = async (id: string) => {
     try {
-      await fetch(`/api/admin/webhooks/${id}/toggle`, {
+      await fetch(`${API_URL}/api/admin/webhooks/${id}/toggle`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
@@ -1841,7 +1843,7 @@ function WebhooksTab({ setMessage }: { setMessage: (m: any) => void }) {
   const handleDelete = async (id: string) => {
     if (!confirm('Webhook o\'chirilsinmi?')) return;
     try {
-      await fetch(`/api/admin/webhooks/${id}`, {
+      await fetch(`${API_URL}/api/admin/webhooks/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
@@ -2006,7 +2008,7 @@ function AIAnalyticsTab() {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const response = await fetch('/api/admin/ai/analytics', {
+        const response = await fetch(`${API_URL}/api/admin/ai/analytics`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
         const data = await response.json();
@@ -2122,7 +2124,7 @@ function AnnouncementsTab({ setMessage }: { setMessage: (msg: { type: 'success' 
 
   const toggleAnnouncement = async (id: number) => {
     try {
-      const res = await fetch(`/api/announcements/${id}/toggle`, {
+      const res = await fetch(`${API_URL}/api/announcements/${id}/toggle`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
@@ -2138,7 +2140,7 @@ function AnnouncementsTab({ setMessage }: { setMessage: (msg: { type: 'success' 
   const deleteAnnouncement = async (id: number) => {
     if (!confirm("E'lonni o'chirishni tasdiqlaysizmi?")) return;
     try {
-      const res = await fetch(`/api/announcements/${id}`, {
+      const res = await fetch(`${API_URL}/api/announcements/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
@@ -2564,7 +2566,7 @@ function NotificationsTab({ setMessage }: { setMessage: (m: any) => void }) {
     setSending(true);
 
     try {
-      await fetch('/api/admin/notifications', {
+      await fetch(`${API_URL}/api/admin/notifications`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -2670,7 +2672,7 @@ function SettingsTab() {
 
   const fetchSettings = async () => {
     try {
-      const res = await fetch('/api/settings', {
+      const res = await fetch(`${API_URL}/api/settings`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
       const data = await res.json();
@@ -2713,7 +2715,7 @@ function SettingsTab() {
 
     setSaving(true);
     try {
-      const res = await fetch('/api/settings/bulk', {
+      const res = await fetch(`${API_URL}/api/settings/bulk`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -2741,7 +2743,7 @@ function SettingsTab() {
     if (!confirm("Bu sozlamani o'chirishni xohlaysizmi?")) return;
 
     try {
-      const res = await fetch(`/api/settings/${key}`, {
+      const res = await fetch(`${API_URL}/api/settings/${key}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
@@ -3007,7 +3009,7 @@ function AddSettingModal({ onClose, onSuccess, categories }: any) {
         parsedValue = formData.value.split(',').map((s) => s.trim()).filter(Boolean);
       }
 
-      const res = await fetch('/api/settings', {
+      const res = await fetch(`${API_URL}/api/settings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -3172,7 +3174,7 @@ function SystemTab() {
   useEffect(() => {
     const fetchSystemInfo = async () => {
       try {
-        const response = await fetch('/api/admin/system/info', {
+        const response = await fetch(`${API_URL}/api/admin/system/info`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
         const data = await response.json();
