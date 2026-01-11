@@ -195,6 +195,7 @@ func main() {
 				admin.DELETE("/users/:id", handlers.DeleteUser)
 				admin.PUT("/users/:id/password", handlers.ChangeUserPassword) // Check this line
 				admin.POST("/import-students", handlers.ImportStudents)
+				admin.POST("/students/import", handlers.ImportStudents) // Alternative route
 				admin.POST("/notifications", handlers.CreateNotification)
 				// JWT secret rotation
 				admin.POST("/rotate-jwt-secret", handlers.RotateJWTSecret)
