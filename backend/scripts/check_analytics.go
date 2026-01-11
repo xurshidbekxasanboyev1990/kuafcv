@@ -34,7 +34,7 @@ func main() {
 
 	fmt.Println("\n==========================================")
 	fmt.Println("  DATABASE ANALYTICS CHECK")
-	fmt.Println("==========================================\n")
+	fmt.Println("==========================================")
 
 	// 1. Users count by role
 	fmt.Println("📊 USERS BY ROLE:")
@@ -142,5 +142,5 @@ func main() {
 
 	fmt.Println("\n==========================================")
 	fmt.Println("  CHECK COMPLETE")
-	fmt.Println("==========================================\n")
+	fmt.Println("==========================================")
 }

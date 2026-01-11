@@ -189,11 +189,10 @@ export default function SuperAdminPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as TabType)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-all ${
-                activeTab === tab.id
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-all ${activeTab === tab.id
                   ? 'bg-purple-600 text-white shadow-lg'
                   : 'bg-white/10 text-purple-200 border border-white/20 hover:bg-white/20'
-              }`}
+                }`}
             >
               {tab.icon}
               <span className="hidden sm:inline">{tab.label}</span>
@@ -204,11 +203,10 @@ export default function SuperAdminPage() {
         {/* Message */}
         {message && (
           <div
-            className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
-              message.type === 'success'
+            className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${message.type === 'success'
                 ? 'bg-green-500/20 border border-green-400/30 text-green-200'
                 : 'bg-red-500/20 border border-red-400/30 text-red-200'
-            }`}
+              }`}
           >
             {message.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
             <span>{message.text}</span>
@@ -415,9 +413,8 @@ function DashboardTab() {
             <div className="space-y-3">
               {topPortfolios.slice(0, 5).map((p: any, idx: number) => (
                 <div key={p.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-lg hover:bg-white/10">
-                  <span className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-white ${
-                    idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-gray-400' : idx === 2 ? 'bg-amber-600' : 'bg-purple-400'
-                  }`}>
+                  <span className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-white ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-gray-400' : idx === 2 ? 'bg-amber-600' : 'bg-purple-400'
+                    }`}>
                     {idx + 1}
                   </span>
                   <div className="flex-1 min-w-0">
@@ -450,16 +447,15 @@ function DashboardTab() {
             <div className="space-y-3 max-h-80 overflow-y-auto">
               {recentActivity.map((a: any, idx: number) => (
                 <div key={idx} className="flex items-start gap-3 p-3 bg-white/5 rounded-lg">
-                  <div className={`w-8 h-8 flex items-center justify-center rounded-full ${
-                    a.type === 'view' ? 'bg-purple-500/20 text-purple-300' :
-                    a.type === 'rating' ? 'bg-yellow-500/20 text-yellow-300' :
-                    a.type === 'comment' ? 'bg-blue-500/20 text-blue-300' :
-                    'bg-pink-500/20 text-pink-300'
-                  }`}>
+                  <div className={`w-8 h-8 flex items-center justify-center rounded-full ${a.type === 'view' ? 'bg-purple-500/20 text-purple-300' :
+                      a.type === 'rating' ? 'bg-yellow-500/20 text-yellow-300' :
+                        a.type === 'comment' ? 'bg-blue-500/20 text-blue-300' :
+                          'bg-pink-500/20 text-pink-300'
+                    }`}>
                     {a.type === 'view' ? <Eye size={16} /> :
-                     a.type === 'rating' ? <Star size={16} /> :
-                     a.type === 'comment' ? <FileText size={16} /> :
-                     <Link size={16} />}
+                      a.type === 'rating' ? <Star size={16} /> :
+                        a.type === 'comment' ? <FileText size={16} /> :
+                          <Link size={16} />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-white">{a.description || a.user_name}</p>
@@ -850,9 +846,8 @@ function StudentsTab({ setMessage }: { setMessage: (m: any) => void }) {
 
             <div className="space-y-4">
               <div
-                className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer ${
-                  importFile ? 'border-green-400 bg-green-500/10' : 'border-purple-400/30 hover:border-purple-400'
-                }`}
+                className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer ${importFile ? 'border-green-400 bg-green-500/10' : 'border-purple-400/30 hover:border-purple-400'
+                  }`}
                 onClick={() => document.getElementById('import-file')?.click()}
               >
                 <input
@@ -1187,11 +1182,10 @@ function PortfoliosTab() {
           <button
             key={s}
             onClick={() => setStatus(s)}
-            className={`px-4 py-2 rounded-lg transition-all ${
-              status === s
+            className={`px-4 py-2 rounded-lg transition-all ${status === s
                 ? 'bg-purple-600 text-white'
                 : 'bg-white/10 text-purple-200 border border-white/20 hover:bg-white/20'
-            }`}
+              }`}
           >
             {s === 'PENDING' && 'Kutilmoqda'}
             {s === 'APPROVED' && 'Tasdiqlangan'}
@@ -1219,13 +1213,12 @@ function PortfoliosTab() {
                   <p className="text-purple-300 text-sm">{p.type}</p>
                 </div>
                 <span
-                  className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    p.approval_status === 'APPROVED'
+                  className={`px-3 py-1 rounded-full text-xs font-medium ${p.approval_status === 'APPROVED'
                       ? 'bg-green-500/20 text-green-300'
                       : p.approval_status === 'REJECTED'
-                      ? 'bg-red-500/20 text-red-300'
-                      : 'bg-orange-500/20 text-orange-300'
-                  }`}
+                        ? 'bg-red-500/20 text-red-300'
+                        : 'bg-orange-500/20 text-orange-300'
+                    }`}
                 >
                   {p.approval_status}
                 </span>
@@ -1891,11 +1884,10 @@ function WebhooksTab({ setMessage }: { setMessage: (m: any) => void }) {
                       {webhook.event}
                     </code>
                     <span
-                      className={`px-2 py-1 rounded text-xs ${
-                        webhook.is_active
+                      className={`px-2 py-1 rounded text-xs ${webhook.is_active
                           ? 'bg-green-500/20 text-green-300'
                           : 'bg-gray-500/20 text-gray-400'
-                      }`}
+                        }`}
                     >
                       {webhook.is_active ? 'Aktiv' : 'O\'chirilgan'}
                     </span>
@@ -1908,11 +1900,10 @@ function WebhooksTab({ setMessage }: { setMessage: (m: any) => void }) {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleToggle(webhook.id)}
-                    className={`p-2 rounded-lg ${
-                      webhook.is_active
+                    className={`p-2 rounded-lg ${webhook.is_active
                         ? 'bg-green-500/20 text-green-300 hover:bg-green-500/30'
                         : 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/30'
-                    }`}
+                      }`}
                   >
                     {webhook.is_active ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
                   </button>
@@ -2183,9 +2174,8 @@ function AnnouncementsTab({ setMessage }: { setMessage: (msg: { type: 'success' 
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-lg text-sm ${
-              filter === 'all' ? 'bg-purple-600 text-white' : 'bg-white/5 text-purple-200 hover:bg-white/10'
-            }`}
+            className={`px-4 py-2 rounded-lg text-sm ${filter === 'all' ? 'bg-purple-600 text-white' : 'bg-white/5 text-purple-200 hover:bg-white/10'
+              }`}
           >
             Barchasi
           </button>
@@ -2193,9 +2183,8 @@ function AnnouncementsTab({ setMessage }: { setMessage: (msg: { type: 'success' 
             <button
               key={type.value}
               onClick={() => setFilter(type.value)}
-              className={`px-4 py-2 rounded-lg text-sm ${
-                filter === type.value ? 'bg-purple-600 text-white' : 'bg-white/5 text-purple-200 hover:bg-white/10'
-              }`}
+              className={`px-4 py-2 rounded-lg text-sm ${filter === type.value ? 'bg-purple-600 text-white' : 'bg-white/5 text-purple-200 hover:bg-white/10'
+                }`}
             >
               {type.icon} {type.label}
             </button>
@@ -2219,9 +2208,8 @@ function AnnouncementsTab({ setMessage }: { setMessage: (msg: { type: 'success' 
             return (
               <div
                 key={announcement.id}
-                className={`bg-white/10 rounded-xl p-6 border-l-4 ${
-                  announcement.is_active ? 'border-green-400' : 'border-gray-500'
-                } border-r border-t border-b border-white/20`}
+                className={`bg-white/10 rounded-xl p-6 border-l-4 ${announcement.is_active ? 'border-green-400' : 'border-gray-500'
+                  } border-r border-t border-b border-white/20`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -2229,9 +2217,8 @@ function AnnouncementsTab({ setMessage }: { setMessage: (msg: { type: 'success' 
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${typeInfo.color}`}>
                         {typeInfo.icon} {typeInfo.label}
                       </span>
-                      <span className={`px-2 py-1 rounded text-xs ${
-                        announcement.is_marquee ? 'bg-yellow-500/20 text-yellow-300' : 'bg-gray-500/20 text-gray-400'
-                      }`}>
+                      <span className={`px-2 py-1 rounded text-xs ${announcement.is_marquee ? 'bg-yellow-500/20 text-yellow-300' : 'bg-gray-500/20 text-gray-400'
+                        }`}>
                         {announcement.is_marquee ? '🔄 Banner' : '📄 Oddiy'}
                       </span>
                       <span className="text-xs text-purple-300">Muhimlik: {announcement.priority}</span>
@@ -2264,11 +2251,10 @@ function AnnouncementsTab({ setMessage }: { setMessage: (msg: { type: 'success' 
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => toggleAnnouncement(announcement.id)}
-                      className={`p-2 rounded-lg ${
-                        announcement.is_active
+                      className={`p-2 rounded-lg ${announcement.is_active
                           ? 'bg-green-500/20 text-green-300 hover:bg-green-500/30'
                           : 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/30'
-                      }`}
+                        }`}
                       title={announcement.is_active ? "O'chirish" : 'Yoqish'}
                     >
                       {announcement.is_active ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
@@ -2413,11 +2399,10 @@ function AnnouncementModal({ announcement, onClose, onSuccess, setMessage }: any
                   key={type.value}
                   type="button"
                   onClick={() => setFormData((prev) => ({ ...prev, type: type.value }))}
-                  className={`p-3 rounded-lg border-2 text-left ${
-                    formData.type === type.value
+                  className={`p-3 rounded-lg border-2 text-left ${formData.type === type.value
                       ? 'border-purple-500 bg-purple-500/20'
                       : 'border-white/20 hover:border-purple-400/50'
-                  }`}
+                    }`}
                 >
                   <span className="text-xl mr-2">{type.icon}</span>
                   <span className="text-sm font-medium text-white">{type.label}</span>
@@ -2499,11 +2484,10 @@ function AnnouncementModal({ announcement, onClose, onSuccess, setMessage }: any
                   key={role.value}
                   type="button"
                   onClick={() => toggleRole(role.value)}
-                  className={`px-3 py-1 rounded-full text-sm ${
-                    formData.target_roles.includes(role.value)
+                  className={`px-3 py-1 rounded-full text-sm ${formData.target_roles.includes(role.value)
                       ? 'bg-purple-600 text-white'
                       : 'bg-white/10 text-purple-200 hover:bg-white/20'
-                  }`}
+                    }`}
                 >
                   {role.label}
                 </button>
@@ -2769,11 +2753,10 @@ function SettingsTab() {
         return (
           <button
             onClick={() => handleValueChange(setting.key, !value)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-              value
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg ${value
                 ? 'bg-green-500/20 text-green-300 hover:bg-green-500/30'
                 : 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/30'
-            } ${isEdited ? 'ring-2 ring-blue-400' : ''}`}
+              } ${isEdited ? 'ring-2 ring-blue-400' : ''}`}
           >
             {value ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
             <span>{value ? 'Yoqilgan' : "O'chirilgan"}</span>
@@ -2786,9 +2769,8 @@ function SettingsTab() {
             type="number"
             value={value}
             onChange={(e) => handleValueChange(setting.key, parseInt(e.target.value) || 0)}
-            className={`px-4 py-2 bg-white/10 border rounded-lg w-32 text-white ${
-              isEdited ? 'border-blue-400 ring-2 ring-blue-400/50' : 'border-white/20'
-            }`}
+            className={`px-4 py-2 bg-white/10 border rounded-lg w-32 text-white ${isEdited ? 'border-blue-400 ring-2 ring-blue-400/50' : 'border-white/20'
+              }`}
           />
         );
 
@@ -2821,9 +2803,8 @@ function SettingsTab() {
                   e.currentTarget.value = '';
                 }
               }}
-              className={`px-3 py-1 bg-white/10 border rounded text-sm text-white ${
-                isEdited ? 'border-blue-400' : 'border-white/20'
-              }`}
+              className={`px-3 py-1 bg-white/10 border rounded text-sm text-white ${isEdited ? 'border-blue-400' : 'border-white/20'
+                }`}
             />
           </div>
         );
@@ -2834,9 +2815,8 @@ function SettingsTab() {
             type="text"
             value={value || ''}
             onChange={(e) => handleValueChange(setting.key, e.target.value)}
-            className={`px-4 py-2 bg-white/10 border rounded-lg w-full max-w-md text-white ${
-              isEdited ? 'border-blue-400 ring-2 ring-blue-400/50' : 'border-white/20'
-            }`}
+            className={`px-4 py-2 bg-white/10 border rounded-lg w-full max-w-md text-white ${isEdited ? 'border-blue-400 ring-2 ring-blue-400/50' : 'border-white/20'
+              }`}
           />
         );
     }
@@ -2878,9 +2858,8 @@ function SettingsTab() {
 
       {message && (
         <div
-          className={`p-4 rounded-lg flex items-center gap-3 ${
-            message.type === 'success' ? 'bg-green-500/20 text-green-200' : 'bg-red-500/20 text-red-200'
-          }`}
+          className={`p-4 rounded-lg flex items-center gap-3 ${message.type === 'success' ? 'bg-green-500/20 text-green-200' : 'bg-red-500/20 text-red-200'
+            }`}
         >
           {message.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
           <span>{message.text}</span>
@@ -2895,11 +2874,10 @@ function SettingsTab() {
           <button
             key={cat.id}
             onClick={() => setActiveCategory(cat.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap ${
-              activeCategory === cat.id
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap ${activeCategory === cat.id
                 ? 'bg-purple-600 text-white'
                 : 'bg-white/10 text-purple-200 border border-white/20 hover:bg-white/20'
-            }`}
+              }`}
           >
             {cat.icon}
             <span>{cat.label}</span>
