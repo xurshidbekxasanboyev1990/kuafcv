@@ -6,7 +6,7 @@
 // Fully adapt to the current programming language, framework, and project context.
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../components/AuthProvider';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';

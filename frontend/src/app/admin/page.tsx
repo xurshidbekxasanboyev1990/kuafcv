@@ -9,7 +9,7 @@
 import AIAnalytics from '@/components/AIAnalytics';
 import { useAuth } from '@/components/AuthProvider';
 import MainLayout from '@/components/MainLayout';
-import { admin, CreateUserData, FilterOptions, User, webhooks as webhooksApi, Webhook as WebhookType, WebhookLog, WebhookEvent } from '@/lib/api';
+import { admin, CreateUserData, FilterOptions, User, WebhookEvent, WebhookLog, webhooks as webhooksApi, Webhook as WebhookType } from '@/lib/api';
 import { getFileUrl } from '@/lib/config';
 import {
   AlertCircle,
@@ -3007,6 +3007,8 @@ function WebhooksTab({ setMessage }: { setMessage: (msg: { type: 'success' | 'er
         webhooksApi.getAll(),
         webhooksApi.getEvents(),
       ]);
+      console.log('Webhooks response:', webhooksRes);
+      console.log('Events response:', eventsRes);
       setWebhookList(webhooksRes.webhooks || []);
       setEvents(eventsRes.events || []);
     } catch (err) {
@@ -3408,20 +3410,24 @@ function WebhookModal({
           <div>
             <label className="block text-sm font-medium text-red-700 mb-2">Eventlar *</label>
             <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border border-red-100 rounded-lg">
-              {events.map((event) => (
-                <label
-                  key={event.value}
-                  className={`flex items-center gap-2 p-2 rounded cursor-pointer transition-colors ${formData.events.includes(event.value) ? 'bg-red-100 text-red-800' : 'hover:bg-gray-50'}`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={formData.events.includes(event.value)}
-                    onChange={() => toggleEvent(event.value)}
-                    className="rounded text-red-600 focus:ring-red-500"
-                  />
-                  <span className="text-sm">{event.label}</span>
-                </label>
-              ))}
+              {events.length === 0 ? (
+                <p className="col-span-2 text-center text-gray-500 py-4">Eventlar yuklanmoqda...</p>
+              ) : (
+                events.map((event) => (
+                  <label
+                    key={event.value}
+                    className={`flex items-center gap-2 p-2 rounded cursor-pointer transition-colors ${formData.events.includes(event.value) ? 'bg-red-100 text-red-800' : 'hover:bg-gray-50'}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.events.includes(event.value)}
+                      onChange={() => toggleEvent(event.value)}
+                      className="rounded text-red-600 focus:ring-red-500"
+                    />
+                    <span className="text-sm">{event.label}</span>
+                  </label>
+                ))
+              )}
             </div>
           </div>
 

@@ -396,8 +396,8 @@ func GetWebhooks(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"webhooks":       webhooks,
-		"total":          len(webhooks),
+		"webhooks":         webhooks,
+		"total":            len(webhooks),
 		"available_events": AllWebhookEvents,
 	})
 }
