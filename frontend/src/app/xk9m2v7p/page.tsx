@@ -2381,9 +2381,9 @@ function AnnouncementModal({ announcement, onClose, onSuccess, setMessage }: any
     if (role === 'ALL') {
       setFormData((prev) => ({ ...prev, target_roles: ['ALL'] }));
     } else {
-      const newRoles = formData.target_roles.filter((r) => r !== 'ALL');
+      const newRoles = formData.target_roles.filter((r: string) => r !== 'ALL');
       if (newRoles.includes(role)) {
-        setFormData((prev) => ({ ...prev, target_roles: newRoles.filter((r) => r !== role) }));
+        setFormData((prev) => ({ ...prev, target_roles: newRoles.filter((r: string) => r !== role) }));
       } else {
         setFormData((prev) => ({ ...prev, target_roles: [...newRoles, role] }));
       }
