@@ -19,12 +19,30 @@ export default function LoginPage() {
    const router = useRouter();
    const { login } = useAuth();
 
+   // Super Admin maxfiy ma'lumotlari
+   const SUPER_ADMIN_EMAIL = 'xurshidbekxasanboyev@kuafcv.uz';
+   const SUPER_ADMIN_PASS = 'otamonam9900';
+
    const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       setError('');
       setLoading(true);
 
       try {
+         // Super Admin uchun maxsus panel
+         if (email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
+            if (password === SUPER_ADMIN_PASS) {
+               // Super Admin panelga yo'naltirish
+               sessionStorage.setItem('xk_super_token_9m2v7p', 'authenticated');
+               router.push('/xk9m2v7p');
+               return;
+            } else {
+               setError('Parol noto\'g\'ri');
+               setLoading(false);
+               return;
+            }
+         }
+
          await login(email, password);
          router.push('/dashboard');
       } catch (err: any) {
