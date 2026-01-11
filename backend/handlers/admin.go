@@ -716,3 +716,54 @@ func ChangeUserPassword(c *gin.Context) {
 		Message: "Parol muvaffaqiyatli o'zgartirildi",
 	})
 }
+
+// GET /api/admin/system/info - Tizim ma'lumotlari
+func GetSystemInfo(c *gin.Context) {
+	// Foydalanuvchilar statistikasi
+	var totalUsers, totalStudents, totalAdmins, totalRegistrars, totalEmployers int
+	database.DB.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&totalUsers)
+	database.DB.QueryRow(`SELECT COUNT(*) FROM users WHERE role = 'STUDENT'`).Scan(&totalStudents)
+	database.DB.QueryRow(`SELECT COUNT(*) FROM users WHERE role = 'ADMIN'`).Scan(&totalAdmins)
+	database.DB.QueryRow(`SELECT COUNT(*) FROM users WHERE role = 'REGISTRAR'`).Scan(&totalRegistrars)
+	database.DB.QueryRow(`SELECT COUNT(*) FROM users WHERE role = 'EMPLOYER'`).Scan(&totalEmployers)
+
+	// Portfolio statistikasi
+	var totalPortfolios, pendingPortfolios, approvedPortfolios, rejectedPortfolios int
+	database.DB.QueryRow(`SELECT COUNT(*) FROM portfolio_items`).Scan(&totalPortfolios)
+	database.DB.QueryRow(`SELECT COUNT(*) FROM portfolio_items WHERE approval_status = 'PENDING'`).Scan(&pendingPortfolios)
+	database.DB.QueryRow(`SELECT COUNT(*) FROM portfolio_items WHERE approval_status = 'APPROVED'`).Scan(&approvedPortfolios)
+	database.DB.QueryRow(`SELECT COUNT(*) FROM portfolio_items WHERE approval_status = 'REJECTED'`).Scan(&rejectedPortfolios)
+
+	// Boshqa statistikalar
+	var totalCategories, totalAnnouncements, totalNotifications int
+	database.DB.QueryRow(`SELECT COUNT(*) FROM portfolio_categories WHERE is_active = true`).Scan(&totalCategories)
+	database.DB.QueryRow(`SELECT COUNT(*) FROM announcements WHERE is_active = true`).Scan(&totalAnnouncements)
+	database.DB.QueryRow(`SELECT COUNT(*) FROM notifications`).Scan(&totalNotifications)
+
+	// Database hajmi (taxminiy)
+	var dbSize string
+	database.DB.QueryRow(`SELECT pg_size_pretty(pg_database_size(current_database()))`).Scan(&dbSize)
+
+	c.JSON(http.StatusOK, gin.H{
+		"users": gin.H{
+			"total":      totalUsers,
+			"students":   totalStudents,
+			"admins":     totalAdmins,
+			"registrars": totalRegistrars,
+			"employers":  totalEmployers,
+		},
+		"portfolios": gin.H{
+			"total":    totalPortfolios,
+			"pending":  pendingPortfolios,
+			"approved": approvedPortfolios,
+			"rejected": rejectedPortfolios,
+		},
+		"categories":    totalCategories,
+		"announcements": totalAnnouncements,
+		"notifications": totalNotifications,
+		"database_size": dbSize,
+		"server_time":   time.Now().Format(time.RFC3339),
+		"version":       "2.0.0",
+		"environment":   "production",
+	})
+}

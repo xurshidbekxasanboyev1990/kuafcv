@@ -199,6 +199,8 @@ func main() {
 				// JWT secret rotation
 				admin.POST("/rotate-jwt-secret", handlers.RotateJWTSecret)
 				admin.GET("/jwt-info", handlers.GetJWTInfo)
+				admin.GET("/system/info", handlers.GetSystemInfo)
+				admin.GET("/ai/analytics", handlers.GetAIAnalyticsAdmin)
 				// Admin analytics
 				admin.GET("/analytics/overview", handlers.GetAnalyticsOverview)
 				admin.GET("/analytics/top-portfolios", handlers.GetTopPortfolios)

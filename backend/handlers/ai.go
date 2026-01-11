@@ -2429,3 +2429,124 @@ Javobni JSON formatda ber:
 	result["ai_available"] = true
 	c.JSON(http.StatusOK, result)
 }
+
+// GET /api/admin/ai/analytics - AI tahlil statistikasi (Admin uchun)
+func GetAIAnalyticsAdmin(c *gin.Context) {
+	// Jami tahlillar soni
+	var totalAnalyses int
+	database.DB.QueryRow(`SELECT COUNT(*) FROM file_analysis_results`).Scan(&totalAnalyses)
+
+	// Bugungi tahlillar
+	var todayAnalyses int
+	database.DB.QueryRow(`SELECT COUNT(*) FROM file_analysis_results WHERE created_at >= CURRENT_DATE`).Scan(&todayAnalyses)
+
+	// Haftalik tahlillar
+	var weeklyAnalyses int
+	database.DB.QueryRow(`SELECT COUNT(*) FROM file_analysis_results WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'`).Scan(&weeklyAnalyses)
+
+	// Oylik tahlillar
+	var monthlyAnalyses int
+	database.DB.QueryRow(`SELECT COUNT(*) FROM file_analysis_results WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'`).Scan(&monthlyAnalyses)
+
+	// Tahlil turlari bo'yicha
+	typeStats := []map[string]interface{}{}
+	rows, err := database.DB.Query(`
+		SELECT analysis_type, COUNT(*) as count
+		FROM file_analysis_results
+		GROUP BY analysis_type
+		ORDER BY count DESC
+	`)
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var analysisType string
+			var count int
+			rows.Scan(&analysisType, &count)
+			typeStats = append(typeStats, map[string]interface{}{
+				"type":  analysisType,
+				"count": count,
+			})
+		}
+	}
+
+	// AI natijalar bo'yicha (AI ehtimoli)
+	aiProbabilityStats := []map[string]interface{}{}
+	rows2, err := database.DB.Query(`
+		SELECT ai_probability_range, COUNT(*) as count
+		FROM file_analysis_results
+		WHERE ai_probability_range IS NOT NULL
+		GROUP BY ai_probability_range
+		ORDER BY count DESC
+	`)
+	if err == nil {
+		defer rows2.Close()
+		for rows2.Next() {
+			var prob string
+			var count int
+			rows2.Scan(&prob, &count)
+			aiProbabilityStats = append(aiProbabilityStats, map[string]interface{}{
+				"range": prob,
+				"count": count,
+			})
+		}
+	}
+
+	// So'nggi 7 kun trend
+	dailyTrend := []map[string]interface{}{}
+	rows3, err := database.DB.Query(`
+		SELECT DATE(created_at) as date, COUNT(*) as count
+		FROM file_analysis_results
+		WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
+		GROUP BY DATE(created_at)
+		ORDER BY date
+	`)
+	if err == nil {
+		defer rows3.Close()
+		for rows3.Next() {
+			var date time.Time
+			var count int
+			rows3.Scan(&date, &count)
+			dailyTrend = append(dailyTrend, map[string]interface{}{
+				"date":  date.Format("2006-01-02"),
+				"count": count,
+			})
+		}
+	}
+
+	// Eng ko'p tahlil qilgan foydalanuvchilar
+	topUsers := []map[string]interface{}{}
+	rows4, err := database.DB.Query(`
+		SELECT f.user_id, u.full_name, u.email, COUNT(*) as count
+		FROM file_analysis_results f
+		JOIN users u ON f.user_id::text = u.id::text
+		GROUP BY f.user_id, u.full_name, u.email
+		ORDER BY count DESC
+		LIMIT 10
+	`)
+	if err == nil {
+		defer rows4.Close()
+		for rows4.Next() {
+			var userID, fullName, email string
+			var count int
+			rows4.Scan(&userID, &fullName, &email, &count)
+			topUsers = append(topUsers, map[string]interface{}{
+				"user_id":   userID,
+				"full_name": fullName,
+				"email":     email,
+				"count":     count,
+			})
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"total_analyses":   totalAnalyses,
+		"today_analyses":   todayAnalyses,
+		"weekly_analyses":  weeklyAnalyses,
+		"monthly_analyses": monthlyAnalyses,
+		"by_type":          typeStats,
+		"by_ai_probability": aiProbabilityStats,
+		"daily_trend":      dailyTrend,
+		"top_users":        topUsers,
+		"ai_enabled":       os.Getenv("OPENAI_API_KEY") != "",
+	})
+}
