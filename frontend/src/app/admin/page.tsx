@@ -3246,8 +3246,8 @@ function WebhooksTab({ setMessage }: { setMessage: (msg: { type: 'success' | 'er
                 >
                   Tozalash
                 </button>
-                <button 
-                  onClick={() => setShowLogs(null)} 
+                <button
+                  onClick={() => setShowLogs(null)}
                   className="p-2 hover:bg-gray-100 rounded-lg"
                   title="Yopish"
                   aria-label="Loglar oynasini yopish"

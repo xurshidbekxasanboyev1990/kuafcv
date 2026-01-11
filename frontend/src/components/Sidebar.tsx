@@ -75,12 +75,6 @@ const navItems: NavItem[] = [
     roles: ['admin', 'registrar', 'student'],
   },
   {
-    href: '/admin',
-    icon: Users,
-    label: 'Super Admin',
-    roles: ['admin'],
-  },
-  {
     href: '/analytics',
     icon: BarChart3,
     label: 'Analytics',

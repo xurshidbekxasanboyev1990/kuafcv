@@ -14,6 +14,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var DB *sql.DB
@@ -565,6 +566,45 @@ func Migrate() error {
 			log.Printf("⚠️ Migration v4 yozishda xatolik: %v", err)
 		} else {
 			log.Println("✅ Migration v4 completed")
+		}
+	}
+
+	// Migration v5: Super Admin user
+	var v5Applied bool
+	DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM schema_migrations WHERE version = 5 AND success = true)`).Scan(&v5Applied)
+
+	if !v5Applied {
+		log.Println("🔄 Applying migration v5: Super Admin user...")
+
+		// Check if super admin already exists
+		var exists bool
+		DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE email = 'xurshidbekxasanboyev@kuafcv.uz')`).Scan(&exists)
+
+		if !exists {
+			// Hash password using bcrypt
+			hashedPassword, err := bcrypt.GenerateFromPassword([]byte("otamonam9900"), 12)
+			if err != nil {
+				log.Printf("⚠️ Super Admin parolini hash qilishda xatolik: %v", err)
+			} else {
+				superAdminSQL := `
+				INSERT INTO users (id, email, password, full_name, role, is_active, created_at, updated_at)
+				VALUES ($1, $2, $3, $4, 'ADMIN', true, NOW(), NOW())
+				`
+				if _, err := DB.Exec(superAdminSQL, "super-admin-001", "xurshidbekxasanboyev@kuafcv.uz", string(hashedPassword), "Super Administrator"); err != nil {
+					log.Printf("⚠️ Super Admin yaratishda xatolik: %v", err)
+				} else {
+					log.Println("✅ Super Admin yaratildi")
+				}
+			}
+		} else {
+			log.Println("ℹ️ Super Admin allaqachon mavjud")
+		}
+
+		// Record migration
+		if _, err := DB.Exec(`INSERT INTO schema_migrations (version) VALUES (5)`); err != nil {
+			log.Printf("⚠️ Migration v5 yozishda xatolik: %v", err)
+		} else {
+			log.Println("✅ Migration v5 completed")
 		}
 	}
 
