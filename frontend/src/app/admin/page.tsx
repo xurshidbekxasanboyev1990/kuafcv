@@ -173,6 +173,9 @@ function DashboardTab() {
         fetch('/api/admin/analytics/categories', { headers }),
       ]);
 
+      console.log('Stats response status:', statsRes.status);
+      console.log('Analytics response status:', analyticsRes.status);
+
       const [statsData, analyticsData, topData, activityData, categoryData] = await Promise.all([
         statsRes.json(),
         analyticsRes.ok ? analyticsRes.json() : null,
@@ -180,6 +183,9 @@ function DashboardTab() {
         activityRes.ok ? activityRes.json() : { activities: [] },
         categoryRes.ok ? categoryRes.json() : { categories: [] },
       ]);
+
+      console.log('Dashboard stats:', statsData);
+      console.log('Analytics overview:', analyticsData);
 
       setStats(statsData);
       setAnalyticsOverview(analyticsData);
