@@ -240,6 +240,113 @@ func DeleteUser(c *gin.Context) {
 	})
 }
 
+// PUT /api/admin/users/:id - Update user
+func UpdateUser(c *gin.Context) {
+	userID := c.Param("id")
+
+	var req struct {
+		FullName string `json:"full_name"`
+		Email    string `json:"email"`
+		Role     string `json:"role"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.APIError{
+			Error:   "invalid_request",
+			Message: "Noto'g'ri so'rov",
+			Code:    400,
+		})
+		return
+	}
+
+	// Check if user exists
+	var exists bool
+	err := database.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)`, userID).Scan(&exists)
+	if err != nil || !exists {
+		c.JSON(http.StatusNotFound, models.APIError{
+			Error:   "not_found",
+			Message: "Foydalanuvchi topilmadi",
+			Code:    404,
+		})
+		return
+	}
+
+	// Build update query dynamically
+	updates := []string{}
+	args := []interface{}{}
+	argCount := 1
+
+	if req.FullName != "" {
+		updates = append(updates, fmt.Sprintf("full_name = $%d", argCount))
+		args = append(args, req.FullName)
+		argCount++
+	}
+
+	if req.Email != "" {
+		// Check email uniqueness
+		var emailExists bool
+		database.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE email = $1 AND id != $2)`, req.Email, userID).Scan(&emailExists)
+		if emailExists {
+			c.JSON(http.StatusConflict, models.APIError{
+				Error:   "email_exists",
+				Message: "Bu email allaqachon mavjud",
+				Code:    409,
+			})
+			return
+		}
+		updates = append(updates, fmt.Sprintf("email = $%d", argCount))
+		args = append(args, req.Email)
+		argCount++
+	}
+
+	if req.Role != "" {
+		// Validate role
+		validRoles := map[string]bool{
+			"ADMIN": true, "REGISTRAR": true, "EMPLOYER": true, "STUDENT": true,
+		}
+		if !validRoles[req.Role] {
+			c.JSON(http.StatusBadRequest, models.APIError{
+				Error:   "invalid_role",
+				Message: "Noto'g'ri rol",
+				Code:    400,
+			})
+			return
+		}
+		updates = append(updates, fmt.Sprintf("role = $%d", argCount))
+		args = append(args, req.Role)
+		argCount++
+	}
+
+	if len(updates) == 0 {
+		c.JSON(http.StatusBadRequest, models.APIError{
+			Error:   "no_updates",
+			Message: "O'zgartirishlar yo'q",
+			Code:    400,
+		})
+		return
+	}
+
+	updates = append(updates, "updated_at = NOW()")
+	args = append(args, userID)
+
+	query := fmt.Sprintf("UPDATE users SET %s WHERE id = $%d", strings.Join(updates, ", "), argCount)
+
+	_, err = database.DB.Exec(query, args...)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIError{
+			Error:   "database_error",
+			Message: "Yangilashda xatolik",
+			Code:    500,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APISuccess{
+		Success: true,
+		Message: "Foydalanuvchi yangilandi",
+	})
+}
+
 // POST /api/admin/import-students - Excel import (optimized for large files)
 func ImportStudents(c *gin.Context) {
 	// Panic recovery

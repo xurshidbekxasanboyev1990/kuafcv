@@ -14,10 +14,12 @@ import {
   Database,
   Download,
   Edit,
+  Edit2,
   Eye,
   FileText,
   Globe,
   GraduationCap,
+  Key,
   Link,
   Lock,
   Megaphone,
@@ -625,6 +627,11 @@ function StudentsTab({ setMessage }: { setMessage: (m: any) => void }) {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 50;
+  
+  // Password change modal state
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState('');
 
   const fetchStudents = async () => {
     setLoading(true);
@@ -692,6 +699,38 @@ function StudentsTab({ setMessage }: { setMessage: (m: any) => void }) {
     } catch (err) {
       setMessage({ type: 'error', text: "O'chirishda xatolik" });
     }
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedStudent) return;
+    try {
+      const response = await fetch(`${API_URL}/api/admin/users/${selectedStudent.id}/password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('super_admin_token')}`,
+        },
+        body: JSON.stringify({ new_password: newPassword }),
+      });
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Parol o\'zgartirildi' });
+        setShowPasswordModal(false);
+        setSelectedStudent(null);
+        setNewPassword('');
+      } else {
+        const data = await response.json();
+        setMessage({ type: 'error', text: data.message || 'Xatolik' });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Parolni o\'zgartirishda xatolik' });
+    }
+  };
+
+  const openPasswordModal = (student: User) => {
+    setSelectedStudent(student);
+    setNewPassword('');
+    setShowPasswordModal(true);
   };
 
   const totalPages = Math.ceil(total / limit);
@@ -815,10 +854,18 @@ function StudentsTab({ setMessage }: { setMessage: (m: any) => void }) {
                     <td className="px-4 py-3 text-purple-200">{u.student_data?.group || '-'}</td>
                     <td className="px-4 py-3 text-purple-200">{u.student_data?.course || '-'}</td>
                     <td className="px-4 py-3">
-                      <div className="flex justify-end">
+                      <div className="flex justify-end gap-1">
+                        <button
+                          onClick={() => openPasswordModal(u)}
+                          className="p-2 text-yellow-400 hover:bg-yellow-500/20 rounded-lg"
+                          title="Parolni o'zgartirish"
+                        >
+                          <Key size={16} />
+                        </button>
                         <button
                           onClick={() => handleDelete(u.id)}
                           className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg"
+                          title="O'chirish"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -929,6 +976,55 @@ function StudentsTab({ setMessage }: { setMessage: (m: any) => void }) {
           </div>
         </div>
       )}
+
+      {/* Password Modal */}
+      {showPasswordModal && selectedStudent && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-2xl shadow-xl max-w-md w-full p-6 border border-purple-500/30">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white">Parolni o'zgartirish</h2>
+              <button onClick={() => setShowPasswordModal(false)} className="p-2 hover:bg-white/10 rounded-lg">
+                <X size={20} className="text-purple-300" />
+              </button>
+            </div>
+
+            <p className="text-purple-300 mb-4">
+              <strong>{selectedStudent.full_name}</strong> uchun yangi parol
+            </p>
+
+            <form onSubmit={handlePasswordChange} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-purple-200 mb-2">Yangi parol</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white"
+                  placeholder="Kamida 6 ta belgi"
+                  minLength={6}
+                  required
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordModal(false)}
+                  className="flex-1 py-2 border border-purple-400/30 text-purple-200 rounded-lg hover:bg-white/10"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
+                >
+                  O'zgartirish
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -938,11 +1034,20 @@ function StaffTab({ setMessage }: { setMessage: (m: any) => void }) {
   const [staff, setStaff] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [newPassword, setNewPassword] = useState('');
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
     password: '',
     role: 'REGISTRAR',
+  });
+  const [editData, setEditData] = useState({
+    full_name: '',
+    email: '',
+    role: '',
   });
 
   const fetchStaff = async () => {
@@ -1003,6 +1108,74 @@ function StaffTab({ setMessage }: { setMessage: (m: any) => void }) {
     }
   };
 
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+    try {
+      const response = await fetch(`${API_URL}/api/admin/users/${selectedUser.id}/password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('super_admin_token')}`,
+        },
+        body: JSON.stringify({ new_password: newPassword }),
+      });
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Parol o\'zgartirildi' });
+        setShowPasswordModal(false);
+        setSelectedUser(null);
+        setNewPassword('');
+      } else {
+        const data = await response.json();
+        setMessage({ type: 'error', text: data.message || 'Xatolik' });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Parolni o\'zgartirishda xatolik' });
+    }
+  };
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+    try {
+      const response = await fetch(`${API_URL}/api/admin/users/${selectedUser.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('super_admin_token')}`,
+        },
+        body: JSON.stringify(editData),
+      });
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Foydalanuvchi tahrirlandi' });
+        setShowEditModal(false);
+        setSelectedUser(null);
+        fetchStaff();
+      } else {
+        const data = await response.json();
+        setMessage({ type: 'error', text: data.message || 'Xatolik' });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Tahrirlashda xatolik' });
+    }
+  };
+
+  const openEditModal = (user: any) => {
+    setSelectedUser(user);
+    setEditData({
+      full_name: user.full_name,
+      email: user.email,
+      role: user.role,
+    });
+    setShowEditModal(true);
+  };
+
+  const openPasswordModal = (user: any) => {
+    setSelectedUser(user);
+    setNewPassword('');
+    setShowPasswordModal(true);
+  };
+
   const getRoleBadge = (role: string) => {
     const styles = {
       ADMIN: 'bg-red-500/20 text-red-300 border-red-400/30',
@@ -1043,12 +1216,29 @@ function StaffTab({ setMessage }: { setMessage: (m: any) => void }) {
                     <p className="text-purple-300 text-sm">{user.email}</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleDelete(user.id)}
-                  className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg"
-                >
-                  <Trash2 size={16} />
-                </button>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => openEditModal(user)}
+                    className="p-2 text-blue-400 hover:bg-blue-500/20 rounded-lg"
+                    title="Tahrirlash"
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                  <button
+                    onClick={() => openPasswordModal(user)}
+                    className="p-2 text-yellow-400 hover:bg-yellow-500/20 rounded-lg"
+                    title="Parolni o'zgartirish"
+                  >
+                    <Key size={16} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(user.id)}
+                    className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg"
+                    title="O'chirish"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
               <span className={`inline-block px-3 py-1 rounded-full text-sm border ${getRoleBadge(user.role)}`}>
                 {user.role}
@@ -1129,6 +1319,122 @@ function StaffTab({ setMessage }: { setMessage: (m: any) => void }) {
                   className="flex-1 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
                 >
                   Yaratish
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && selectedUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-2xl shadow-xl max-w-md w-full p-6 border border-purple-500/30">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white">Foydalanuvchini tahrirlash</h2>
+              <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-white/10 rounded-lg">
+                <X size={20} className="text-purple-300" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEdit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-purple-200 mb-2">To'liq ism</label>
+                <input
+                  type="text"
+                  value={editData.full_name}
+                  onChange={(e) => setEditData({ ...editData, full_name: e.target.value })}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-purple-200 mb-2">Email</label>
+                <input
+                  type="email"
+                  value={editData.email}
+                  onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-purple-200 mb-2">Rol</label>
+                <select
+                  value={editData.role}
+                  onChange={(e) => setEditData({ ...editData, role: e.target.value })}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white"
+                >
+                  <option value="REGISTRAR">Registrar</option>
+                  <option value="EMPLOYER">Employer</option>
+                  <option value="ADMIN">Admin</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 py-2 border border-purple-400/30 text-purple-200 rounded-lg hover:bg-white/10"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Saqlash
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Password Modal */}
+      {showPasswordModal && selectedUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-2xl shadow-xl max-w-md w-full p-6 border border-purple-500/30">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white">Parolni o'zgartirish</h2>
+              <button onClick={() => setShowPasswordModal(false)} className="p-2 hover:bg-white/10 rounded-lg">
+                <X size={20} className="text-purple-300" />
+              </button>
+            </div>
+
+            <p className="text-purple-300 mb-4">
+              <strong>{selectedUser.full_name}</strong> uchun yangi parol
+            </p>
+
+            <form onSubmit={handlePasswordChange} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-purple-200 mb-2">Yangi parol</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white"
+                  placeholder="Kamida 6 ta belgi"
+                  minLength={6}
+                  required
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordModal(false)}
+                  className="flex-1 py-2 border border-purple-400/30 text-purple-200 rounded-lg hover:bg-white/10"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
+                >
+                  O'zgartirish
                 </button>
               </div>
             </form>

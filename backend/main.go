@@ -192,6 +192,7 @@ func main() {
 			{
 				admin.GET("/users", handlers.GetUsers)
 				admin.POST("/users", handlers.CreateUser)
+				admin.PUT("/users/:id", handlers.UpdateUser)
 				admin.DELETE("/users/:id", handlers.DeleteUser)
 				admin.PUT("/users/:id/password", handlers.ChangeUserPassword) // Check this line
 				admin.POST("/import-students", handlers.ImportStudents)
