@@ -137,21 +137,21 @@ export function revokeFilePreviewUrl(url: string): void {
 
 /**
  * Get accept attribute value for file input
- * Barcha xavfsiz formatlar qabul qilinadi
+ * Faqat xavfsiz office va media formatlar qabul qilinadi
  */
 export function getAcceptAttribute(fileTypes: 'document' | 'media' | 'all'): string {
-  // Kengaytirilgan formatlar ro'yxati - barcha kategoriyalar uchun bir xil
-  const allFormats = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar,.json,.xml,.jpg,.jpeg,.png,.gif,.webp,.svg,.bmp,.tiff,.mp4,.mpeg,.webm,.mov,.avi,.wmv,.mp3,.wav,.ogg,.aac,.flac';
+  // Xavfsiz formatlar - JSON, XML, ZIP, RAR, SVG olib tashlandi
+  const safeFormats = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png,.gif,.webp,.bmp,.mp4,.webm,.mov,.mp3,.wav';
   
   switch (fileTypes) {
     case 'document':
-      return allFormats; // Barcha formatlar qabul qilinadi
+      return safeFormats;
     case 'media':
-      return allFormats;
+      return safeFormats;
     case 'all':
-      return allFormats;
+      return safeFormats;
     default:
-      return allFormats;
+      return safeFormats;
   }
 }
 

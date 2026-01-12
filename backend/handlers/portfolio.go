@@ -165,7 +165,7 @@ func GetMyPortfolios(c *gin.Context) {
 	c.JSON(http.StatusOK, items)
 }
 
-// Ruxsat berilgan fayl turlari
+// Ruxsat berilgan fayl turlari - faqat xavfsiz office va media formatlar
 var allowedDocTypes = map[string]bool{
 	"application/pdf":    true,
 	"application/msword": true,
@@ -174,15 +174,8 @@ var allowedDocTypes = map[string]bool{
 	"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":         true, // xlsx
 	"application/vnd.ms-powerpoint":                                             true,
 	"application/vnd.openxmlformats-officedocument.presentationml.presentation": true, // pptx
-	"text/plain":      true, // txt
-	"text/csv":        true, // csv
-	"application/zip": true, // zip
-	"application/x-zip-compressed": true,
-	"application/x-rar-compressed": true, // rar
-	"application/vnd.rar":          true,
-	"application/json":             true, // json
-	"application/xml":              true, // xml
-	"text/xml":                     true,
+	"text/plain": true, // txt
+	"text/csv":   true, // csv
 }
 
 var allowedMediaTypes = map[string]bool{
@@ -190,20 +183,12 @@ var allowedMediaTypes = map[string]bool{
 	"image/png":       true,
 	"image/gif":       true,
 	"image/webp":      true,
-	"image/svg+xml":   true, // svg
-	"image/bmp":       true, // bmp
-	"image/tiff":      true, // tiff
+	"image/bmp":       true,
 	"video/mp4":       true,
-	"video/mpeg":      true,
 	"video/webm":      true,
 	"video/quicktime": true, // mov
-	"video/x-msvideo": true, // avi
-	"video/x-ms-wmv":  true, // wmv
 	"audio/mpeg":      true, // mp3
 	"audio/wav":       true,
-	"audio/ogg":       true, // ogg
-	"audio/aac":       true, // aac
-	"audio/flac":      true, // flac
 }
 
 // POST /api/portfolio - Yangi portfolio (fayl bilan)

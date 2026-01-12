@@ -374,26 +374,17 @@ function ProjectsPortfolioModal({ onClose, onSuccess }: { onClose: () => void; o
       'application/vnd.openxmlformats-officedocument.presentationml.presentation',
       'text/plain',
       'text/csv',
-      'application/json',
-      'application/xml',
-      'text/xml',
-      'application/zip',
-      'application/x-zip-compressed',
-      'application/x-rar-compressed',
       'image/jpeg',
       'image/png',
       'image/jpg',
       'image/gif',
       'image/webp',
-      'image/svg+xml',
       'image/bmp',
       'video/mp4',
       'video/webm',
       'video/quicktime',
-      'video/x-msvideo',
       'audio/mpeg',
       'audio/wav',
-      'audio/ogg',
     ];
 
     if (file.size > MAX_SIZE) return `Fayl hajmi ${(file.size / 1024 / 1024).toFixed(2)}MB. Maksimal 50MB.`;
@@ -540,7 +531,7 @@ function ProjectsPortfolioModal({ onClose, onSuccess }: { onClose: () => void; o
                   ref={fileInputRef}
                   type="file"
                   multiple
-                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar,.json,.xml,.jpg,.jpeg,.png,.gif,.webp,.svg,.bmp,.mp4,.webm,.mov,.avi,.mp3,.wav,.ogg"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png,.gif,.webp,.bmp,.mp4,.webm,.mov,.mp3,.wav"
                   onChange={handleFileChange}
                   disabled={files.length >= 3}
                   className="hidden"
