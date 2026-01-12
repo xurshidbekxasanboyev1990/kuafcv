@@ -23,6 +23,15 @@ export const metadata: Metadata = {
   formatDetection: {
     telephone: false,
   },
+  icons: {
+    icon: '/logo.svg',
+    shortcut: '/logo.svg',
+    apple: '/logo.svg',
+    other: {
+      rel: 'apple-touch-icon-precomposed',
+      url: '/logo.svg',
+    },
+  },
 };
 
 export const viewport: Viewport = {
