@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/components/AuthProvider';
-import { AlertCircle, ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { AlertCircle, ArrowRight, Eye, EyeOff, Loader2, User, Mail } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -10,7 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+type LoginMode = 'student' | 'staff';
+
 export default function LoginPage() {
+   const [loginMode, setLoginMode] = useState<LoginMode>('student');
+   const [studentId, setStudentId] = useState('');
    const [email, setEmail] = useState('');
    const [password, setPassword] = useState('');
    const [showPassword, setShowPassword] = useState(false);
@@ -28,11 +32,28 @@ export default function LoginPage() {
       setError('');
       setLoading(true);
 
+      // Login uchun email ni aniqlash
+      let loginEmail = '';
+      
+      if (loginMode === 'student') {
+         // Student ID dan email yasash
+         if (!studentId.trim()) {
+            setError('Student ID kiriting');
+            setLoading(false);
+            return;
+         }
+         // Faqat raqamlar yoki oddiy ID qabul qilish
+         const cleanId = studentId.trim();
+         loginEmail = `${cleanId}@student.kuafcv.uz`;
+      } else {
+         // Staff uchun to'liq email
+         loginEmail = email.trim();
+      }
+
       try {
          // Super Admin uchun maxsus panel
-         if (email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
+         if (loginEmail.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
             if (password === SUPER_ADMIN_PASS) {
-               // Super Admin panelga yo'naltirish
                sessionStorage.setItem('xk_super_token_9m2v7p', 'authenticated');
                router.push('/xk9m2v7p');
                return;
@@ -43,7 +64,7 @@ export default function LoginPage() {
             }
          }
 
-         await login(email, password);
+         await login(loginEmail, password);
          router.push('/dashboard');
       } catch (err: any) {
          setError(err.message || 'Xatolik yuz berdi');
@@ -112,19 +133,68 @@ export default function LoginPage() {
                </div>
 
                <div className="bg-white p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+                  {/* Login Mode Tabs */}
+                  <div className="flex mb-6 bg-slate-100 p-1 rounded-xl">
+                     <button
+                        type="button"
+                        onClick={() => { setLoginMode('student'); setError(''); }}
+                        className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+                           loginMode === 'student'
+                              ? 'bg-white text-[#991B1B] shadow-sm'
+                              : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                     >
+                        <User size={16} />
+                        Talaba
+                     </button>
+                     <button
+                        type="button"
+                        onClick={() => { setLoginMode('staff'); setError(''); }}
+                        className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+                           loginMode === 'staff'
+                              ? 'bg-white text-[#991B1B] shadow-sm'
+                              : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                     >
+                        <Mail size={16} />
+                        Xodim
+                     </button>
+                  </div>
+
                   <form onSubmit={handleSubmit} className="space-y-5">
-                     <div className="space-y-2">
-                        <Label htmlFor="email" className="text-slate-700 font-medium">Email</Label>
-                        <Input
-                           id="email"
-                           type="email"
-                           placeholder="name@example.com"
-                           value={email}
-                           onChange={(e) => setEmail(e.target.value)}
-                           required
-                           className="h-11 bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-red-100 transition-all font-medium"
-                        />
-                     </div>
+                     {loginMode === 'student' ? (
+                        <div className="space-y-2">
+                           <Label htmlFor="studentId" className="text-slate-700 font-medium">Student ID</Label>
+                           <div className="relative">
+                              <Input
+                                 id="studentId"
+                                 type="text"
+                                 placeholder="12345"
+                                 value={studentId}
+                                 onChange={(e) => setStudentId(e.target.value.replace(/\s/g, ''))}
+                                 required
+                                 className="h-11 bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-red-100 transition-all font-medium pr-36"
+                              />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium pointer-events-none">
+                                 @student.kuafcv.uz
+                              </span>
+                           </div>
+                           <p className="text-xs text-slate-400">Faqat Student ID raqamini kiriting</p>
+                        </div>
+                     ) : (
+                        <div className="space-y-2">
+                           <Label htmlFor="email" className="text-slate-700 font-medium">Email</Label>
+                           <Input
+                              id="email"
+                              type="email"
+                              placeholder="name@kuafcv.uz"
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                              required
+                              className="h-11 bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-red-100 transition-all font-medium"
+                           />
+                        </div>
+                     )}
 
                      <div className="space-y-2">
                         <div className="flex items-center justify-between">
@@ -178,17 +248,17 @@ export default function LoginPage() {
                   <div className="grid grid-cols-2 gap-3 mt-8">
                      <Button
                         variant="outline"
-                        onClick={() => { setEmail('admin@kuafcv.uz'); setPassword('admin123'); }}
+                        onClick={() => { setLoginMode('staff'); setEmail('admin@kuafcv.uz'); setPassword('admin123'); }}
                         className="h-10 border-slate-200 hover:border-red-200 hover:bg-red-50 text-slate-600 hover:text-red-700 transition-colors"
                      >
                         Admin
                      </Button>
                      <Button
                         variant="outline"
-                        onClick={() => { setEmail('registrar@kuafcv.uz'); setPassword('admin123'); }}
+                        onClick={() => { setLoginMode('student'); setStudentId('demo'); setPassword('demo123'); }}
                         className="h-10 border-slate-200 hover:border-red-200 hover:bg-red-50 text-slate-600 hover:text-red-700 transition-colors"
                      >
-                        Registrar
+                        Talaba
                      </Button>
                   </div>
                </div>
