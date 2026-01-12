@@ -8,12 +8,29 @@ import { AuthProvider } from '@/components/AuthProvider';
 import GlobalChat from '@/components/GlobalChat';
 import { LayoutProvider } from '@/components/LayoutProvider';
 import { WebSocketProvider } from '@/components/WebSocketProvider';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
   title: 'KUAFCV - Portfolio Tizimi',
   description: 'Talabalar portfolio boshqaruv tizimi',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'KUAFCV',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#991B1B',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
