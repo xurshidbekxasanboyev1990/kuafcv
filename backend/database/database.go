@@ -612,6 +612,20 @@ func Migrate() error {
 	return nil
 }
 
+// CheckTablesExist checks if the users table exists
+func CheckTablesExist() bool {
+	if DB == nil {
+		return false
+	}
+	var exists bool
+	err := DB.QueryRow("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'users')").Scan(&exists)
+	if err != nil {
+		log.Printf("⚠️ Jadval mavjudligini tekshirishda xatolik: %v", err)
+		return false
+	}
+	return exists
+}
+
 func Close() {
 	if DB != nil {
 		DB.Close()

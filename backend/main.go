@@ -43,20 +43,21 @@ func main() {
 	}
 	defer database.Close()
 
-	// Seed Super Admin if not exists
-	database.SeedSuperAdmin()
-
 	// ===== MIGRATION =====
 	// Production-da migratsiyani alohida buyruq bilan bajarish tavsiya etiladi:
 	// Buyruq: go run main.go migrate
 	// Yoki: make migrate
 	// Bu yerda faqat development uchun avtomatik migratsiya
-	if cfg.Environment != "production" || shouldRunMigration() {
+	// AMMO: Agar "users" jadvali yo'q bo'lsa (yangi server), baribir migratsiyani ishga tushirish kerak
+	if cfg.Environment != "production" || shouldRunMigration() || !database.CheckTablesExist() {
 		if err := database.Migrate(); err != nil {
 			log.Fatalf("❌ Migration xatolik: %v", err)
 		}
 		log.Println("✅ Database migration completed")
 	}
+
+	// Seed Super Admin if not exists (must run AFTER migration)
+	database.SeedSuperAdmin()
 
 	// Redis ulanish (ixtiyoriy)
 	cache.Connect(cfg.RedisURL)
