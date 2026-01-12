@@ -21,6 +21,7 @@ import {
   Plus,
   Upload,
   X,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -366,10 +367,17 @@ function TechnicalPortfolioModal({
     category: CATEGORY,
     tags: [] as string[],
   });
-  const [files, setFiles] = useState<File[]>([]);
+  
+  interface FileWithPreview extends File {
+    preview?: string;
+  }
+  
+  const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validateFile = (file: File): string | null => {
@@ -403,32 +411,80 @@ function TechnicalPortfolioModal({
     return null;
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = Array.from(e.target.files || []);
+  // Create preview for images
+  const createPreview = (file: File): string | undefined => {
+    if (file.type.startsWith('image/')) {
+      return URL.createObjectURL(file);
+    }
+    return undefined;
+  };
+
+  // Handle files (both from input and drag & drop)
+  const handleFiles = (selectedFiles: FileList | File[]) => {
+    const newFiles = Array.from(selectedFiles);
     setError('');
 
-    if (files.length + selectedFiles.length > 3) {
+    if (files.length + newFiles.length > 3) {
       setError('Maksimal 3 ta fayl yuklash mumkin');
-      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
-    const validFiles: File[] = [];
-    for (const file of selectedFiles) {
+    const validFiles: FileWithPreview[] = [];
+    for (const file of newFiles) {
       const validationError = validateFile(file);
       if (validationError) {
         setError(validationError);
-        if (fileInputRef.current) fileInputRef.current.value = '';
         return;
       }
-      validFiles.push(file);
+      const fileWithPreview = Object.assign(file, {
+        preview: createPreview(file),
+      });
+      validFiles.push(fileWithPreview);
     }
 
     setFiles([...files, ...validFiles]);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      handleFiles(e.target.files);
+    }
+  };
+
+  // Drag & Drop handlers
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFiles(e.dataTransfer.files);
+    }
+  };
+
   const removeFile = (index: number) => {
+    const file = files[index];
+    if (file?.preview) {
+      URL.revokeObjectURL(file.preview);
+    }
     setFiles(files.filter((_, i) => i !== index));
   };
 
@@ -565,7 +621,7 @@ function TechnicalPortfolioModal({
               )}
             </div>
 
-            {/* File Upload */}
+            {/* File Upload with Drag & Drop */}
             <div className="space-y-3">
               <Label className="flex items-center gap-2">
                 <Upload className="w-4 h-4" />
@@ -573,8 +629,16 @@ function TechnicalPortfolioModal({
               </Label>
 
               <div
-                className="border-2 border-dashed border-input hover:border-primary/50 transition-colors rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer bg-muted/5 relative group"
-                onClick={() => fileInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer relative group transition-all duration-200 ${
+                  isDragging 
+                    ? 'border-primary bg-primary/5 scale-[1.02]' 
+                    : 'border-input hover:border-primary/50 bg-muted/5'
+                } ${files.length >= 3 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={() => files.length < 3 && fileInputRef.current?.click()}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
               >
                 <input
                   ref={fileInputRef}
@@ -585,31 +649,52 @@ function TechnicalPortfolioModal({
                   className="hidden"
                   disabled={files.length >= 3}
                 />
-                <div className="p-3 bg-primary/10 rounded-full mb-3 group-hover:scale-110 transition-transform">
-                  <Upload className="w-6 h-6 text-primary" />
+                <div className={`p-3 rounded-full mb-3 transition-all ${isDragging ? 'bg-primary/20 scale-110' : 'bg-primary/10 group-hover:scale-110'}`}>
+                  <Upload className={`w-6 h-6 text-primary ${isDragging ? 'animate-bounce' : ''}`} />
                 </div>
-                <p className="text-sm font-medium">Fayllarni tanlash uchun bosing</p>
+                <p className="text-sm font-medium">
+                  {isDragging ? (
+                    <span className="text-primary">Fayllarni shu yerga tashlang</span>
+                  ) : (
+                    <>Fayllarni <span className="text-primary">tanlang</span> yoki shu yerga tashlang</>
+                  )}
+                </p>
                 <p className="text-xs text-muted-foreground mt-1">PDF, DOC, JPG, PNG (Maks 50MB)</p>
+                <p className="text-xs text-muted-foreground mt-2">{files.length}/3 fayl yuklangan</p>
               </div>
 
+              {/* File List with Preview */}
               {files.length > 0 && (
                 <div className="grid gap-2">
                   {files.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-card border rounded-lg shadow-sm">
-                      <div className="flex items-center gap-3 overflow-hidden">
-                        <div className="p-2 bg-primary/10 rounded">
-                          <File className="w-4 h-4 text-primary" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">{file.name}</p>
-                          <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                        </div>
+                    <div key={index} className="flex items-center gap-3 p-3 bg-card border rounded-lg shadow-sm group hover:bg-muted/30 transition-colors">
+                      {/* Preview or Icon */}
+                      <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-muted/50 border flex items-center justify-center">
+                        {file.preview ? (
+                          <img
+                            src={file.preview}
+                            alt={file.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : file.type.startsWith('image/') ? (
+                          <ImageIcon className="w-5 h-5 text-blue-500" />
+                        ) : (
+                          <File className="w-5 h-5 text-primary" />
+                        )}
                       </div>
+                      
+                      {/* File Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{file.name}</p>
+                        <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                      </div>
+                      
+                      {/* Remove Button */}
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
+                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                         onClick={(e) => {
                           e.stopPropagation();
                           removeFile(index);
@@ -619,6 +704,22 @@ function TechnicalPortfolioModal({
                       </Button>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* Upload Progress */}
+              {loading && uploadProgress > 0 && (
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Yuklanmoqda...</span>
+                    <span>{uploadProgress}%</span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-primary transition-all duration-300 ease-out"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
                 </div>
               )}
             </div>
