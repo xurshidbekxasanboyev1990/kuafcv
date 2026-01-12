@@ -434,6 +434,30 @@ function AcademicPortfolioModal({
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/vnd.ms-excel',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'text/plain',
+      'text/csv',
+      'application/json',
+      'application/xml',
+      'text/xml',
+      'application/zip',
+      'application/x-zip-compressed',
+      'application/x-rar-compressed',
+      'image/jpeg',
+      'image/png',
+      'image/jpg',
+      'image/gif',
+      'image/webp',
+      'image/svg+xml',
+      'image/bmp',
+      'video/mp4',
+      'video/webm',
+      'video/quicktime',
+      'video/x-msvideo',
+      'audio/mpeg',
+      'audio/wav',
+      'audio/ogg',
     ];
 
     if (selectedFile.size > maxSize) {
@@ -441,8 +465,8 @@ function AcademicPortfolioModal({
       return false;
     }
 
-    if (!allowedTypes.includes(selectedFile.type)) {
-      setError('Faqat PDF, DOCX yoki XLSX formatdagi fayllar qabul qilinadi');
+    if (!allowedTypes.includes(selectedFile.type) && selectedFile.type !== '') {
+      setError('Fayl turi qo\'llab-quvvatlanmaydi');
       return false;
     }
 
@@ -568,7 +592,7 @@ function AcademicPortfolioModal({
                   ref={fileInputRef}
                   type="file"
                   multiple
-                  accept=".pdf,.doc,.docx,.xls,.xlsx"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar,.json,.xml,.jpg,.jpeg,.png,.gif,.webp,.svg,.bmp,.mp4,.webm,.mov,.avi,.mp3,.wav,.ogg"
                   onChange={handleFileChange}
                   disabled={files.length >= 3}
                   className="hidden"

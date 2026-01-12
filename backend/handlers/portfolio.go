@@ -30,47 +30,75 @@ var magicBytes = map[string][]byte{
 	"pdf":  {0x25, 0x50, 0x44, 0x46}, // %PDF
 	"jpeg": {0xFF, 0xD8, 0xFF},
 	"png":  {0x89, 0x50, 0x4E, 0x47},
-	"docx": {0x50, 0x4B, 0x03, 0x04}, // ZIP archive (DOCX, XLSX, PPTX)
+	"gif":  {0x47, 0x49, 0x46, 0x38}, // GIF8
+	"bmp":  {0x42, 0x4D},             // BM
+	"webp": {0x52, 0x49, 0x46, 0x46}, // RIFF
+	"zip":  {0x50, 0x4B, 0x03, 0x04}, // ZIP archive (DOCX, XLSX, PPTX, ZIP)
+	"docx": {0x50, 0x4B, 0x03, 0x04},
 	"xlsx": {0x50, 0x4B, 0x03, 0x04},
 	"pptx": {0x50, 0x4B, 0x03, 0x04},
-	"mp4":  {0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70}, // ftyp
+	"mp4":  {0x00, 0x00, 0x00}, // ftyp variants
+	"mp3":  {0x49, 0x44, 0x33}, // ID3
+	"wav":  {0x52, 0x49, 0x46, 0x46}, // RIFF
+	"ogg":  {0x4F, 0x67, 0x67, 0x53}, // OggS
+	"avi":  {0x52, 0x49, 0x46, 0x46}, // RIFF
+	"rar":  {0x52, 0x61, 0x72, 0x21}, // Rar!
 }
 
 // validateMagicBytes checks if file content matches expected type
+// Barcha xavfsiz fayl turlari uchun umumiy validatsiya
 func validateMagicBytes(data []byte, portfolioType string) bool {
-	if len(data) < 8 {
+	if len(data) < 4 {
 		return false // Too small to validate
 	}
 
-	// Check common magic bytes
-	validTypes := []string{}
-
-	if portfolioType == "DOCUMENT" || portfolioType == "CERTIFICATE" {
-		validTypes = []string{"pdf", "docx", "xlsx", "pptx"}
-	} else if portfolioType == "MEDIA" {
-		validTypes = []string{"jpeg", "png", "mp4"}
-	} else {
-		// PROJECT, OTHER - allow all
-		validTypes = []string{"pdf", "docx", "xlsx", "pptx", "jpeg", "png", "mp4"}
+	// Check for known safe magic bytes
+	safeSignatures := [][]byte{
+		{0x25, 0x50, 0x44, 0x46},       // PDF
+		{0xFF, 0xD8, 0xFF},             // JPEG
+		{0x89, 0x50, 0x4E, 0x47},       // PNG
+		{0x47, 0x49, 0x46, 0x38},       // GIF
+		{0x42, 0x4D},                   // BMP
+		{0x52, 0x49, 0x46, 0x46},       // RIFF (WEBP, WAV, AVI)
+		{0x50, 0x4B, 0x03, 0x04},       // ZIP (DOCX, XLSX, PPTX, ZIP)
+		{0x50, 0x4B, 0x05, 0x06},       // Empty ZIP
+		{0x00, 0x00, 0x00},             // MP4/MOV variants
+		{0x49, 0x44, 0x33},             // MP3 (ID3)
+		{0xFF, 0xFB},                   // MP3 without ID3
+		{0xFF, 0xFA},                   // MP3 variant
+		{0x4F, 0x67, 0x67, 0x53},       // OGG
+		{0x52, 0x61, 0x72, 0x21},       // RAR
+		{0x1F, 0x8B},                   // GZIP
+		{0x37, 0x7A, 0xBC, 0xAF},       // 7Z
+		{0x66, 0x4C, 0x61, 0x43},       // FLAC
+		{0x00, 0x00, 0x01, 0x00},       // ICO
+		{0x3C, 0x3F, 0x78, 0x6D},       // XML (<?xm)
+		{0x3C, 0x73, 0x76, 0x67},       // SVG (<svg)
+		{0x7B},                         // JSON ({)
+		{0x5B},                         // JSON ([)
 	}
 
-	for _, fileType := range validTypes {
-		if magic, ok := magicBytes[fileType]; ok {
-			if bytes.HasPrefix(data, magic) {
-				return true
-			}
+	for _, sig := range safeSignatures {
+		if len(data) >= len(sig) && bytes.HasPrefix(data, sig) {
+			return true
 		}
 	}
 
-	// Additional check for Office Open XML (DOCX/XLSX/PPTX)
-	// They all start with PK (ZIP), but we can check further
-	if bytes.HasPrefix(data, []byte{0x50, 0x4B}) {
-		// Check if ZIP contains office-specific files
-		for _, fileType := range validTypes {
-			if fileType == "docx" || fileType == "xlsx" || fileType == "pptx" {
-				return true // Accept all Office formats
-			}
+	// Check for text files (UTF-8 BOM or printable ASCII)
+	if data[0] == 0xEF && data[1] == 0xBB && data[2] == 0xBF {
+		return true // UTF-8 BOM
+	}
+
+	// Allow plain text files (check if mostly printable)
+	printableCount := 0
+	checkLen := min(len(data), 512)
+	for i := 0; i < checkLen; i++ {
+		if (data[i] >= 32 && data[i] <= 126) || data[i] == 9 || data[i] == 10 || data[i] == 13 {
+			printableCount++
 		}
+	}
+	if float64(printableCount)/float64(checkLen) > 0.85 {
+		return true // Mostly printable text
 	}
 
 	return false
@@ -146,6 +174,15 @@ var allowedDocTypes = map[string]bool{
 	"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":         true, // xlsx
 	"application/vnd.ms-powerpoint":                                             true,
 	"application/vnd.openxmlformats-officedocument.presentationml.presentation": true, // pptx
+	"text/plain":      true, // txt
+	"text/csv":        true, // csv
+	"application/zip": true, // zip
+	"application/x-zip-compressed": true,
+	"application/x-rar-compressed": true, // rar
+	"application/vnd.rar":          true,
+	"application/json":             true, // json
+	"application/xml":              true, // xml
+	"text/xml":                     true,
 }
 
 var allowedMediaTypes = map[string]bool{
@@ -153,12 +190,20 @@ var allowedMediaTypes = map[string]bool{
 	"image/png":       true,
 	"image/gif":       true,
 	"image/webp":      true,
+	"image/svg+xml":   true, // svg
+	"image/bmp":       true, // bmp
+	"image/tiff":      true, // tiff
 	"video/mp4":       true,
 	"video/mpeg":      true,
 	"video/webm":      true,
 	"video/quicktime": true, // mov
+	"video/x-msvideo": true, // avi
+	"video/x-ms-wmv":  true, // wmv
 	"audio/mpeg":      true, // mp3
 	"audio/wav":       true,
+	"audio/ogg":       true, // ogg
+	"audio/aac":       true, // aac
+	"audio/flac":      true, // flac
 }
 
 // POST /api/portfolio - Yangi portfolio (fayl bilan)
@@ -245,29 +290,17 @@ func CreatePortfolio(c *gin.Context) {
 				return
 			}
 
-			// Validate file type
+			// Validate file type - barcha kategoriyalar uchun doc va media qabul qilinadi
 			isValidFile := false
-			if portfolioType == "DOCUMENT" || portfolioType == "CERTIFICATE" {
-				isValidFile = allowedDocTypes[contentType] || allowedDocTypes[detectedType]
-				if !isValidFile {
-					c.JSON(http.StatusBadRequest, models.APIError{
-						Error:   "invalid_file",
-						Message: "Faqat PDF, DOCX, XLSX, PPTX formatdagi fayllar qabul qilinadi",
-						Code:    400,
-					})
-					return
-				}
-			} else if portfolioType == "PROJECT" || portfolioType == "MEDIA" || portfolioType == "OTHER" {
-				isValidFile = allowedDocTypes[contentType] || allowedMediaTypes[contentType] ||
-					allowedDocTypes[detectedType] || allowedMediaTypes[detectedType]
-				if !isValidFile {
-					c.JSON(http.StatusBadRequest, models.APIError{
-						Error:   "invalid_file",
-						Message: "Faqat ruxsat berilgan fayl turlari qabul qilinadi",
-						Code:    400,
-					})
-					return
-				}
+			isValidFile = allowedDocTypes[contentType] || allowedMediaTypes[contentType] ||
+				allowedDocTypes[detectedType] || allowedMediaTypes[detectedType]
+			if !isValidFile {
+				c.JSON(http.StatusBadRequest, models.APIError{
+					Error:   "invalid_file",
+					Message: "Faqat ruxsat berilgan fayl turlari qabul qilinadi (PDF, DOCX, XLSX, PPTX, JPG, PNG, MP4, ZIP va boshqalar)",
+					Code:    400,
+				})
+				return
 			}
 
 			// File size check (50MB max)

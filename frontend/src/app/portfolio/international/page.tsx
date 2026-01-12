@@ -380,13 +380,36 @@ function InternationalPortfolioModal({
       'application/pdf',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'text/plain',
+      'text/csv',
+      'application/json',
+      'application/xml',
+      'text/xml',
+      'application/zip',
+      'application/x-zip-compressed',
+      'application/x-rar-compressed',
       'image/jpeg',
       'image/png',
       'image/jpg',
+      'image/gif',
+      'image/webp',
+      'image/svg+xml',
+      'image/bmp',
+      'video/mp4',
+      'video/webm',
+      'video/quicktime',
+      'video/x-msvideo',
+      'audio/mpeg',
+      'audio/wav',
+      'audio/ogg',
     ];
 
     if (file.size > MAX_SIZE) return `Fayl hajmi 50MB dan oshmasligi kerak.`;
-    if (!ALLOWED_TYPES.includes(file.type)) return 'Fayl turi qo\'llab-quvvatlanmaydi';
+    if (!ALLOWED_TYPES.includes(file.type) && file.type !== '') return 'Fayl turi qo\'llab-quvvatlanmaydi';
 
     return null;
   };
@@ -568,7 +591,7 @@ function InternationalPortfolioModal({
                   ref={fileInputRef}
                   type="file"
                   multiple
-                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar,.json,.xml,.jpg,.jpeg,.png,.gif,.webp,.svg,.bmp,.mp4,.webm,.mov,.avi,.mp3,.wav,.ogg"
                   onChange={handleFileChange}
                   className="hidden"
                   disabled={files.length >= 3}
