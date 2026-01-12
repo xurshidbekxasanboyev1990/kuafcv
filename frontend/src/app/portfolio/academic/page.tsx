@@ -383,10 +383,16 @@ function AcademicPortfolioModal({
     category: CATEGORY,
     tags: [] as string[],
   });
-  const [files, setFiles] = useState<File[]>([]);
+  
+  interface FileWithPreview extends File {
+    preview?: string;
+  }
+  
+  const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -464,22 +470,30 @@ function AcademicPortfolioModal({
     return true;
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = Array.from(e.target.files || []);
+  const createPreview = (file: File): string | undefined => {
+    if (file.type.startsWith('image/')) {
+      return URL.createObjectURL(file);
+    }
+    return undefined;
+  };
+
+  const handleFiles = (selectedFiles: FileList | File[]) => {
+    const newFiles = Array.from(selectedFiles);
     setError('');
 
-    if (files.length + selectedFiles.length > 3) {
+    if (files.length + newFiles.length > 3) {
       setError('Maksimal 3 ta fayl yuklash mumkin');
-      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
-    const validFiles: File[] = [];
-    for (const file of selectedFiles) {
+    const validFiles: FileWithPreview[] = [];
+    for (const file of newFiles) {
       if (validateFile(file)) {
-        validFiles.push(file);
+        const fileWithPreview = Object.assign(file, {
+          preview: createPreview(file),
+        });
+        validFiles.push(fileWithPreview);
       } else {
-        if (fileInputRef.current) fileInputRef.current.value = '';
         return;
       }
     }
@@ -488,7 +502,44 @@ function AcademicPortfolioModal({
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      handleFiles(e.target.files);
+    }
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFiles(e.dataTransfer.files);
+    }
+  };
+
   const removeFile = (index: number) => {
+    const file = files[index];
+    if (file?.preview) {
+      URL.revokeObjectURL(file.preview);
+    }
     setFiles(files.filter((_, i) => i !== index));
   };
 
@@ -577,7 +628,15 @@ function AcademicPortfolioModal({
 
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-muted-foreground/25 rounded-xl p-6 text-center hover:bg-muted/50 transition-colors cursor-pointer group"
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                className={`border-2 border-dashed rounded-xl p-6 text-center transition-all duration-200 cursor-pointer group ${
+                  isDragging
+                    ? 'border-primary bg-primary/10 scale-[1.02]'
+                    : 'border-muted-foreground/25 hover:bg-muted/50'
+                }`}
               >
                 <input
                   ref={fileInputRef}
@@ -588,19 +647,33 @@ function AcademicPortfolioModal({
                   disabled={files.length >= 3}
                   className="hidden"
                 />
-                <div className="bg-primary/5 h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-primary/10 transition-colors">
-                  <Upload size={20} className="text-primary" />
+                <div className={`h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-3 transition-all ${
+                  isDragging ? 'bg-primary/20 scale-110' : 'bg-primary/5 group-hover:bg-primary/10'
+                }`}>
+                  <Upload size={20} className={`${isDragging ? 'text-primary animate-bounce' : 'text-primary'}`} />
                 </div>
-                <p className="text-sm font-medium mb-1">Fayllarni yuklash uchun bosing</p>
+                <p className="text-sm font-medium mb-1">
+                  {isDragging ? 'Fayllarni shu yerga tashlang' : 'Fayllarni sudrab tashlang yoki bosing'}
+                </p>
                 <p className="text-xs text-muted-foreground">PDF, DOCX yoki XLSX (maks 50MB)</p>
               </div>
 
               {files.length > 0 && (
                 <div className="space-y-2">
                   {files.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border">
+                    <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border group/item hover:border-primary/30 transition-colors">
                       <div className="flex items-center gap-3 overflow-hidden">
-                        <FileText size={18} className="text-primary shrink-0" />
+                        {file.preview ? (
+                          <div className="relative w-10 h-10 rounded overflow-hidden border bg-muted flex-shrink-0">
+                            <img
+                              src={file.preview}
+                              alt={file.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <FileText size={18} className="text-primary shrink-0" />
+                        )}
                         <span className="text-sm truncate">{file.name}</span>
                         <span className="text-xs text-muted-foreground shrink-0">
                           {(file.size / 1024 / 1024).toFixed(2)} MB
@@ -614,7 +687,7 @@ function AcademicPortfolioModal({
                           e.stopPropagation();
                           removeFile(index);
                         }}
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover/item:opacity-100"
                       >
                         <X size={16} />
                       </Button>
