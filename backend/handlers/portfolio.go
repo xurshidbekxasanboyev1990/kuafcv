@@ -290,8 +290,12 @@ func CreatePortfolio(c *gin.Context) {
 				".mp3":  "audio/mpeg",
 				".wav":  "audio/wav",
 			}
-			if extMime, ok := extMimeMap[ext]; ok && contentType == "application/octet-stream" {
-				contentType = extMime
+			extMimeType := ""
+			if extMime, ok := extMimeMap[ext]; ok {
+				extMimeType = extMime
+				if contentType == "application/octet-stream" || contentType == "application/zip" {
+					contentType = extMime
+				}
 			}
 
 			// Validate magic bytes
@@ -308,7 +312,8 @@ func CreatePortfolio(c *gin.Context) {
 			// Validate file type - barcha kategoriyalar uchun doc va media qabul qilinadi
 			isValidFile := false
 			isValidFile = allowedDocTypes[contentType] || allowedMediaTypes[contentType] ||
-				allowedDocTypes[detectedType] || allowedMediaTypes[detectedType]
+				allowedDocTypes[detectedType] || allowedMediaTypes[detectedType] ||
+				allowedDocTypes[extMimeType] || allowedMediaTypes[extMimeType]
 			if !isValidFile {
 				c.JSON(http.StatusBadRequest, models.APIError{
 					Error:   "invalid_file",
