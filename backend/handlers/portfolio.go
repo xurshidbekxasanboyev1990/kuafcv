@@ -13,7 +13,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"kuafcv-backend/cache"
@@ -37,8 +39,8 @@ var magicBytes = map[string][]byte{
 	"docx": {0x50, 0x4B, 0x03, 0x04},
 	"xlsx": {0x50, 0x4B, 0x03, 0x04},
 	"pptx": {0x50, 0x4B, 0x03, 0x04},
-	"mp4":  {0x00, 0x00, 0x00}, // ftyp variants
-	"mp3":  {0x49, 0x44, 0x33}, // ID3
+	"mp4":  {0x00, 0x00, 0x00},       // ftyp variants
+	"mp3":  {0x49, 0x44, 0x33},       // ID3
 	"wav":  {0x52, 0x49, 0x46, 0x46}, // RIFF
 	"ogg":  {0x4F, 0x67, 0x67, 0x53}, // OggS
 	"avi":  {0x52, 0x49, 0x46, 0x46}, // RIFF
@@ -54,28 +56,28 @@ func validateMagicBytes(data []byte, portfolioType string) bool {
 
 	// Check for known safe magic bytes
 	safeSignatures := [][]byte{
-		{0x25, 0x50, 0x44, 0x46},       // PDF
-		{0xFF, 0xD8, 0xFF},             // JPEG
-		{0x89, 0x50, 0x4E, 0x47},       // PNG
-		{0x47, 0x49, 0x46, 0x38},       // GIF
-		{0x42, 0x4D},                   // BMP
-		{0x52, 0x49, 0x46, 0x46},       // RIFF (WEBP, WAV, AVI)
-		{0x50, 0x4B, 0x03, 0x04},       // ZIP (DOCX, XLSX, PPTX, ZIP)
-		{0x50, 0x4B, 0x05, 0x06},       // Empty ZIP
-		{0x00, 0x00, 0x00},             // MP4/MOV variants
-		{0x49, 0x44, 0x33},             // MP3 (ID3)
-		{0xFF, 0xFB},                   // MP3 without ID3
-		{0xFF, 0xFA},                   // MP3 variant
-		{0x4F, 0x67, 0x67, 0x53},       // OGG
-		{0x52, 0x61, 0x72, 0x21},       // RAR
-		{0x1F, 0x8B},                   // GZIP
-		{0x37, 0x7A, 0xBC, 0xAF},       // 7Z
-		{0x66, 0x4C, 0x61, 0x43},       // FLAC
-		{0x00, 0x00, 0x01, 0x00},       // ICO
-		{0x3C, 0x3F, 0x78, 0x6D},       // XML (<?xm)
-		{0x3C, 0x73, 0x76, 0x67},       // SVG (<svg)
-		{0x7B},                         // JSON ({)
-		{0x5B},                         // JSON ([)
+		{0x25, 0x50, 0x44, 0x46}, // PDF
+		{0xFF, 0xD8, 0xFF},       // JPEG
+		{0x89, 0x50, 0x4E, 0x47}, // PNG
+		{0x47, 0x49, 0x46, 0x38}, // GIF
+		{0x42, 0x4D},             // BMP
+		{0x52, 0x49, 0x46, 0x46}, // RIFF (WEBP, WAV, AVI)
+		{0x50, 0x4B, 0x03, 0x04}, // ZIP (DOCX, XLSX, PPTX, ZIP)
+		{0x50, 0x4B, 0x05, 0x06}, // Empty ZIP
+		{0x00, 0x00, 0x00},       // MP4/MOV variants
+		{0x49, 0x44, 0x33},       // MP3 (ID3)
+		{0xFF, 0xFB},             // MP3 without ID3
+		{0xFF, 0xFA},             // MP3 variant
+		{0x4F, 0x67, 0x67, 0x53}, // OGG
+		{0x52, 0x61, 0x72, 0x21}, // RAR
+		{0x1F, 0x8B},             // GZIP
+		{0x37, 0x7A, 0xBC, 0xAF}, // 7Z
+		{0x66, 0x4C, 0x61, 0x43}, // FLAC
+		{0x00, 0x00, 0x01, 0x00}, // ICO
+		{0x3C, 0x3F, 0x78, 0x6D}, // XML (<?xm)
+		{0x3C, 0x73, 0x76, 0x67}, // SVG (<svg)
+		{0x7B},                   // JSON ({)
+		{0x5B},                   // JSON ([)
 	}
 
 	for _, sig := range safeSignatures {
@@ -264,6 +266,34 @@ func CreatePortfolio(c *gin.Context) {
 				contentType = headerType
 			}
 
+			// Also check file extension (case-insensitive)
+			ext := strings.ToLower(filepath.Ext(fileHeader.Filename))
+			extMimeMap := map[string]string{
+				".pdf":  "application/pdf",
+				".doc":  "application/msword",
+				".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+				".xls":  "application/vnd.ms-excel",
+				".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+				".ppt":  "application/vnd.ms-powerpoint",
+				".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+				".txt":  "text/plain",
+				".csv":  "text/csv",
+				".jpg":  "image/jpeg",
+				".jpeg": "image/jpeg",
+				".png":  "image/png",
+				".gif":  "image/gif",
+				".webp": "image/webp",
+				".bmp":  "image/bmp",
+				".mp4":  "video/mp4",
+				".webm": "video/webm",
+				".mov":  "video/quicktime",
+				".mp3":  "audio/mpeg",
+				".wav":  "audio/wav",
+			}
+			if extMime, ok := extMimeMap[ext]; ok && contentType == "application/octet-stream" {
+				contentType = extMime
+			}
+
 			// Validate magic bytes
 			isValidMagic := validateMagicBytes(buffer[:n], portfolioType)
 			if !isValidMagic {
@@ -299,17 +329,12 @@ func CreatePortfolio(c *gin.Context) {
 			}
 
 			// Save file
-			ext := ""
-			if idx := len(fileHeader.Filename) - 1; idx >= 0 {
-				for i := idx; i >= 0; i-- {
-					if fileHeader.Filename[i] == '.' {
-						ext = fileHeader.Filename[i:]
-						break
-					}
-				}
+			fileExt := filepath.Ext(fileHeader.Filename)
+			if fileExt == "" {
+				fileExt = ".bin"
 			}
 
-			newFileName := uuid.New().String() + ext
+			newFileName := uuid.New().String() + fileExt
 			filePath := "uploads/portfolios/" + newFileName
 			os.MkdirAll("uploads/portfolios", 0755)
 
