@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/components/AuthProvider';
-import { AlertCircle, ArrowRight, Eye, EyeOff, Loader2, User, Mail } from 'lucide-react';
+import { AlertCircle, ArrowRight, Eye, EyeOff, Loader2, Mail, User } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -34,7 +34,7 @@ export default function LoginPage() {
 
       // Login uchun email ni aniqlash
       let loginEmail = '';
-      
+
       if (loginMode === 'student') {
          // Student ID dan email yasash
          if (!studentId.trim()) {
@@ -89,7 +89,7 @@ export default function LoginPage() {
                <div>
                   <div className="flex items-center gap-3 mb-12">
                      <div className="bg-white/10 p-2.5 rounded-xl backdrop-blur-md border border-white/20 shadow-xl">
-                        <Image src="/logo.svg" alt="Logo" width={160} height={160} className="object-contain brightness-0 invert" />
+                        <Image src="/logo.png" alt="Logo" width={160} height={160} className="object-contain brightness-0 invert" />
                      </div>
                      <h1 className="text-2xl font-bold tracking-wider font-mono">KUAFCV</h1>
                   </div>
@@ -138,11 +138,10 @@ export default function LoginPage() {
                      <button
                         type="button"
                         onClick={() => { setLoginMode('student'); setError(''); }}
-                        className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                           loginMode === 'student'
+                        className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${loginMode === 'student'
                               ? 'bg-white text-[#991B1B] shadow-sm'
                               : 'text-slate-500 hover:text-slate-700'
-                        }`}
+                           }`}
                      >
                         <User size={16} />
                         Talaba
@@ -150,11 +149,10 @@ export default function LoginPage() {
                      <button
                         type="button"
                         onClick={() => { setLoginMode('staff'); setError(''); }}
-                        className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                           loginMode === 'staff'
+                        className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${loginMode === 'staff'
                               ? 'bg-white text-[#991B1B] shadow-sm'
                               : 'text-slate-500 hover:text-slate-700'
-                        }`}
+                           }`}
                      >
                         <Mail size={16} />
                         Xodim
