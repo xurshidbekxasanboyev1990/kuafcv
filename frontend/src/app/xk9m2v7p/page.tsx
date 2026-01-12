@@ -1053,7 +1053,7 @@ function StaffTab({ setMessage }: { setMessage: (m: any) => void }) {
   const fetchStaff = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/api/admin/users?role=ADMIN,REGISTRAR,EMPLOYER`, {
+      const response = await fetch(`${API_URL}/api/admin/users?role=STAFF`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('super_admin_token')}` },
       });
       const data = await response.json();
