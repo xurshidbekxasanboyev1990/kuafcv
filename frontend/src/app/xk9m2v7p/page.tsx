@@ -1057,7 +1057,7 @@ function StaffTab({ setMessage }: { setMessage: (m: any) => void }) {
         headers: { Authorization: `Bearer ${localStorage.getItem('super_admin_token')}` },
       });
       const data = await response.json();
-      setStaff(data.users || []);
+      setStaff(data.students || data.users || []);
     } catch (err) {
       setMessage({ type: 'error', text: 'Xatolik' });
     } finally {
