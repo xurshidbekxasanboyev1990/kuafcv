@@ -1,7 +1,6 @@
 package database
 
 import (
-	"fmt"
 	"kuafcv-backend/models"
 	"log"
 	"time"
@@ -56,6 +55,19 @@ func SeedSuperAdmin() {
 			log.Printf("📧 Email: %s", email)
 		}
 	} else {
-		fmt.Println("ℹ️ Super admin allaqachon mavjud.")
+		// Update password for existing super admin to ensure it matches
+		log.Println("🔄 Super admin mavjud. Parol yangilanmoqda...")
+		hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		if err != nil {
+			log.Printf("❌ Parol hash qilishda xatolik: %v", err)
+			return
+		}
+
+		_, err = DB.Exec("UPDATE users SET password_hash = $1 WHERE email = $2", string(hash), email)
+		if err != nil {
+			log.Printf("❌ Super admin parolini yangilashda xatolik: %v", err)
+		} else {
+			log.Println("✅ Super admin paroli yangilandi (tizimga kirish uchun tayyor)")
+		}
 	}
 }

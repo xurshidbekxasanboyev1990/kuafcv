@@ -92,8 +92,8 @@ export default function SuperAdminPage() {
         sessionStorage.setItem('xk_super_token_9m2v7p', 'xk_super_authenticated_9m2v7p');
         setIsAuthenticated(true);
       } else {
-        // Backend login failed - user not in database
-        setLoginError('Foydalanuvchi topilmadi. Admin sifatida ro\'yxatdan o\'ting.');
+        const errorData = await response.json();
+        setLoginError(errorData.message || 'Kirishda xatolik yuz berdi');
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -216,8 +216,8 @@ export default function SuperAdminPage() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id as TabType)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-all ${activeTab === tab.id
-                  ? 'bg-purple-600 text-white shadow-lg'
-                  : 'bg-white/10 text-purple-200 border border-white/20 hover:bg-white/20'
+                ? 'bg-purple-600 text-white shadow-lg'
+                : 'bg-white/10 text-purple-200 border border-white/20 hover:bg-white/20'
                 }`}
             >
               {tab.icon}
@@ -230,8 +230,8 @@ export default function SuperAdminPage() {
         {message && (
           <div
             className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${message.type === 'success'
-                ? 'bg-green-500/20 border border-green-400/30 text-green-200'
-                : 'bg-red-500/20 border border-red-400/30 text-red-200'
+              ? 'bg-green-500/20 border border-green-400/30 text-green-200'
+              : 'bg-red-500/20 border border-red-400/30 text-red-200'
               }`}
           >
             {message.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
@@ -474,9 +474,9 @@ function DashboardTab() {
               {recentActivity.map((a: any, idx: number) => (
                 <div key={idx} className="flex items-start gap-3 p-3 bg-white/5 rounded-lg">
                   <div className={`w-8 h-8 flex items-center justify-center rounded-full ${a.type === 'view' ? 'bg-purple-500/20 text-purple-300' :
-                      a.type === 'rating' ? 'bg-yellow-500/20 text-yellow-300' :
-                        a.type === 'comment' ? 'bg-blue-500/20 text-blue-300' :
-                          'bg-pink-500/20 text-pink-300'
+                    a.type === 'rating' ? 'bg-yellow-500/20 text-yellow-300' :
+                      a.type === 'comment' ? 'bg-blue-500/20 text-blue-300' :
+                        'bg-pink-500/20 text-pink-300'
                     }`}>
                     {a.type === 'view' ? <Eye size={16} /> :
                       a.type === 'rating' ? <Star size={16} /> :
@@ -627,7 +627,7 @@ function StudentsTab({ setMessage }: { setMessage: (m: any) => void }) {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 50;
-  
+
   // Password change modal state
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
@@ -1513,8 +1513,8 @@ function PortfoliosTab() {
             key={s}
             onClick={() => setStatus(s)}
             className={`px-4 py-2 rounded-lg transition-all ${status === s
-                ? 'bg-purple-600 text-white'
-                : 'bg-white/10 text-purple-200 border border-white/20 hover:bg-white/20'
+              ? 'bg-purple-600 text-white'
+              : 'bg-white/10 text-purple-200 border border-white/20 hover:bg-white/20'
               }`}
           >
             {s === 'PENDING' && 'Kutilmoqda'}
@@ -1544,10 +1544,10 @@ function PortfoliosTab() {
                 </div>
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-medium ${p.approval_status === 'APPROVED'
-                      ? 'bg-green-500/20 text-green-300'
-                      : p.approval_status === 'REJECTED'
-                        ? 'bg-red-500/20 text-red-300'
-                        : 'bg-orange-500/20 text-orange-300'
+                    ? 'bg-green-500/20 text-green-300'
+                    : p.approval_status === 'REJECTED'
+                      ? 'bg-red-500/20 text-red-300'
+                      : 'bg-orange-500/20 text-orange-300'
                     }`}
                 >
                   {p.approval_status}
@@ -2215,8 +2215,8 @@ function WebhooksTab({ setMessage }: { setMessage: (m: any) => void }) {
                     </code>
                     <span
                       className={`px-2 py-1 rounded text-xs ${webhook.is_active
-                          ? 'bg-green-500/20 text-green-300'
-                          : 'bg-gray-500/20 text-gray-400'
+                        ? 'bg-green-500/20 text-green-300'
+                        : 'bg-gray-500/20 text-gray-400'
                         }`}
                     >
                       {webhook.is_active ? 'Aktiv' : 'O\'chirilgan'}
@@ -2231,8 +2231,8 @@ function WebhooksTab({ setMessage }: { setMessage: (m: any) => void }) {
                   <button
                     onClick={() => handleToggle(webhook.id)}
                     className={`p-2 rounded-lg ${webhook.is_active
-                        ? 'bg-green-500/20 text-green-300 hover:bg-green-500/30'
-                        : 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/30'
+                      ? 'bg-green-500/20 text-green-300 hover:bg-green-500/30'
+                      : 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/30'
                       }`}
                   >
                     {webhook.is_active ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
@@ -2582,8 +2582,8 @@ function AnnouncementsTab({ setMessage }: { setMessage: (msg: { type: 'success' 
                     <button
                       onClick={() => toggleAnnouncement(announcement.id)}
                       className={`p-2 rounded-lg ${announcement.is_active
-                          ? 'bg-green-500/20 text-green-300 hover:bg-green-500/30'
-                          : 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/30'
+                        ? 'bg-green-500/20 text-green-300 hover:bg-green-500/30'
+                        : 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/30'
                         }`}
                       title={announcement.is_active ? "O'chirish" : 'Yoqish'}
                     >
@@ -2730,8 +2730,8 @@ function AnnouncementModal({ announcement, onClose, onSuccess, setMessage }: any
                   type="button"
                   onClick={() => setFormData((prev) => ({ ...prev, type: type.value }))}
                   className={`p-3 rounded-lg border-2 text-left ${formData.type === type.value
-                      ? 'border-purple-500 bg-purple-500/20'
-                      : 'border-white/20 hover:border-purple-400/50'
+                    ? 'border-purple-500 bg-purple-500/20'
+                    : 'border-white/20 hover:border-purple-400/50'
                     }`}
                 >
                   <span className="text-xl mr-2">{type.icon}</span>
@@ -2815,8 +2815,8 @@ function AnnouncementModal({ announcement, onClose, onSuccess, setMessage }: any
                   type="button"
                   onClick={() => toggleRole(role.value)}
                   className={`px-3 py-1 rounded-full text-sm ${formData.target_roles.includes(role.value)
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-white/10 text-purple-200 hover:bg-white/20'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-white/10 text-purple-200 hover:bg-white/20'
                     }`}
                 >
                   {role.label}
@@ -3084,8 +3084,8 @@ function SettingsTab() {
           <button
             onClick={() => handleValueChange(setting.key, !value)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg ${value
-                ? 'bg-green-500/20 text-green-300 hover:bg-green-500/30'
-                : 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/30'
+              ? 'bg-green-500/20 text-green-300 hover:bg-green-500/30'
+              : 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/30'
               } ${isEdited ? 'ring-2 ring-blue-400' : ''}`}
           >
             {value ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
@@ -3205,8 +3205,8 @@ function SettingsTab() {
             key={cat.id}
             onClick={() => setActiveCategory(cat.id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap ${activeCategory === cat.id
-                ? 'bg-purple-600 text-white'
-                : 'bg-white/10 text-purple-200 border border-white/20 hover:bg-white/20'
+              ? 'bg-purple-600 text-white'
+              : 'bg-white/10 text-purple-200 border border-white/20 hover:bg-white/20'
               }`}
           >
             {cat.icon}
