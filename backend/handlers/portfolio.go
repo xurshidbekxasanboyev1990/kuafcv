@@ -309,11 +309,28 @@ func CreatePortfolio(c *gin.Context) {
 				return
 			}
 
-			// Validate file type - barcha kategoriyalar uchun doc va media qabul qilinadi
+			// Validate file type - check all possible mime types
 			isValidFile := false
-			isValidFile = allowedDocTypes[contentType] || allowedMediaTypes[contentType] ||
-				allowedDocTypes[detectedType] || allowedMediaTypes[detectedType] ||
-				allowedDocTypes[extMimeType] || allowedMediaTypes[extMimeType]
+			// Check detected types
+			if allowedDocTypes[contentType] || allowedMediaTypes[contentType] {
+				isValidFile = true
+			}
+			if allowedDocTypes[detectedType] || allowedMediaTypes[detectedType] {
+				isValidFile = true
+			}
+			// Check extension-based mime type
+			if extMimeType != "" && (allowedDocTypes[extMimeType] || allowedMediaTypes[extMimeType]) {
+				isValidFile = true
+			}
+			// For Office files (DOCX, XLSX, PPTX), check extension directly
+			officeExts := map[string]bool{
+				".doc": true, ".docx": true, ".xls": true, ".xlsx": true,
+				".ppt": true, ".pptx": true, ".pdf": true,
+			}
+			if officeExts[ext] {
+				isValidFile = true
+			}
+			
 			if !isValidFile {
 				c.JSON(http.StatusBadRequest, models.APIError{
 					Error:   "invalid_file",
