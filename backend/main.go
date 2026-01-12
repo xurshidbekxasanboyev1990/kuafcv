@@ -43,6 +43,9 @@ func main() {
 	}
 	defer database.Close()
 
+	// Seed Super Admin if not exists
+	database.SeedSuperAdmin()
+
 	// ===== MIGRATION =====
 	// Production-da migratsiyani alohida buyruq bilan bajarish tavsiya etiladi:
 	// Buyruq: go run main.go migrate
