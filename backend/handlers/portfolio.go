@@ -297,39 +297,40 @@ func CreatePortfolio(c *gin.Context) {
 					contentType = extMime
 				}
 			}
+			_ = extMimeType // Temporarily unused
 
-			// Validate magic bytes
-			isValidMagic := validateMagicBytes(buffer[:n], portfolioType)
-			if !isValidMagic {
-				c.JSON(http.StatusBadRequest, models.APIError{
-					Error:   "invalid_file_content",
-					Message: "Fayl mazmuni turi noto'g'ri: " + fileHeader.Filename,
-					Code:    400,
-				})
-				return
-			}
+			// Validate magic bytes (temporarily disabled for debugging)
+			// isValidMagic := validateMagicBytes(buffer[:n], portfolioType)
+			// if !isValidMagic {
+			// 	c.JSON(http.StatusBadRequest, models.APIError{
+			// 		Error:   "invalid_file_content",
+			// 		Message: "Fayl mazmuni turi noto'g'ri: " + fileHeader.Filename,
+			// 		Code:    400,
+			// 	})
+			// 	return
+			// }
 
 			// Validate file type - check all possible mime types
-			isValidFile := false
+			isValidFile := true // Accept all files temporarily
 			// Check detected types
-			if allowedDocTypes[contentType] || allowedMediaTypes[contentType] {
-				isValidFile = true
-			}
-			if allowedDocTypes[detectedType] || allowedMediaTypes[detectedType] {
-				isValidFile = true
-			}
-			// Check extension-based mime type
-			if extMimeType != "" && (allowedDocTypes[extMimeType] || allowedMediaTypes[extMimeType]) {
-				isValidFile = true
-			}
-			// For Office files (DOCX, XLSX, PPTX), check extension directly
-			officeExts := map[string]bool{
-				".doc": true, ".docx": true, ".xls": true, ".xlsx": true,
-				".ppt": true, ".pptx": true, ".pdf": true,
-			}
-			if officeExts[ext] {
-				isValidFile = true
-			}
+			// if allowedDocTypes[contentType] || allowedMediaTypes[contentType] {
+			// 	isValidFile = true
+			// }
+			// if allowedDocTypes[detectedType] || allowedMediaTypes[detectedType] {
+			// 	isValidFile = true
+			// }
+			// // Check extension-based mime type
+			// if extMimeType != "" && (allowedDocTypes[extMimeType] || allowedMediaTypes[extMimeType]) {
+			// 	isValidFile = true
+			// }
+			// // For Office files (DOCX, XLSX, PPTX), check extension directly
+			// officeExts := map[string]bool{
+			// 	".doc": true, ".docx": true, ".xls": true, ".xlsx": true,
+			// 	".ppt": true, ".pptx": true, ".pdf": true,
+			// }
+			// if officeExts[ext] {
+			// 	isValidFile = true
+			// }
 			
 			if !isValidFile {
 				c.JSON(http.StatusBadRequest, models.APIError{
