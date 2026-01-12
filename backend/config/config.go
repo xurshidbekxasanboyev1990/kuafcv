@@ -32,9 +32,9 @@ func Load() *Config {
 		DatabaseURL:     getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5433/kuafcv?sslmode=disable"),
 		RedisURL:        getEnv("REDIS_URL", "localhost:6379"),
 		RedisPassword:   getEnv("REDIS_PASSWORD", ""),
-		JWTSecret:       getEnvRequired("JWT_SECRET"),
+		JWTSecret:       getEnv("JWT_SECRET", "change-this-secret-key-in-production"),
 		Environment:     getEnv("ENVIRONMENT", "development"),
-		OpenAIAPIKey:    getEnvRequired("OPENAI_API_KEY"),
+		OpenAIAPIKey:    getEnv("OPENAI_API_KEY", ""),
 		AllowedOrigins:  getEnv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"),
 		MaxFileSize:     getEnvInt64("MAX_FILE_SIZE", 10485760), // 10MB
 		RateLimitReqs:   getEnvInt("RATE_LIMIT_REQUESTS", 100),
