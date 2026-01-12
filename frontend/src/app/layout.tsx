@@ -24,9 +24,9 @@ export const metadata: Metadata = {
     telephone: false,
   },
   icons: {
-    icon: '/logo.svg',
-    shortcut: '/logo.svg',
-    apple: '/logo.svg',
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
     other: {
       rel: 'apple-touch-icon-precomposed',
       url: '/logo.svg',
