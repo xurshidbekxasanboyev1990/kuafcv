@@ -290,48 +290,28 @@ func CreatePortfolio(c *gin.Context) {
 				".mp3":  "audio/mpeg",
 				".wav":  "audio/wav",
 			}
-			extMimeType := ""
 			if extMime, ok := extMimeMap[ext]; ok {
-				extMimeType = extMime
 				if contentType == "application/octet-stream" || contentType == "application/zip" {
 					contentType = extMime
 				}
 			}
-			_ = extMimeType // Temporarily unused
+			_ = contentType // May be used for logging
 
-			// Validate magic bytes (temporarily disabled for debugging)
-			// isValidMagic := validateMagicBytes(buffer[:n], portfolioType)
-			// if !isValidMagic {
-			// 	c.JSON(http.StatusBadRequest, models.APIError{
-			// 		Error:   "invalid_file_content",
-			// 		Message: "Fayl mazmuni turi noto'g'ri: " + fileHeader.Filename,
-			// 		Code:    400,
-			// 	})
-			// 	return
-			// }
-
-			// Validate file type - check all possible mime types
-			isValidFile := true // Accept all files temporarily
-			// Check detected types
-			// if allowedDocTypes[contentType] || allowedMediaTypes[contentType] {
-			// 	isValidFile = true
-			// }
-			// if allowedDocTypes[detectedType] || allowedMediaTypes[detectedType] {
-			// 	isValidFile = true
-			// }
-			// // Check extension-based mime type
-			// if extMimeType != "" && (allowedDocTypes[extMimeType] || allowedMediaTypes[extMimeType]) {
-			// 	isValidFile = true
-			// }
-			// // For Office files (DOCX, XLSX, PPTX), check extension directly
-			// officeExts := map[string]bool{
-			// 	".doc": true, ".docx": true, ".xls": true, ".xlsx": true,
-			// 	".ppt": true, ".pptx": true, ".pdf": true,
-			// }
-			// if officeExts[ext] {
-			// 	isValidFile = true
-			// }
+			// Simple validation - accept all common file types by extension
+			allowedExts := map[string]bool{
+				".pdf": true, ".doc": true, ".docx": true, ".xls": true, ".xlsx": true,
+				".ppt": true, ".pptx": true, ".txt": true, ".csv": true,
+				".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".webp": true, ".bmp": true,
+				".mp4": true, ".webm": true, ".mov": true, ".mp3": true, ".wav": true,
+				".zip": true, ".rar": true, ".7z": true,
+			}
+			isValidFile := allowedExts[ext]
 			
+			// Also accept if magic bytes are valid (for renamed files)
+			if !isValidFile {
+				isValidFile = validateMagicBytes(buffer[:n], portfolioType)
+			}
+
 			if !isValidFile {
 				c.JSON(http.StatusBadRequest, models.APIError{
 					Error:   "invalid_file",
