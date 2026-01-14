@@ -253,73 +253,13 @@ func CreatePortfolio(c *gin.Context) {
 			}
 			defer file.Close()
 
-			// Read first 512 bytes for magic number detection
+			// Read first 512 bytes for content type detection
 			buffer := make([]byte, 512)
-			n, _ := file.Read(buffer)
+			file.Read(buffer)
 			file.Seek(0, 0)
 
-			// Detect content type
-			detectedType := http.DetectContentType(buffer[:n])
-			headerType := fileHeader.Header.Get("Content-Type")
-			contentType := detectedType
-			if contentType == "application/octet-stream" && headerType != "" {
-				contentType = headerType
-			}
-
-			// Also check file extension (case-insensitive)
+			// Get file extension (case-insensitive)
 			ext := strings.ToLower(filepath.Ext(fileHeader.Filename))
-			extMimeMap := map[string]string{
-				".pdf":  "application/pdf",
-				".doc":  "application/msword",
-				".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-				".xls":  "application/vnd.ms-excel",
-				".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-				".ppt":  "application/vnd.ms-powerpoint",
-				".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-				".txt":  "text/plain",
-				".csv":  "text/csv",
-				".jpg":  "image/jpeg",
-				".jpeg": "image/jpeg",
-				".png":  "image/png",
-				".gif":  "image/gif",
-				".webp": "image/webp",
-				".bmp":  "image/bmp",
-				".mp4":  "video/mp4",
-				".webm": "video/webm",
-				".mov":  "video/quicktime",
-				".mp3":  "audio/mpeg",
-				".wav":  "audio/wav",
-			}
-			if extMime, ok := extMimeMap[ext]; ok {
-				if contentType == "application/octet-stream" || contentType == "application/zip" {
-					contentType = extMime
-				}
-			}
-			_ = contentType // May be used for logging
-
-			// Simple validation - accept all common file types by extension
-			allowedExts := map[string]bool{
-				".pdf": true, ".doc": true, ".docx": true, ".xls": true, ".xlsx": true,
-				".ppt": true, ".pptx": true, ".txt": true, ".csv": true,
-				".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".webp": true, ".bmp": true,
-				".mp4": true, ".webm": true, ".mov": true, ".mp3": true, ".wav": true,
-				".zip": true, ".rar": true, ".7z": true,
-			}
-			isValidFile := allowedExts[ext]
-			
-			// Also accept if magic bytes are valid (for renamed files)
-			if !isValidFile {
-				isValidFile = validateMagicBytes(buffer[:n], portfolioType)
-			}
-
-			if !isValidFile {
-				c.JSON(http.StatusBadRequest, models.APIError{
-					Error:   "invalid_file",
-					Message: "Faqat ruxsat berilgan fayl turlari qabul qilinadi (PDF, DOCX, XLSX, PPTX, JPG, PNG, MP4, ZIP va boshqalar)",
-					Code:    400,
-				})
-				return
-			}
 
 			// File size check (50MB max)
 			if fileHeader.Size > 50*1024*1024 {
@@ -332,7 +272,7 @@ func CreatePortfolio(c *gin.Context) {
 			}
 
 			// Save file
-			fileExt := filepath.Ext(fileHeader.Filename)
+			fileExt := ext
 			if fileExt == "" {
 				fileExt = ".bin"
 			}
@@ -351,10 +291,14 @@ func CreatePortfolio(c *gin.Context) {
 			}
 
 			// Add to uploaded files
+			mimeType := fileHeader.Header.Get("Content-Type")
+			if mimeType == "" {
+				mimeType = "application/octet-stream"
+			}
 			uploadedFiles = append(uploadedFiles, models.FileInfo{
 				URL:      "/" + filePath,
 				Name:     fileHeader.Filename,
-				MimeType: contentType,
+				MimeType: mimeType,
 				Size:     fileHeader.Size,
 			})
 
@@ -363,7 +307,7 @@ func CreatePortfolio(c *gin.Context) {
 				url := "/" + filePath
 				firstFileURL = &url
 				firstFileName = &fileHeader.Filename
-				firstMimeType = &contentType
+				firstMimeType = &mimeType
 				size := fileHeader.Size
 				firstSizeBytes = &size
 			}
