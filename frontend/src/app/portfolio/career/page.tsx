@@ -378,11 +378,11 @@ function CareerPortfolioModal({
     category: CATEGORY,
     tags: [] as string[],
   });
-  
+
   interface FileWithPreview extends File {
     preview?: string;
   }
-  
+
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -392,31 +392,23 @@ function CareerPortfolioModal({
 
   const validateFile = (file: File): string | null => {
     const MAX_SIZE = 50 * 1024 * 1024; // 50MB
-    const ALLOWED_TYPES = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-powerpoint',
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      'text/plain',
-      'text/csv',
-      'image/jpeg',
-      'image/png',
-      'image/jpg',
-      'image/gif',
-      'image/webp',
-      'image/bmp',
-      'video/mp4',
-      'video/webm',
-      'video/quicktime',
-      'audio/mpeg',
-      'audio/wav',
+    const ALLOWED_EXTENSIONS = [
+      '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+      '.txt', '.csv', '.rtf',
+      '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.ico',
+      '.mp4', '.webm', '.mov', '.avi', '.mkv',
+      '.mp3', '.wav', '.ogg', '.flac', '.aac',
+      '.zip', '.rar', '.7z', '.tar', '.gz',
     ];
 
     if (file.size > MAX_SIZE) return `Fayl hajmi 50MB dan oshmasligi kerak. Siznikidi: ${(file.size / 1024 / 1024).toFixed(2)}MB`;
-    if (!ALLOWED_TYPES.includes(file.type) && file.type !== '') return 'Fayl turi qo\'llab-quvvatlanmaydi';
+    
+    // Extension tekshiruvi
+    const fileName = file.name.toLowerCase();
+    const ext = fileName.substring(fileName.lastIndexOf('.'));
+    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+      return 'Faqat ruxsat berilgan fayl turlari qabul qilinadi (PDF, DOCX, XLSX, PPTX, JPG, PNG, MP4, ZIP va boshqalar)';
+    }
 
     return null;
   };
@@ -481,7 +473,7 @@ function CareerPortfolioModal({
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleFiles(e.dataTransfer.files);
     }
@@ -636,11 +628,10 @@ function CareerPortfolioModal({
               </Label>
 
               <div
-                className={`border-2 border-dashed transition-all duration-200 rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer relative group ${
-                  isDragging
+                className={`border-2 border-dashed transition-all duration-200 rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer relative group ${isDragging
                     ? 'border-primary bg-primary/10 scale-[1.02]'
                     : 'border-input hover:border-primary/50 bg-muted/5'
-                }`}
+                  }`}
                 onClick={() => fileInputRef.current?.click()}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}

@@ -3,13 +3,13 @@
  * Helper functions for file handling and display
  */
 
-import { 
-  File as FileIcon, 
-  Image as ImageIcon, 
-  Video as VideoIcon, 
-  FileText, 
-  Sheet, 
-  Presentation 
+import {
+  File as FileIcon,
+  FileText,
+  Image as ImageIcon,
+  Presentation,
+  Sheet,
+  Video as VideoIcon
 } from 'lucide-react';
 
 /**
@@ -66,10 +66,33 @@ export function formatFileSize(bytes?: number): string {
 }
 
 /**
- * Validate file type
+ * Ruxsat berilgan fayl kengaytmalari
+ */
+export const ALLOWED_EXTENSIONS = [
+  '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+  '.txt', '.csv', '.rtf',
+  '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.ico',
+  '.mp4', '.webm', '.mov', '.avi', '.mkv',
+  '.mp3', '.wav', '.ogg', '.flac', '.aac',
+  '.zip', '.rar', '.7z', '.tar', '.gz',
+];
+
+/**
+ * Validate file type - extension yoki MIME type orqali
  */
 export function isValidFileType(file: File, allowedTypes: string[]): boolean {
-  return allowedTypes.includes(file.type);
+  // MIME type tekshiruvi
+  if (allowedTypes.includes(file.type)) return true;
+  
+  // Extension tekshiruvi (MIME type xato bo'lsa ham)
+  const fileName = file.name.toLowerCase();
+  const ext = fileName.substring(fileName.lastIndexOf('.'));
+  if (ALLOWED_EXTENSIONS.includes(ext)) return true;
+  
+  // Bo'sh MIME type - extension orqali ruxsat
+  if (file.type === '' && ALLOWED_EXTENSIONS.includes(ext)) return true;
+  
+  return false;
 }
 
 /**
@@ -142,7 +165,7 @@ export function revokeFilePreviewUrl(url: string): void {
 export function getAcceptAttribute(fileTypes: 'document' | 'media' | 'all'): string {
   // Xavfsiz formatlar - JSON, XML, ZIP, RAR, SVG olib tashlandi
   const safeFormats = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png,.gif,.webp,.bmp,.mp4,.webm,.mov,.mp3,.wav';
-  
+
   switch (fileTypes) {
     case 'document':
       return safeFormats;

@@ -383,11 +383,11 @@ function AcademicPortfolioModal({
     category: CATEGORY,
     tags: [] as string[],
   });
-  
+
   interface FileWithPreview extends File {
     preview?: string;
   }
-  
+
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -434,27 +434,13 @@ function AcademicPortfolioModal({
 
   const validateFile = (selectedFile: File): boolean => {
     const maxSize = 50 * 1024 * 1024;
-    const allowedTypes = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-powerpoint',
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      'text/plain',
-      'text/csv',
-      'image/jpeg',
-      'image/png',
-      'image/jpg',
-      'image/gif',
-      'image/webp',
-      'image/bmp',
-      'video/mp4',
-      'video/webm',
-      'video/quicktime',
-      'audio/mpeg',
-      'audio/wav',
+    const allowedExtensions = [
+      '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+      '.txt', '.csv', '.rtf',
+      '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.ico',
+      '.mp4', '.webm', '.mov', '.avi', '.mkv',
+      '.mp3', '.wav', '.ogg', '.flac', '.aac',
+      '.zip', '.rar', '.7z', '.tar', '.gz',
     ];
 
     if (selectedFile.size > maxSize) {
@@ -462,8 +448,11 @@ function AcademicPortfolioModal({
       return false;
     }
 
-    if (!allowedTypes.includes(selectedFile.type) && selectedFile.type !== '') {
-      setError('Fayl turi qo\'llab-quvvatlanmaydi');
+    // Extension tekshiruvi
+    const fileName = selectedFile.name.toLowerCase();
+    const ext = fileName.substring(fileName.lastIndexOf('.'));
+    if (!allowedExtensions.includes(ext)) {
+      setError('Faqat ruxsat berilgan fayl turlari qabul qilinadi (PDF, DOCX, XLSX, PPTX, JPG, PNG, MP4, ZIP va boshqalar)');
       return false;
     }
 
@@ -529,7 +518,7 @@ function AcademicPortfolioModal({
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleFiles(e.dataTransfer.files);
     }
@@ -632,11 +621,10 @@ function AcademicPortfolioModal({
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
-                className={`border-2 border-dashed rounded-xl p-6 text-center transition-all duration-200 cursor-pointer group ${
-                  isDragging
+                className={`border-2 border-dashed rounded-xl p-6 text-center transition-all duration-200 cursor-pointer group ${isDragging
                     ? 'border-primary bg-primary/10 scale-[1.02]'
                     : 'border-muted-foreground/25 hover:bg-muted/50'
-                }`}
+                  }`}
               >
                 <input
                   ref={fileInputRef}
@@ -647,9 +635,8 @@ function AcademicPortfolioModal({
                   disabled={files.length >= 3}
                   className="hidden"
                 />
-                <div className={`h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-3 transition-all ${
-                  isDragging ? 'bg-primary/20 scale-110' : 'bg-primary/5 group-hover:bg-primary/10'
-                }`}>
+                <div className={`h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-3 transition-all ${isDragging ? 'bg-primary/20 scale-110' : 'bg-primary/5 group-hover:bg-primary/10'
+                  }`}>
                   <Upload size={20} className={`${isDragging ? 'text-primary animate-bounce' : 'text-primary'}`} />
                 </div>
                 <p className="text-sm font-medium mb-1">
