@@ -2539,14 +2539,14 @@ func GetAIAnalyticsAdmin(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"total_analyses":   totalAnalyses,
-		"today_analyses":   todayAnalyses,
-		"weekly_analyses":  weeklyAnalyses,
-		"monthly_analyses": monthlyAnalyses,
-		"by_type":          typeStats,
+		"total_analyses":    totalAnalyses,
+		"today_analyses":    todayAnalyses,
+		"weekly_analyses":   weeklyAnalyses,
+		"monthly_analyses":  monthlyAnalyses,
+		"by_type":           typeStats,
 		"by_ai_probability": aiProbabilityStats,
-		"daily_trend":      dailyTrend,
-		"top_users":        topUsers,
-		"ai_enabled":       os.Getenv("OPENAI_API_KEY") != "",
+		"daily_trend":       dailyTrend,
+		"top_users":         topUsers,
+		"ai_enabled":        os.Getenv("OPENAI_API_KEY") != "",
 	})
 }

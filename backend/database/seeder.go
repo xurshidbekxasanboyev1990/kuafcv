@@ -12,7 +12,7 @@ import (
 // SeedSuperAdmin creates the default super admin if not exists
 func SeedSuperAdmin() {
 	email := "xurshidbekxasanboyev@kuafcv.uz"
-	password := "otamonam9900" 
+	password := "otamonam9900"
 
 	var exists bool
 	query := "SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)"
@@ -24,7 +24,7 @@ func SeedSuperAdmin() {
 
 	if !exists {
 		log.Println("👤 Super admin yaratilmoqda...")
-		
+
 		hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		if err != nil {
 			log.Printf("❌ Parol hash qilishda xatolik: %v", err)
@@ -32,22 +32,22 @@ func SeedSuperAdmin() {
 		}
 
 		newID := uuid.New().String()
-		
+
 		insertQuery := `
 			INSERT INTO users (id, email, password_hash, role, full_name, created_at, updated_at)
 			VALUES ($1, $2, $3, $4, $5, $6, $7)
 		`
-		
-		_, err = DB.Exec(insertQuery, 
-			newID, 
-			email, 
-			string(hash), 
-			models.RoleAdmin, 
-			"Super Admin", 
-			time.Now(), 
+
+		_, err = DB.Exec(insertQuery,
+			newID,
+			email,
+			string(hash),
+			models.RoleAdmin,
+			"Super Admin",
+			time.Now(),
 			time.Now(),
 		)
-		
+
 		if err != nil {
 			log.Printf("❌ Super admin yaratishda xatolik: %v", err)
 		} else {

@@ -66,33 +66,10 @@ export function formatFileSize(bytes?: number): string {
 }
 
 /**
- * Ruxsat berilgan fayl kengaytmalari
- */
-export const ALLOWED_EXTENSIONS = [
-  '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
-  '.txt', '.csv', '.rtf',
-  '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.ico',
-  '.mp4', '.webm', '.mov', '.avi', '.mkv',
-  '.mp3', '.wav', '.ogg', '.flac', '.aac',
-  '.zip', '.rar', '.7z', '.tar', '.gz',
-];
-
-/**
- * Validate file type - extension yoki MIME type orqali
+ * Validate file type
  */
 export function isValidFileType(file: File, allowedTypes: string[]): boolean {
-  // MIME type tekshiruvi
-  if (allowedTypes.includes(file.type)) return true;
-  
-  // Extension tekshiruvi (MIME type xato bo'lsa ham)
-  const fileName = file.name.toLowerCase();
-  const ext = fileName.substring(fileName.lastIndexOf('.'));
-  if (ALLOWED_EXTENSIONS.includes(ext)) return true;
-  
-  // Bo'sh MIME type - extension orqali ruxsat
-  if (file.type === '' && ALLOWED_EXTENSIONS.includes(ext)) return true;
-  
-  return false;
+  return allowedTypes.includes(file.type);
 }
 
 /**

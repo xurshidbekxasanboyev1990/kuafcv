@@ -31,11 +31,6 @@ const ALLOWED_TYPES = [
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'application/vnd.ms-powerpoint',
     'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    'application/zip',
-    'application/x-zip-compressed',
-    'application/x-rar-compressed',
-    'application/x-7z-compressed',
-    'application/octet-stream', // Default tur - ba'zi brauzerlar buni beradi
     'text/plain',
     'text/csv',
     'image/jpeg',
@@ -44,25 +39,11 @@ const ALLOWED_TYPES = [
     'image/gif',
     'image/webp',
     'image/bmp',
-    'image/svg+xml',
     'video/mp4',
     'video/webm',
     'video/quicktime',
-    'video/x-msvideo', // AVI
     'audio/mpeg',
     'audio/wav',
-    'audio/ogg',
-    'audio/flac',
-];
-
-// Allowed extensions - fayl kengaytmalari (MIME type xato bo'lsa ham ruxsat)
-const ALLOWED_EXTENSIONS = [
-    '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
-    '.txt', '.csv', '.rtf',
-    '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.ico',
-    '.mp4', '.webm', '.mov', '.avi', '.mkv',
-    '.mp3', '.wav', '.ogg', '.flac', '.aac',
-    '.zip', '.rar', '.7z', '.tar', '.gz',
 ];
 
 export default function FileUpload({
@@ -70,7 +51,7 @@ export default function FileUpload({
     setFiles,
     maxFiles = 3,
     maxSize = 50 * 1024 * 1024, // 50MB
-    accept = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.rtf,.txt,.csv,.jpg,.jpeg,.png,.gif,.webp,.bmp,.svg,.ico,.mp4,.webm,.mov,.avi,.mkv,.mp3,.wav,.ogg,.flac,.aac,.zip,.rar,.7z,.tar,.gz',
+    accept = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png,.gif,.webp,.bmp,.mp4,.webm,.mov,.mp3,.wav',
     onError,
     disabled = false,
     className,
@@ -80,29 +61,15 @@ export default function FileUpload({
 
     // Validate file
     const validateFile = useCallback((file: File): string | null => {
-        // 1. Hajm tekshiruvi
         if (file.size > maxSize) {
             return `Fayl hajmi ${(file.size / 1024 / 1024).toFixed(2)}MB. Maksimal ${(maxSize / 1024 / 1024).toFixed(0)}MB.`;
         }
-        
-        // 2. Xavfli fayl nomi tekshiruvi
+        if (!ALLOWED_TYPES.includes(file.type) && file.type !== '') {
+            return 'Fayl turi qo\'llab-quvvatlanmaydi';
+        }
         if (file.name.includes('../') || file.name.includes('..\\')) {
             return 'Xavfli fayl nomi';
         }
-        
-        // 3. Extension tekshiruvi (MIME type'dan mustaqil)
-        const fileName = file.name.toLowerCase();
-        const ext = fileName.substring(fileName.lastIndexOf('.'));
-        const hasAllowedExtension = ALLOWED_EXTENSIONS.includes(ext);
-        
-        // 4. MIME type tekshiruvi
-        const hasAllowedMime = ALLOWED_TYPES.includes(file.type) || file.type === '';
-        
-        // Extension yoki MIME type'dan biri to'g'ri bo'lsa - ruxsat
-        if (!hasAllowedExtension && !hasAllowedMime) {
-            return `Faqat ruxsat berilgan fayl turlari qabul qilinadi (PDF, DOCX, XLSX, PPTX, JPG, PNG, MP4, ZIP va boshqalar)`;
-        }
-        
         return null;
     }, [maxSize]);
 
