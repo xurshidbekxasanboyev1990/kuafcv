@@ -89,7 +89,7 @@ export default function LoginPage() {
                <div>
                   <div className="flex items-center gap-3 mb-12">
                      <div className="bg-white/10 p-2.5 rounded-xl backdrop-blur-md border border-white/20 shadow-xl">
-                        <Image src="/logo.png" alt="Logo" width={160} height={160} className="object-contain brightness-0 invert" />
+                        <Image src="/logo.svg" alt="Logo" width={160} height={160} className="object-contain" />
                      </div>
                      <h1 className="text-2xl font-bold tracking-wider font-mono">KUAFCV</h1>
                   </div>
@@ -126,7 +126,7 @@ export default function LoginPage() {
             <div className="w-full max-w-[440px] space-y-8 relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
                <div className="flex flex-col space-y-2 text-center">
                   <div className="lg:hidden mx-auto mb-4 bg-[#991B1B] p-4 rounded-2xl shadow-xl shadow-red-900/20 transform rotate-3">
-                     <Image src="/logo.svg" alt="Logo" width={160} height={160} className="brightness-0 invert" />
+                     <Image src="/logo.svg" alt="Logo" width={160} height={160} className="object-contain" />
                   </div>
                   <h1 className="text-3xl font-bold tracking-tight text-slate-900">Xush kelibsiz</h1>
                   <p className="text-slate-500">Shaxsiy kabinetingizga kirish uchun ma'lumotlarni kiriting</p>
@@ -139,8 +139,8 @@ export default function LoginPage() {
                         type="button"
                         onClick={() => { setLoginMode('student'); setError(''); }}
                         className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${loginMode === 'student'
-                              ? 'bg-white text-[#991B1B] shadow-sm'
-                              : 'text-slate-500 hover:text-slate-700'
+                           ? 'bg-white text-[#991B1B] shadow-sm'
+                           : 'text-slate-500 hover:text-slate-700'
                            }`}
                      >
                         <User size={16} />
@@ -150,8 +150,8 @@ export default function LoginPage() {
                         type="button"
                         onClick={() => { setLoginMode('staff'); setError(''); }}
                         className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${loginMode === 'staff'
-                              ? 'bg-white text-[#991B1B] shadow-sm'
-                              : 'text-slate-500 hover:text-slate-700'
+                           ? 'bg-white text-[#991B1B] shadow-sm'
+                           : 'text-slate-500 hover:text-slate-700'
                            }`}
                      >
                         <Mail size={16} />
