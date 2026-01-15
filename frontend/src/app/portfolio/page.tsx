@@ -350,9 +350,9 @@ export default function PortfolioPage() {
         )}
       </div>
 
-      {/* AI Analysis Overlay */}
+      {/* AI Analysis Modal */}
       {showAIAnalysis && (
-        <AIAnalytics onClose={() => setShowAIAnalysis(false)} />
+        <AIAnalytics onClose={() => setShowAIAnalysis(false)} isModal={true} />
       )}
 
       {/* File Analysis Overlay */}
