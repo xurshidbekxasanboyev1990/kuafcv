@@ -7,6 +7,7 @@
 'use client';
 
 import {
+  Award,
   BarChart3,
   Brain,
   Download,
@@ -37,6 +38,7 @@ import { Badge, StatusBadge } from '@/components/ui/StatusBadge';
 // Note: We're reusing existing specialized components for now, but wrapped in new layout
 import AIAnalytics from '@/components/AIAnalytics';
 import FileAnalysis from '@/components/FileAnalysis';
+import GrantNizomi from '@/components/GrantNizomi';
 
 // Category labels
 const categoryLabels: Record<string, string> = {
@@ -68,6 +70,7 @@ export default function PortfolioPage() {
 
   // AI & Analysis State
   const [showAIAnalysis, setShowAIAnalysis] = useState(false);
+  const [showGrantNizomi, setShowGrantNizomi] = useState(false);
   const [fileAnalysis, setFileAnalysis] = useState<{ url: string; name: string; type?: string; mimeType?: string } | null>(null);
 
   // Files Modal State
@@ -154,6 +157,10 @@ export default function PortfolioPage() {
             <p className="text-muted-foreground">Yutuqlaringizni boshqaring va tahlil qiling</p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button onClick={() => setShowGrantNizomi(true)} variant="outline" className="gap-2 border-amber-200 text-amber-700 hover:bg-amber-50">
+              <Award size={16} />
+              Grant Nizomi
+            </Button>
             <Button onClick={() => setShowAIAnalysis(true)} variant="outline" className="gap-2">
               <BarChart3 size={16} />
               AI Tahlil
@@ -353,6 +360,22 @@ export default function PortfolioPage() {
       {/* AI Analysis Modal */}
       {showAIAnalysis && (
         <AIAnalytics onClose={() => setShowAIAnalysis(false)} isModal={true} />
+      )}
+
+      {/* Grant Nizomi Modal */}
+      {showGrantNizomi && (
+        <GrantNizomi
+          onClose={() => setShowGrantNizomi(false)}
+          onAnalyze={() => {
+            setShowGrantNizomi(false);
+            setFileAnalysis({
+              url: '/grant-nizomi.pdf',
+              name: 'Universitet Iftixori - Grant Nizomi',
+              type: 'application/pdf',
+              mimeType: 'application/pdf'
+            });
+          }}
+        />
       )}
 
       {/* File Analysis Overlay */}

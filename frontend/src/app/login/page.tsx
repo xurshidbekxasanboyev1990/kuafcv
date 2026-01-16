@@ -233,32 +233,6 @@ export default function LoginPage() {
                         {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <span className="flex items-center gap-2">Kirish <ArrowRight size={18} strokeWidth={2.5} /></span>}
                      </Button>
                   </form>
-
-                  <div className="mt-8 relative">
-                     <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-slate-200" />
-                     </div>
-                     <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-white px-4 text-slate-400 font-semibold tracking-wider">Tezkor kirish (Demo)</span>
-                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 mt-8">
-                     <Button
-                        variant="outline"
-                        onClick={() => { setLoginMode('staff'); setEmail('admin@kuafcv.uz'); setPassword('admin123'); }}
-                        className="h-10 border-slate-200 hover:border-red-200 hover:bg-red-50 text-slate-600 hover:text-red-700 transition-colors"
-                     >
-                        Admin
-                     </Button>
-                     <Button
-                        variant="outline"
-                        onClick={() => { setLoginMode('student'); setStudentId('demo'); setPassword('demo123'); }}
-                        className="h-10 border-slate-200 hover:border-red-200 hover:bg-red-50 text-slate-600 hover:text-red-700 transition-colors"
-                     >
-                        Talaba
-                     </Button>
-                  </div>
                </div>
 
                <p className="text-center text-sm text-slate-400">

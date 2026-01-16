@@ -1,8 +1,10 @@
 ﻿'use client';
 
+import GrantNizomi from '@/components/GrantNizomi';
 import { getFileUrl } from '@/lib/config';
 import {
   AlertCircle,
+  Award,
   BarChart3,
   Bell,
   Building,
@@ -271,6 +273,7 @@ function DashboardTab() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [showGrantNizomi, setShowGrantNizomi] = useState(false);
 
   const fetchDashboardData = async (showRefreshing = false) => {
     if (showRefreshing) setRefreshing(true);
@@ -338,15 +341,29 @@ function DashboardTab() {
             </span>
           )}
         </div>
-        <button
-          onClick={() => fetchDashboardData(true)}
-          disabled={refreshing}
-          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
-        >
-          <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
-          Yangilash
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowGrantNizomi(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-amber-500/20 text-amber-200 rounded-lg hover:bg-amber-500/30 border border-amber-400/30"
+          >
+            <Award size={16} />
+            Grant Nizomi
+          </button>
+          <button
+            onClick={() => fetchDashboardData(true)}
+            disabled={refreshing}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+          >
+            <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
+            Yangilash
+          </button>
+        </div>
       </div>
+
+      {/* Grant Nizomi Modal */}
+      {showGrantNizomi && (
+        <GrantNizomi onClose={() => setShowGrantNizomi(false)} />
+      )}
 
       {/* Main Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
