@@ -349,3 +349,20 @@ docker-compose up -d frontend
 ## 📄 Litsenziya
 
 MIT License - Qo'qon Universiteti Andijon filiali © 2026
+
+---
+
+## 👨‍💻 Muallif
+
+| | Ma'lumot |
+|---|----------|
+| **Dasturchi** | Xurshidbek Xasanboyev |
+| **Bo'lim** | Startuplar bilan ishlash bo'limi |
+| **Rahbar** | Javlonbek Tuychiyev |
+
+---
+
+<p align="center">
+  <strong>Qo'qon Universiteti Andijon filiali</strong><br>
+  Startuplar bilan ishlash bo'limi © 2026
+</p>
