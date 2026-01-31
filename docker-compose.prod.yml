@@ -21,7 +21,7 @@ services:
     container_name: cv_backend
     restart: unless-stopped
     env_file:
-      - ./backend/.env.production
+      - ./.env
     environment:
       DATABASE_URL: postgres://${DB_USER:-kuafcv}:${DB_PASSWORD:-kuafcv123}@postgres:5432/kuafcv?sslmode=disable
       REDIS_URL: redis:6379
@@ -48,7 +48,7 @@ services:
     container_name: cv_frontend
     restart: unless-stopped
     env_file:
-      - ./frontend/.env.production
+      - ./.env
     environment:
       NEXT_PUBLIC_API_URL: http://cv_backend:8085
     ports:
