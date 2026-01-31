@@ -31,7 +31,7 @@ services:
     ports:
       - "8085:8085"
     depends_on:
-      redis:
+      cv_redis:
         condition: service_healthy
     healthcheck:
       test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8085/api/health" ]
@@ -50,11 +50,11 @@ services:
     env_file:
       - ./frontend/.env.production
     environment:
-      NEXT_PUBLIC_API_URL: http://backend:8085
+      NEXT_PUBLIC_API_URL: http://cv_backend:8085
     ports:
       - "3000:3000"
     depends_on:
-      - backend
+      - cv_backend
     healthcheck:
       test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000" ]
       interval: 30s
@@ -74,8 +74,8 @@ services:
       - ./nginx/ssl:/etc/nginx/ssl:ro
       - nginx_logs:/var/log/nginx
     depends_on:
-      - frontend
-      - backend
+      - cv_frontend
+      - cv_backend
     healthcheck:
       test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health" ]
       interval: 30s
