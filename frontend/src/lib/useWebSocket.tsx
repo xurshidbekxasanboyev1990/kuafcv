@@ -4,9 +4,9 @@
 // Include comments, best practices, edge cases, performance, security, and maintainability.
 // Do not simplify, shorten, or skip details for brevity.
 // Fully adapt to the current programming language, framework, and project context.
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { useAuth } from '../components/AuthProvider';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '../components/AuthProvider';
 
 interface WebSocketMessage {
   type: string;
@@ -55,15 +55,15 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = typeof window !== 'undefined' ? window.location.host : 'localhost:3000';
     const wsUrl = `${protocol}//${host}/api/ws?token=${encodeURIComponent(token)}`;
-    
+
     try {
       const ws = new WebSocket(wsUrl);
-      
+
       ws.onopen = () => {
         console.log('WebSocket connected');
         setIsConnected(true);
         reconnectAttemptsRef.current = 0;
-        
+
         // Send auth message
         ws.send(JSON.stringify({ type: 'auth', token }));
       };
@@ -78,7 +78,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
             case 'notification':
               const notifData = message.data as NotificationData;
               onNotification?.(notifData);
-              
+
               if (showToasts) {
                 toast(notifData.message, {
                   icon: notifData.type === 'rating' ? '⭐' : '💬',
@@ -90,7 +90,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
             case 'announcement':
               const annData = message.data as { title: string; message: string };
               onAnnouncement?.(annData);
-              
+
               if (showToasts) {
                 toast(annData.message, {
                   icon: '📢',
@@ -114,7 +114,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       ws.onclose = (event) => {
         console.log('WebSocket disconnected:', event.code, event.reason);
         setIsConnected(false);
-        
+
         // Attempt reconnection
         if (reconnectAttemptsRef.current < maxReconnectAttempts) {
           const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000);
@@ -177,7 +177,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 }
 
 // Notification context for global state
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, ReactNode, useContext } from 'react';
 
 interface NotificationContextType {
   unreadCount: number;

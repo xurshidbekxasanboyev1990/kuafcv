@@ -15,6 +15,7 @@ export const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:4000';
 /**
  * Get full URL for file uploads/downloads
  * Returns domain root without /api path
+ * Works both server-side (build time) and client-side (browser)
  */
 export const getFileUrl = (path?: string | null): string => {
     if (!path) return '';
@@ -24,12 +25,16 @@ export const getFileUrl = (path?: string | null): string => {
         return path;
     }
 
-    // Get base URL without /api suffix
-    const baseUrl = API_BASE_URL.replace(/\/api\/?$/, '');
-
     // Ensure path starts with /
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
 
+    // Client-side: use current origin (browser window location)
+    if (typeof window !== 'undefined') {
+        return `${window.location.origin}${normalizedPath}`;
+    }
+
+    // Server-side fallback: use API_BASE_URL without /api suffix
+    const baseUrl = API_BASE_URL.replace(/\/api\/?$/, '');
     return `${baseUrl}${normalizedPath}`;
 };
 

@@ -6,8 +6,8 @@
 // Fully adapt to the current programming language, framework, and project context.
 'use client';
 
-import { useEffect, useRef, useCallback, useState, createContext, useContext, ReactNode } from 'react';
 import { useAuth } from '@/components/AuthProvider';
+import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 interface NotificationData {
   id: number;
@@ -41,9 +41,9 @@ export function useNotifications() {
   if (!context) {
     return {
       unreadCount: 0,
-      setUnreadCount: () => {},
+      setUnreadCount: () => { },
       notifications: [],
-      addNotification: () => {},
+      addNotification: () => { },
       isConnected: false,
     };
   }
@@ -91,10 +91,10 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = typeof window !== 'undefined' ? window.location.host : 'localhost:3000';
     const wsUrl = `${protocol}//${host}/api/ws?token=${encodeURIComponent(token)}`;
-    
+
     try {
       const ws = new WebSocket(wsUrl);
-      
+
       ws.onopen = () => {
         console.log('🔌 WebSocket connected');
         setIsConnected(true);
@@ -109,7 +109,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
             case 'notification':
               const notifData = message.data as NotificationData;
               addNotification(notifData);
-              
+
               // Show browser notification if permitted
               if (Notification.permission === 'granted') {
                 new Notification(notifData.title, {
@@ -117,7 +117,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
                   icon: '/logo.svg',
                 });
               }
-              
+
               // Also show in-app toast
               showToast(notifData);
               break;
@@ -144,7 +144,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       ws.onclose = (event) => {
         console.log('🔌 WebSocket disconnected:', event.code);
         setIsConnected(false);
-        
+
         // Attempt reconnection
         const storedToken = localStorage.getItem('token');
         if (storedToken && user && reconnectAttemptsRef.current < maxReconnectAttempts) {
@@ -207,15 +207,15 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   }, [user, connect]);
 
   return (
-    <NotificationContext.Provider value={{ 
-      unreadCount, 
-      setUnreadCount, 
-      notifications, 
+    <NotificationContext.Provider value={{
+      unreadCount,
+      setUnreadCount,
+      notifications,
       addNotification,
-      isConnected 
+      isConnected
     }}>
       {children}
-      
+
       {/* Toast Container */}
       <div className="fixed top-4 right-4 z-50 space-y-2">
         {toasts.map((toast) => (
