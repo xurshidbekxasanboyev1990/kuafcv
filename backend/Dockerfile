@@ -27,9 +27,6 @@ WORKDIR /root/
 # Copy binary from builder
 COPY --from=builder /app/main .
 
-# Copy environment file
-COPY .env.production .
-
 # Create uploads directory
 RUN mkdir -p uploads/portfolios uploads/profiles uploads/resumes
 

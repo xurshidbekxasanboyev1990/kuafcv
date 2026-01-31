@@ -51,10 +51,13 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       wsRef.current.close();
     }
 
-    const wsUrl = `${process.env.NEXT_PUBLIC_API_URL?.replace('http', 'ws')}/ws`;
+    // WebSocket URL - production va development uchun avtomatik
+    const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = typeof window !== 'undefined' ? window.location.host : 'localhost:3000';
+    const wsUrl = `${protocol}//${host}/api/ws?token=${encodeURIComponent(token)}`;
     
     try {
-      const ws = new WebSocket(wsUrl, ['Authorization', token]);
+      const ws = new WebSocket(wsUrl);
       
       ws.onopen = () => {
         console.log('WebSocket connected');

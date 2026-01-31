@@ -48,7 +48,8 @@ import { useEffect, useState } from 'react';
 
 type TabType = 'dashboard' | 'students' | 'staff' | 'portfolios' | 'categories' | 'webhooks' | 'ai' | 'announcements' | 'notifications' | 'settings' | 'system';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+// API_URL - /api prefix bilan ishlatamiz (Next.js rewrite qiladi)
+const API_URL = '/api';
 
 export default function SuperAdminPage() {
   const router = useRouter();

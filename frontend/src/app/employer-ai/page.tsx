@@ -9,7 +9,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../components/AuthProvider';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = '/api';
 
 interface Student {
   id: string;
@@ -39,19 +39,19 @@ interface PortfolioData {
 export default function EmployerAIPage() {
   const { user } = useAuth();
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  
+
   // Students list state
   const [students, setStudents] = useState<Student[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Filters state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFaculty, setSelectedFaculty] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('');
   const [selectedCourse, setSelectedCourse] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('');
-  
+
   // Analysis state
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -60,7 +60,7 @@ export default function EmployerAIPage() {
   // Load students
   useEffect(() => {
     if (!token || !user || user.role !== 'EMPLOYER') return;
-    
+
     const loadStudents = async () => {
       try {
         const res = await fetch(`${API_URL}/employer/students`, {
@@ -92,7 +92,7 @@ export default function EmployerAIPage() {
     // Search by name, studentId, email
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(s => 
+      result = result.filter(s =>
         s.fullName?.toLowerCase().includes(query) ||
         s.studentId?.toLowerCase().includes(query) ||
         s.email?.toLowerCase().includes(query)
@@ -184,7 +184,7 @@ export default function EmployerAIPage() {
             </svg>
             Filtrlar va Qidiruv
           </h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             {/* Search */}
             <div className="md:col-span-2 lg:col-span-3 xl:col-span-2">
@@ -328,9 +328,8 @@ export default function EmployerAIPage() {
                     <div
                       key={student.id}
                       onClick={() => analyzeStudent(student)}
-                      className={`p-4 hover:bg-red-50 cursor-pointer transition-all ${
-                        selectedStudent?.id === student.id ? 'bg-purple-50 border-l-4 border-purple-500' : ''
-                      }`}
+                      className={`p-4 hover:bg-red-50 cursor-pointer transition-all ${selectedStudent?.id === student.id ? 'bg-purple-50 border-l-4 border-purple-500' : ''
+                        }`}
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">

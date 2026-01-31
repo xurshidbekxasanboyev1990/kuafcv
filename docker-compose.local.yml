@@ -1,0 +1,139 @@
+# ==========================================
+# KUAFCV - LOCAL Docker Compose (104xx ports)
+# ==========================================
+# Ishga tushirish: docker-compose -f docker-compose.local.yml up -d
+
+services:
+  # ==========================================
+  # PostgreSQL Database - Port 10432
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: kuafcv_local_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-kuafcv_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-kuafcv_local_password_2026}
+      POSTGRES_DB: ${DB_NAME:-kuafcv_db}
+    volumes:
+      - kuafcv_local_postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    ports:
+      - "10432:5432"
+    networks:
+      - kuafcv_local_network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-kuafcv_user} -d ${DB_NAME:-kuafcv_db}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # Redis Cache - Port 10479
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: kuafcv_local_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - kuafcv_local_redis_data:/data
+    ports:
+      - "10479:6379"
+    networks:
+      - kuafcv_local_network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ==========================================
+  # Go Backend API - Port 10400
+  # ==========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kuafcv_local_backend
+    restart: unless-stopped
+    environment:
+      - PORT=4000
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgres://${DB_USER:-kuafcv_user}:${DB_PASSWORD:-kuafcv_local_password_2026}@postgres:5432/${DB_NAME:-kuafcv_db}?sslmode=disable
+      - REDIS_URL=redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - JWT_SECRET=${JWT_SECRET:-kuafcv-local-jwt-secret-2026}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ALLOWED_ORIGINS=http://localhost:10430,http://127.0.0.1:10430,http://localhost:3000
+      - MAX_FILE_SIZE=52428800
+      - RATE_LIMIT_REQUESTS=100
+      - RATE_LIMIT_WINDOW=60
+      - LOG_LEVEL=debug
+      - LOG_FORMAT=text
+    volumes:
+      - kuafcv_local_uploads:/app/uploads
+    ports:
+      - "10400:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - kuafcv_local_network
+    healthcheck:
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:4000/api/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ==========================================
+  # Next.js Frontend - Port 10430
+  # ==========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:10400
+        - NEXT_PUBLIC_WS_URL=ws://localhost:10400
+        - NEXT_PUBLIC_APP_URL=http://localhost:10430
+    container_name: kuafcv_local_frontend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:10400
+      - NEXT_PUBLIC_WS_URL=ws://localhost:10400
+      - NEXT_PUBLIC_APP_URL=http://localhost:10430
+    ports:
+      - "10430:3000"
+    depends_on:
+      - backend
+    networks:
+      - kuafcv_local_network
+    healthcheck:
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# ==========================================
+# Volumes (alohida nomlar - boshqalar bilan aralashmaydi)
+# ==========================================
+volumes:
+  kuafcv_local_postgres_data:
+    name: kuafcv_local_postgres_data
+  kuafcv_local_redis_data:
+    name: kuafcv_local_redis_data
+  kuafcv_local_uploads:
+    name: kuafcv_local_uploads
+
+# ==========================================
+# Network (alohida network)
+# ==========================================
+networks:
+  kuafcv_local_network:
+    name: kuafcv_local_network
+    driver: bridge

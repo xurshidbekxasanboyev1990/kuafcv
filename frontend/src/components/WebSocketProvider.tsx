@@ -87,8 +87,10 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       wsRef.current.close();
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
-    const wsUrl = baseUrl.replace('http', 'ws').replace('/api', '') + '/api/ws?token=' + encodeURIComponent(token);
+    // WebSocket URL - production va development uchun avtomatik
+    const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = typeof window !== 'undefined' ? window.location.host : 'localhost:3000';
+    const wsUrl = `${protocol}//${host}/api/ws?token=${encodeURIComponent(token)}`;
     
     try {
       const ws = new WebSocket(wsUrl);
