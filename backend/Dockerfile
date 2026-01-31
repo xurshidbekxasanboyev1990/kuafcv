@@ -31,7 +31,7 @@ COPY --from=builder /app/main .
 RUN mkdir -p uploads/portfolios uploads/profiles uploads/resumes
 
 # Expose port
-EXPOSE 4000
+EXPOSE 8085
 
 # Run binary
 CMD ["./main"]
