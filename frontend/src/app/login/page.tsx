@@ -88,10 +88,9 @@ export default function LoginPage() {
             <div className="relative z-10 p-12 flex flex-col justify-between h-full w-full max-w-2xl">
                <div>
                   <div className="flex items-center gap-3 mb-12">
-                     <div className="bg-white/10 p-2.5 rounded-xl backdrop-blur-md border border-white/20 shadow-xl">
-                        <Image src="/logo.svg" alt="Logo" width={160} height={160} className="object-contain" />
+                     <div className="bg-white p-3 rounded-xl shadow-xl">
+                        <Image src="/logo.svg" alt="Kokand University Logo" width={220} height={75} className="object-contain" />
                      </div>
-                     <h1 className="text-2xl font-bold tracking-wider font-mono">KUAFCV</h1>
                   </div>
 
                   <h2 className="text-5xl font-extrabold tracking-tight leading-tight mb-8 drop-shadow-lg">
@@ -125,8 +124,8 @@ export default function LoginPage() {
 
             <div className="w-full max-w-[440px] space-y-8 relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
                <div className="flex flex-col space-y-2 text-center">
-                  <div className="lg:hidden mx-auto mb-4 bg-[#991B1B] p-4 rounded-2xl shadow-xl shadow-red-900/20 transform rotate-3">
-                     <Image src="/logo.svg" alt="Logo" width={160} height={160} className="object-contain" />
+                  <div className="lg:hidden mx-auto mb-4 bg-white p-4 rounded-2xl shadow-xl">
+                     <Image src="/logo.svg" alt="Logo" width={200} height={70} className="object-contain" />
                   </div>
                   <h1 className="text-3xl font-bold tracking-tight text-slate-900">Xush kelibsiz</h1>
                   <p className="text-slate-500">Shaxsiy kabinetingizga kirish uchun ma'lumotlarni kiriting</p>
