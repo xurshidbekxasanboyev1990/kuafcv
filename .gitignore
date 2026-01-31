@@ -74,6 +74,7 @@ vendor/
 
 # Docker
 .dockerignore
+docker-compose.prod.yml
 
 # Backups
 *.backup
