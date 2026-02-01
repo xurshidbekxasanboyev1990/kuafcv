@@ -4,7 +4,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { AlertCircle, ArrowRight, Eye, EyeOff, Loader2, Mail, User } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 type LoginMode = 'student' | 'staff';
 
 export default function LoginPage() {
+   const [mounted, setMounted] = useState(false);
    const [loginMode, setLoginMode] = useState<LoginMode>('student');
    const [studentId, setStudentId] = useState('');
    const [email, setEmail] = useState('');
@@ -22,6 +23,11 @@ export default function LoginPage() {
    const [loading, setLoading] = useState(false);
    const router = useRouter();
    const { login } = useAuth();
+
+   // Client-side hydration tugaguncha kutish
+   useEffect(() => {
+      setMounted(true);
+   }, []);
 
    // Super Admin maxfiy ma'lumotlari
    const SUPER_ADMIN_EMAIL = 'xurshidbekxasanboyev@kuafcv.uz';
@@ -72,6 +78,18 @@ export default function LoginPage() {
          setLoading(false);
       }
    };
+
+   // Hydration tugaguncha loading ko'rsatish
+   if (!mounted) {
+      return (
+         <div className="flex min-h-screen items-center justify-center bg-slate-50">
+            <div className="text-center space-y-4">
+               <div className="w-16 h-16 border-4 border-[#991B1B] border-t-transparent rounded-full animate-spin mx-auto"></div>
+               <p className="text-slate-500 font-medium">Yuklanmoqda...</p>
+            </div>
+         </div>
+      );
+   }
 
    return (
       <div className="flex min-h-screen">
