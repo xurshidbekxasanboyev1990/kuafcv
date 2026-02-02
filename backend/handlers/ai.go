@@ -865,8 +865,20 @@ MUHIM: Shuningdek, bu matn/hujjat AI (ChatGPT, Claude va h.k.) tomonidan yozilga
 
 	// For images, read file and convert to base64
 	if isImage {
-		// Get local file path from URL
-		localPath := strings.Replace(req.FileURL, "http://localhost:4000", ".", 1)
+		// Get local file path from URL - handle both absolute and relative URLs
+		localPath := req.FileURL
+		if strings.HasPrefix(localPath, "http://") || strings.HasPrefix(localPath, "https://") {
+			// Remove any domain prefix
+			if idx := strings.Index(localPath, "/uploads/"); idx != -1 {
+				localPath = "." + localPath[idx:]
+			} else {
+				localPath = strings.Replace(localPath, "http://localhost:4000", ".", 1)
+				localPath = strings.Replace(localPath, "http://localhost:8085", ".", 1)
+			}
+		} else if strings.HasPrefix(localPath, "/") {
+			// Relative path starting with /
+			localPath = "." + localPath
+		}
 		fmt.Printf("[DEBUG] Reading local file: %s\n", localPath)
 
 		imageData, err := os.ReadFile(localPath)
@@ -1288,8 +1300,20 @@ func ExtractTextFromImage(c *gin.Context) {
 		return
 	}
 
-	// Read local file
-	localPath := strings.Replace(req.FileURL, "http://localhost:4000", ".", 1)
+	// Read local file - handle both absolute and relative URLs
+	localPath := req.FileURL
+	if strings.HasPrefix(localPath, "http://") || strings.HasPrefix(localPath, "https://") {
+		// Remove any domain prefix
+		if idx := strings.Index(localPath, "/uploads/"); idx != -1 {
+			localPath = "." + localPath[idx:]
+		} else {
+			localPath = strings.Replace(localPath, "http://localhost:4000", ".", 1)
+			localPath = strings.Replace(localPath, "http://localhost:8085", ".", 1)
+		}
+	} else if strings.HasPrefix(localPath, "/") {
+		// Relative path starting with /
+		localPath = "." + localPath
+	}
 	imageData, err := os.ReadFile(localPath)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIError{
